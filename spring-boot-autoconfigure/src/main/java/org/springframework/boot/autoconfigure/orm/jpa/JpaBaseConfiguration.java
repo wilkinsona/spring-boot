@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -109,18 +110,6 @@ public abstract class JpaBaseConfiguration implements BeanFactoryAware {
 		return builder;
 	}
 
-	@Bean
-	@Primary
-	@ConditionalOnMissingBean({ LocalContainerEntityManagerFactoryBean.class,
-			EntityManagerFactory.class })
-	public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-			EntityManagerFactoryBuilder factoryBuilder) {
-		Map<String, Object> vendorProperties = getVendorProperties();
-		customizeVendorProperties(vendorProperties);
-		return factoryBuilder.dataSource(this.dataSource).packages(getPackagesToScan())
-				.properties(vendorProperties).jta(isJta()).build();
-	}
-
 	protected abstract AbstractJpaVendorAdapter createJpaVendorAdapter();
 
 	protected abstract Map<String, Object> getVendorProperties();
@@ -180,6 +169,37 @@ public abstract class JpaBaseConfiguration implements BeanFactoryAware {
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = (ConfigurableListableBeanFactory) beanFactory;
+	}
+
+	@Configuration
+	@ConditionalOnSingleCandidate(DataSource.class)
+	protected static class EntityManagerFactoryConfiguration {
+
+		private final JpaBaseConfiguration baseConfiguration;
+
+		private final DataSource dataSource;
+
+		EntityManagerFactoryConfiguration(JpaBaseConfiguration baseConfiguration,
+				DataSource dataSource) {
+			this.baseConfiguration = baseConfiguration;
+			this.dataSource = dataSource;
+		}
+
+		@Bean
+		@Primary
+		@ConditionalOnMissingBean({ LocalContainerEntityManagerFactoryBean.class,
+				EntityManagerFactory.class })
+		public LocalContainerEntityManagerFactoryBean entityManagerFactory(
+				EntityManagerFactoryBuilder factoryBuilder) {
+			Map<String, Object> vendorProperties = this.baseConfiguration
+					.getVendorProperties();
+			this.baseConfiguration.customizeVendorProperties(vendorProperties);
+			return factoryBuilder.dataSource(this.dataSource)
+					.packages(this.baseConfiguration.getPackagesToScan())
+					.properties(vendorProperties).jta(this.baseConfiguration.isJta())
+					.build();
+		}
+
 	}
 
 	@Configuration
