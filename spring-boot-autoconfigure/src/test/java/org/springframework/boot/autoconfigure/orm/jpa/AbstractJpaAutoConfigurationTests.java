@@ -29,7 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.autoconfigure.TestAutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -52,6 +51,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Base for JPA tests and tests for {@link JpaBaseConfiguration}.
@@ -74,12 +74,16 @@ public abstract class AbstractJpaAutoConfigurationTests {
 	protected abstract Class<?> getAutoConfigureClass();
 
 	@Test
-	public void testNoDataSource() throws Exception {
+	public void backsOffGentlyWithNoDataSource() throws Exception {
 		this.context.register(PropertyPlaceholderAutoConfiguration.class,
 				getAutoConfigureClass());
-		this.expected.expect(BeanCreationException.class);
-		this.expected.expectMessage("No qualifying bean");
-		this.expected.expectMessage("DataSource");
+		this.context.refresh();
+	}
+
+	@Test
+	public void backsOffGentlyWithMultipleDataSources() throws Exception {
+		this.context.register(PropertyPlaceholderAutoConfiguration.class,
+				TwoDataSourcesConfiguration.class, getAutoConfigureClass());
 		this.context.refresh();
 	}
 
@@ -203,7 +207,8 @@ public abstract class AbstractJpaAutoConfigurationTests {
 	protected void setupTestConfiguration(Class<?> configClass) {
 		this.context.register(configClass, EmbeddedDataSourceConfiguration.class,
 				DataSourceAutoConfiguration.class,
-				PropertyPlaceholderAutoConfiguration.class, getAutoConfigureClass());
+				PropertyPlaceholderAutoConfiguration.class, getAutoConfigureClass(),
+				JpaTransactionManagerAutoConfiguration.class);
 	}
 
 	private String[] getInterceptorBeans(ApplicationContext context) {
@@ -213,6 +218,21 @@ public abstract class AbstractJpaAutoConfigurationTests {
 	@Configuration
 	@TestAutoConfigurationPackage(City.class)
 	protected static class TestConfiguration {
+
+	}
+
+	@Configuration
+	protected static class TwoDataSourcesConfiguration {
+
+		@Bean
+		public DataSource firstDataSource() {
+			return mock(DataSource.class);
+		}
+
+		@Bean
+		public DataSource secondDataSource() {
+			return mock(DataSource.class);
+		}
 
 	}
 

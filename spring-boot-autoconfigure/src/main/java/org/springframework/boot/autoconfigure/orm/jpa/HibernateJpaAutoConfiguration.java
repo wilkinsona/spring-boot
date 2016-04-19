@@ -83,10 +83,9 @@ public class HibernateJpaAutoConfiguration extends JpaBaseConfiguration {
 			"org.hibernate.engine.transaction.jta.platform.internal.WebSphereExtendedJtaPlatform",
 			"org.hibernate.service.jta.platform.internal.WebSphereExtendedJtaPlatform", };
 
-	public HibernateJpaAutoConfiguration(DataSource dataSource,
-			JpaProperties jpaProperties,
+	public HibernateJpaAutoConfiguration(JpaProperties jpaProperties,
 			ObjectProvider<JtaTransactionManager> jtaTransactionManagerProvider) {
-		super(dataSource, jpaProperties, jtaTransactionManagerProvider);
+		super(jpaProperties, jtaTransactionManagerProvider);
 	}
 
 	@Override
@@ -95,9 +94,9 @@ public class HibernateJpaAutoConfiguration extends JpaBaseConfiguration {
 	}
 
 	@Override
-	protected Map<String, Object> getVendorProperties() {
+	protected Map<String, Object> getVendorProperties(DataSource dataSource) {
 		Map<String, Object> vendorProperties = new LinkedHashMap<String, Object>();
-		vendorProperties.putAll(getProperties().getHibernateProperties(getDataSource()));
+		vendorProperties.putAll(getProperties().getHibernateProperties(dataSource));
 		return vendorProperties;
 	}
 

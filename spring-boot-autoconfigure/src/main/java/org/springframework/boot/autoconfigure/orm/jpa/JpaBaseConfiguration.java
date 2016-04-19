@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
@@ -39,7 +40,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
-import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.persistenceunit.PersistenceUnitManager;
@@ -65,25 +65,16 @@ public abstract class JpaBaseConfiguration implements BeanFactoryAware {
 
 	private static final String[] NO_PACKAGES = new String[0];
 
-	private final DataSource dataSource;
-
 	private final JpaProperties properties;
 
 	private final JtaTransactionManager jtaTransactionManager;
 
 	private ConfigurableListableBeanFactory beanFactory;
 
-	protected JpaBaseConfiguration(DataSource dataSource, JpaProperties properties,
+	protected JpaBaseConfiguration(JpaProperties properties,
 			ObjectProvider<JtaTransactionManager> jtaTransactionManagerProvider) {
-		this.dataSource = dataSource;
 		this.properties = properties;
 		this.jtaTransactionManager = jtaTransactionManagerProvider.getIfAvailable();
-	}
-
-	@Bean
-	@ConditionalOnMissingBean(PlatformTransactionManager.class)
-	public PlatformTransactionManager transactionManager() {
-		return new JpaTransactionManager();
 	}
 
 	@Bean
@@ -113,17 +104,18 @@ public abstract class JpaBaseConfiguration implements BeanFactoryAware {
 	@Primary
 	@ConditionalOnMissingBean({ LocalContainerEntityManagerFactoryBean.class,
 			EntityManagerFactory.class })
+	@ConditionalOnSingleCandidate(DataSource.class)
 	public LocalContainerEntityManagerFactoryBean entityManagerFactory(
-			EntityManagerFactoryBuilder factoryBuilder) {
-		Map<String, Object> vendorProperties = getVendorProperties();
+			EntityManagerFactoryBuilder factoryBuilder, DataSource dataSource) {
+		Map<String, Object> vendorProperties = getVendorProperties(dataSource);
 		customizeVendorProperties(vendorProperties);
-		return factoryBuilder.dataSource(this.dataSource).packages(getPackagesToScan())
+		return factoryBuilder.dataSource(dataSource).packages(getPackagesToScan())
 				.properties(vendorProperties).jta(isJta()).build();
 	}
 
 	protected abstract AbstractJpaVendorAdapter createJpaVendorAdapter();
 
-	protected abstract Map<String, Object> getVendorProperties();
+	protected abstract Map<String, Object> getVendorProperties(DataSource dataSource);
 
 	/**
 	 * Customize vendor properties before they are used. Allows for post processing (for
@@ -167,14 +159,6 @@ public abstract class JpaBaseConfiguration implements BeanFactoryAware {
 	 */
 	protected final JpaProperties getProperties() {
 		return this.properties;
-	}
-
-	/**
-	 * Return the {@link DataSource}.
-	 * @return the data source
-	 */
-	protected final DataSource getDataSource() {
-		return this.dataSource;
 	}
 
 	@Override
