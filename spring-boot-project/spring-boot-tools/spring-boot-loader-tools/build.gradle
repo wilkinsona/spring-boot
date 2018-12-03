@@ -1,0 +1,42 @@
+plugins {
+	id 'java-library'
+}
+
+def generatedResources = "${buildDir}/generated-resources/main"
+
+configurations {
+	loader
+}
+
+dependencies {
+	compileOnly "ch.qos.logback:logback-classic"
+
+	implementation enforcedPlatform(project(":spring-boot-project:spring-boot-parent"))
+	implementation "org.springframework:spring-core"
+	implementation "org.apache.commons:commons-compress"
+
+	loader project(":spring-boot-project:spring-boot-tools:spring-boot-loader")
+
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.mockito:mockito-core"
+	testImplementation "org.zeroturnaround:zt-zip"
+	testImplementation "junit:junit"
+}
+
+sourceSets {
+	main {
+		output.dir(generatedResources, builtBy: 'copyLoaderJar')
+	}
+}
+
+task copyLoaderJar(type: Copy) {
+	inputs.files configurations.loader
+	from(configurations.loader.incoming.files.filter {it.name.startsWith "spring-boot-loader" }.singleFile) {
+		rename 'spring-boot-loader-.*.jar', 'spring-boot-loader.jar'
+	}
+	into "${generatedResources}/META-INF/loader"
+}
+
+jar {
+	dependsOn copyLoaderJar
+}

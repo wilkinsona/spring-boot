@@ -16,6 +16,11 @@
 
 package org.springframework.boot.context.logging;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -64,10 +69,7 @@ import org.springframework.core.env.MutablePropertySources;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
+import ch.qos.logback.classic.LoggerContext;
 
 /**
  * Tests for {@link LoggingApplicationListener} with Logback.

@@ -1,0 +1,98 @@
+plugins {
+    id 'java-library'
+    id 'nebula.optional-base' version '3.0.3'
+    id 'org.jetbrains.kotlin.jvm' version '1.2.70'
+}
+
+dependencies {
+	annotationProcessor project(':spring-boot-project:spring-boot-tools:spring-boot-configuration-processor')
+	annotationProcessor 'org.apache.logging.log4j:log4j-core'
+
+	implementation enforcedPlatform(project(':spring-boot-project:spring-boot-parent'))
+	implementation 'org.springframework:spring-core'
+	implementation 'org.springframework:spring-context'
+	implementation 'ch.qos.logback:logback-classic', optional
+	implementation 'com.atomikos:transactions-jdbc', optional
+	implementation 'com.atomikos:transactions-jms', optional
+	implementation 'com.atomikos:transactions-jta', optional
+	implementation 'com.fasterxml.jackson.core:jackson-databind', optional
+	implementation 'com.google.code.gson:gson', optional
+	implementation 'com.samskivert:jmustache', optional
+	implementation 'com.sendgrid:sendgrid-java', optional
+	implementation 'com.zaxxer:HikariCP', optional
+	implementation 'io.projectreactor.netty:reactor-netty', optional
+	implementation 'io.netty:netty-tcnative-boringssl-static', optional
+	implementation 'io.undertow:undertow-servlet', optional
+	implementation 'javax.jms:javax.jms-api', optional
+	implementation 'javax.servlet:javax.servlet-api', optional
+	implementation 'junit:junit', optional
+	implementation 'org.apache.commons:commons-dbcp2', optional
+	implementation 'org.apache.httpcomponents:httpclient', optional
+	implementation 'org.apache.logging.log4j:log4j-api', optional
+	implementation 'org.apache.logging.log4j:log4j-core', optional
+	implementation 'org.apache.tomcat.embed:tomcat-embed-core', optional
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper', optional
+	implementation 'org.apache.tomcat:tomcat-jdbc', optional
+	implementation 'org.assertj:assertj-core', optional
+	implementation 'org.codehaus.btm:btm', optional
+	implementation 'org.codehaus.groovy:groovy', optional
+	implementation 'org.codehaus.groovy:groovy-xml', optional
+	implementation 'org.eclipse.jetty:jetty-servlets', optional
+	implementation 'org.eclipse.jetty:jetty-util', optional
+	implementation 'org.eclipse.jetty:jetty-webapp', optional
+	implementation 'org.eclipse.jetty:jetty-alpn-conscrypt-server', optional
+	implementation 'org.eclipse.jetty.http2:http2-server', optional
+	implementation 'org.hamcrest:hamcrest-library', optional
+	implementation 'org.hibernate:hibernate-core', optional
+	implementation 'org.hibernate.validator:hibernate-validator', optional
+	implementation 'org.jboss:jboss-transaction-spi', optional
+	implementation 'org.liquibase:liquibase-core', optional
+	implementation 'org.neo4j:neo4j-ogm-core', optional
+	implementation 'org.slf4j:jul-to-slf4j', optional
+	implementation 'org.slf4j:slf4j-api', optional
+	implementation 'org.springframework:spring-orm', optional
+	implementation 'org.springframework:spring-oxm', optional
+	implementation 'org.springframework:spring-test', optional
+	implementation 'org.springframework:spring-web', optional
+	implementation 'org.springframework:spring-webflux', optional
+	implementation 'org.springframework:spring-webmvc', optional
+	implementation 'org.springframework.security:spring-security-web', optional
+	implementation 'org.springframework.ws:spring-ws-core', optional
+	implementation 'org.yaml:snakeyaml', optional
+	implementation 'org.jetbrains.kotlin:kotlin-reflect', optional
+	implementation 'org.jetbrains.kotlin:kotlin-stdlib', optional
+
+	testImplementation project(':spring-boot-project:spring-boot-tools:spring-boot-test-support')
+	testImplementation 'com.google.appengine:appengine-api-1.0-sdk'
+	testImplementation 'com.h2database:h2'
+	testImplementation 'com.jayway.jsonpath:json-path'
+	testImplementation 'com.microsoft.sqlserver:mssql-jdbc'
+	testImplementation 'com.squareup.okhttp3:okhttp'
+	testImplementation 'com.sun.xml.messaging.saaj:saaj-impl'
+	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation 'javax.xml.ws:jaxws-api'
+	testImplementation 'mysql:mysql-connector-java'
+	testImplementation 'net.sourceforge.jtds:jtds'
+	testImplementation 'org.apache.derby:derby'
+	testImplementation 'org.apache.httpcomponents:httpasyncclient'
+	testImplementation 'org.firebirdsql.jdbc:jaybird-jdk18'
+	testImplementation 'org.hsqldb:hsqldb'
+	testImplementation 'org.mariadb.jdbc:mariadb-java-client'
+	testImplementation 'org.mockito:mockito-core'
+	testImplementation 'org.postgresql:postgresql'
+	testImplementation 'org.springframework:spring-context-support'
+	testImplementation 'org.springframework.data:spring-data-redis'
+	testImplementation 'org.xerial:sqlite-jdbc'
+}
+
+compileKotlin {
+	kotlinOptions {
+		jvmTarget = 1.8
+	}
+}
+
+compileTestKotlin {
+	kotlinOptions {
+		jvmTarget = 1.8
+	}
+}
