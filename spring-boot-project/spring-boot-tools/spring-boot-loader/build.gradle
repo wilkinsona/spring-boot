@@ -1,0 +1,27 @@
+plugins {
+	id "java-library"
+}
+
+dependencies {
+	compileOnly "org.springframework:spring-core"
+
+	implementation enforcedPlatform(project(":spring-boot-project:spring-boot-dependencies"))
+
+	testImplementation project(":spring-boot-project:spring-boot-tools:spring-boot-test-support")
+
+	testImplementation "junit:junit"
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.mockito:mockito-core"
+	testImplementation "org.springframework:spring-test"
+
+	testRuntimeOnly "ch.qos.logback:logback-classic"
+	testRuntimeOnly "org.bouncycastle:bcprov-jdk16:1.46"
+	testRuntimeOnly "org.slf4j:jcl-over-slf4j"
+	testRuntimeOnly "org.springframework:spring-webmvc"
+}
+
+task resolveBomTest {
+	doLast {
+		println configurations.bomTest.files
+	}
+}

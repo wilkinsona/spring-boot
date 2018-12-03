@@ -16,6 +16,13 @@
 
 package org.springframework.boot.logging.logback;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import java.io.File;
 import java.io.FileReader;
 import java.util.EnumSet;
@@ -23,16 +30,6 @@ import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.spi.LoggerContextListener;
-import ch.qos.logback.core.ConsoleAppender;
-import ch.qos.logback.core.CoreConstants;
-import ch.qos.logback.core.rolling.RollingFileAppender;
-import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.impl.SLF4JLogFactory;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -43,7 +40,6 @@ import org.junit.runner.RunWith;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.slf4j.impl.StaticLoggerBinder;
-
 import org.springframework.boot.logging.AbstractLoggingSystemTests;
 import org.springframework.boot.logging.LogFile;
 import org.springframework.boot.logging.LogLevel;
@@ -60,12 +56,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.LoggerContextListener;
+import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.CoreConstants;
+import ch.qos.logback.core.rolling.RollingFileAppender;
+import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy;
 
 /**
  * Tests for {@link LogbackLoggingSystem}.
@@ -87,7 +85,7 @@ public class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 	private final LogbackLoggingSystem loggingSystem = new LogbackLoggingSystem(
 			getClass().getClassLoader());
 
-	private Log logger;
+	private Logger logger;
 
 	private LoggingInitializationContext initializationContext;
 
@@ -96,7 +94,7 @@ public class LogbackLoggingSystemTests extends AbstractLoggingSystemTests {
 	@Before
 	public void setup() {
 		this.loggingSystem.cleanUp();
-		this.logger = new SLF4JLogFactory().getInstance(getClass().getName());
+		this.logger = ((LoggerContext)StaticLoggerBinder.getSingleton().getLoggerFactory()).getLogger(getClass().getName());
 		this.environment = new MockEnvironment();
 		this.initializationContext = new LoggingInitializationContext(this.environment);
 	}

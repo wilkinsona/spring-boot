@@ -1,0 +1,12 @@
+rootProject.name='spring-boot-build'
+
+include 'spring-boot-project:spring-boot-dependencies'
+include 'spring-boot-project:spring-boot-parent'
+include 'spring-boot-project:spring-boot-tools:spring-boot-antlib'
+include 'spring-boot-project:spring-boot-tools:spring-boot-autoconfigure-processor'
+include 'spring-boot-project:spring-boot-tools:spring-boot-configuration-metadata'
+include 'spring-boot-project:spring-boot-tools:spring-boot-configuration-processor'
+include 'spring-boot-project:spring-boot-tools:spring-boot-loader'
+include 'spring-boot-project:spring-boot-tools:spring-boot-loader-tools'
+include 'spring-boot-project:spring-boot-tools:spring-boot-test-support'
+include 'spring-boot-project:spring-boot'

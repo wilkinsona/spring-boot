@@ -16,6 +16,11 @@
 
 package org.springframework.boot.context.logging;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -28,14 +33,13 @@ import java.util.logging.Logger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.logging.impl.SLF4JLogFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.bridge.SLF4JBridgeHandler;
-
+import org.slf4j.impl.StaticLoggerBinder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.context.event.ApplicationFailedEvent;
 import org.springframework.boot.context.event.ApplicationStartingEvent;
@@ -63,10 +67,7 @@ import org.springframework.core.env.MutablePropertySources;
 import org.springframework.test.context.support.TestPropertySourceUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
+import ch.qos.logback.classic.LoggerContext;
 
 /**
  * Tests for {@link LoggingApplicationListener} with Logback.
@@ -89,9 +90,9 @@ public class LoggingApplicationListenerTests {
 
 	private final LoggingApplicationListener initializer = new LoggingApplicationListener();
 
-	private final SLF4JLogFactory logFactory = new SLF4JLogFactory();
+	private final LoggerContext logFactory = (LoggerContext)StaticLoggerBinder.getSingleton().getLoggerFactory();
 
-	private final Log logger = this.logFactory.getInstance(getClass());
+	private final ch.qos.logback.classic.Logger logger = this.logFactory.getLogger(getClass());
 
 	private final SpringApplication springApplication = new SpringApplication();
 
@@ -404,7 +405,7 @@ public class LoggingApplicationListenerTests {
 		this.initializer.initialize(this.context.getEnvironment(),
 				this.context.getClassLoader());
 		this.logger.debug("testatdebug");
-		this.logger.fatal("testatfatal");
+		this.logger.error("testaterror");
 		assertThat(this.outputCapture.toString()).doesNotContain("testatdebug")
 				.doesNotContain("testatfatal");
 	}
@@ -416,7 +417,7 @@ public class LoggingApplicationListenerTests {
 		this.initializer.initialize(this.context.getEnvironment(),
 				this.context.getClassLoader());
 		this.logger.debug("testatdebug");
-		this.logger.fatal("testatfatal");
+		this.logger.error("testaterror");
 		assertThat(this.outputCapture.toString()).doesNotContain("testatdebug")
 				.doesNotContain("testatfatal");
 	}
@@ -657,7 +658,7 @@ public class LoggingApplicationListenerTests {
 	}
 
 	private void assertTraceEnabled(String name, boolean expected) {
-		assertThat(this.logFactory.getInstance(name).isTraceEnabled())
+		assertThat(this.logFactory.getLogger(name).isTraceEnabled())
 				.isEqualTo(expected);
 	}
 

@@ -9,7 +9,7 @@ buildscript {
 }
 
 plugins {
-	id 'java'
+	id 'java-library'
 	id 'eclipse'
 }
 
@@ -21,12 +21,12 @@ repositories {
 }
 
 dependencies {
+	api "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
 	implementation localGroovy()
 	implementation gradleApi()
-	implementation fileTree(dir: 'target/dependencies/compile', include: '*.jar')
+	implementation project(":spring-boot-loader-tools")
 	testImplementation gradleTestKit()
-	testImplementation 'org.apache.commons:commons-compress:1.13'
-	testImplementation fileTree(dir: 'target/dependencies/test', include: '*.jar')
+	testImplementation "org.apache.commons:commons-compress:1.13"
 }
 
 jar {
