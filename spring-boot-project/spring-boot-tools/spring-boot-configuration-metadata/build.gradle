@@ -1,0 +1,12 @@
+plugins {
+	id "java-library"
+}
+
+dependencies {
+	implementation enforcedPlatform(project(path: ":spring-boot-project:spring-boot-parent"))
+	implementation "com.vaadin.external.google:android-json"
+
+	testImplementation "junit:junit"
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.springframework:spring-core"
+}

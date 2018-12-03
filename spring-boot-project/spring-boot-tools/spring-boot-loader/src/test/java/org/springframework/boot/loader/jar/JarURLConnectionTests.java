@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 public class JarURLConnectionTests {
 
 	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder(new File("target"));
+	public TemporaryFolder temporaryFolder = new TemporaryFolder(new File("build"));
 
 	private File rootJarFile;
 

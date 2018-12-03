@@ -1,0 +1,11 @@
+plugins {
+	id "java-library"
+}
+
+dependencies {
+	implementation enforcedPlatform(project(":spring-boot-project:spring-boot-dependencies"))
+
+	testImplementation "junit:junit"
+	testImplementation "org.assertj:assertj-core"
+	testImplementation project(":spring-boot-project:spring-boot-tools:spring-boot-test-support")
+}

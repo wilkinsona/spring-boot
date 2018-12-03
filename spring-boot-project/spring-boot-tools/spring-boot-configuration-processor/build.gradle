@@ -1,0 +1,24 @@
+plugins {
+	id "java-library"
+}
+
+sourceSets {
+	main {
+		java {
+			srcDir file("src/json-shade/java")
+		}
+	}
+}
+
+dependencies {
+	implementation enforcedPlatform(project(":spring-boot-project:spring-boot-dependencies"))
+
+	testImplementation project(":spring-boot-project:spring-boot-tools:spring-boot-test-support")
+	testImplementation "javax.validation:validation-api"
+	testImplementation "junit:junit"
+	testImplementation "org.assertj:assertj-core"
+	testImplementation "org.hamcrest:hamcrest-library"
+	testImplementation "org.mockito:mockito-core"
+	testImplementation "org.projectlombok:lombok"
+	testImplementation "org.springframework:spring-core"
+}

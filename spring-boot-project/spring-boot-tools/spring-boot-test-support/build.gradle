@@ -1,0 +1,32 @@
+plugins {
+	id 'java-library'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compileOnly "com.datastax.cassandra:cassandra-driver-core"
+	compileOnly "javax.servlet:javax.servlet-api"
+	compileOnly "junit:junit"
+	compileOnly "org.mockito:mockito-core"
+	compileOnly "org.neo4j:neo4j-ogm-core"
+	compileOnly "org.springframework:spring-context"
+	compileOnly "org.springframework.data:spring-data-redis"
+	compileOnly "org.testcontainers:testcontainers"
+
+	implementation enforcedPlatform(project(path: ":spring-boot-project:spring-boot-parent"))
+	implementation "org.apache.maven.resolver:maven-resolver-connector-basic"
+	implementation "org.apache.maven.resolver:maven-resolver-impl"
+	implementation "org.apache.maven:maven-resolver-provider"
+	implementation "org.apache.maven.resolver:maven-resolver-transport-http"
+	implementation "org.assertj:assertj-core"
+	implementation "org.hamcrest:hamcrest-core"
+	implementation "org.hamcrest:hamcrest-library"
+	implementation "org.springframework:spring-core"
+
+	testImplementation "junit:junit"
+	testImplementation "org.springframework:spring-context"
+	testRuntimeOnly "org.hibernate.validator:hibernate-validator"
+}
