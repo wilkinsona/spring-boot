@@ -1,7 +1,3 @@
 plugins {
-	id 'java'
-}
-
-dependencies {
-	implementation gradleApi()
+	id 'java-gradle-plugin'
 }
