@@ -10,6 +10,8 @@ repositories {
 
 dependencies {
 	checkstyle 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.6'
+	implementation 'commons-io:commons-io:2.6'
+
 	testImplementation 'junit:junit:4.12'
 	testImplementation 'org.assertj:assertj-core:3.11.1'
 }
@@ -25,6 +27,10 @@ gradlePlugin {
 		bomPlugin {
 			id = "org.springframework.boot.bom"
 			implementationClass = "org.springframework.boot.build.bom.BomPlugin"
+		}
+		mavenExecPlugin {
+			id = "org.springframework.boot.mavenexec"
+			implementationClass = "org.springframework.boot.build.mavenexec.MavenExecPlugin"
 		}
 	}
 }

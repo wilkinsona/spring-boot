@@ -1,11 +1,13 @@
-= BOM Plugin
+= Spring Boot Development Gradle Plugins
+
+== BOM Plugin
 
 Allows one to publish a BOM from Gradle.
 Properties, dependencies, and other BOMs are applied to the `bom {}` extension.
 
 This plugin applies the `java-library` and `maven-publish` plugins to the Project it's applied to.
 
-== Usage
+=== Usage
 
 [source,groovy,indent=0]
 ----
@@ -24,3 +26,30 @@ bom {
 }
 ----
 
+== MavenExec Plugin
+
+Allows one to execute a Maven build through Gradle.
+The configured Maven version is used, defaulting to Maven 3.6.0 from mirrors.standaloneinstaller.com.
+
+Creating and running a task of type `MavenExec` will invoke `mvn <taskName>` using the configured Maven distribution.
+
+The Maven Wrapper is not yet supported.
+
+=== Usage
+
+[source,groovy,indent=0]
+----
+plugins {
+	id 'org.springframework.boot.mavenexec'
+}
+
+// Optional configuration
+maven {
+    version = '3.6.0'
+    repositoryUrl = 'http://mirrors.standaloneinstaller.com/apache/maven/maven-3/'
+}
+
+// This creates an "install" task lazily
+tasks.register("install", MavenExec)
+// Running `gradle install` will invoke `mvn install`
+----

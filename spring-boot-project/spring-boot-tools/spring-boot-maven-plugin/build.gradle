@@ -1,0 +1,11 @@
+import org.springframework.boot.build.mavenexec.MavenExec
+
+plugins {
+    id 'org.springframework.boot.mavenexec'
+}
+
+maven {
+    version = "3.6.0"
+}
+
+tasks.register("install", MavenExec)
