@@ -1,3 +1,21 @@
 plugins {
 	id 'java-gradle-plugin'
 }
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	testImplementation 'junit:junit:4.12'
+}
+
+// Configure java-gradle-plugin
+gradlePlugin {
+	plugins {
+		bomPlugin {
+			id = "org.springframework.boot.bom"
+			implementationClass = "org.springframework.boot.build.bom.BomPlugin"
+		}
+	}
+}
