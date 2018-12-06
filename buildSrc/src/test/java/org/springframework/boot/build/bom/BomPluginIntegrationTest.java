@@ -15,26 +15,27 @@
  */
 package org.springframework.boot.build.bom;
 
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.GradleRunner;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.w3c.dom.Document;
+import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
-import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.GradleRunner;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.w3c.dom.Document;
 
 /**
  * Tests for {@link BomPlugin}.
@@ -133,9 +134,8 @@ public class BomPluginIntegrationTest {
         assertBomImport(groupId, artifactId, version, generatedPomXml);
     }
 
-    @Ignore("this is failing for an unknown reason")
     @Test
-    public void testResolvesDependencyVersionsUsingProperties() throws Exception {
+    public void testDeclaresDependencyVersionsUsingProperties() throws Exception {
         try (FileWriter out = new FileWriter(buildFile)) {
             out.write("plugins {\n" +
                     "    id 'org.springframework.boot.bom'\n" +
@@ -153,8 +153,12 @@ public class BomPluginIntegrationTest {
         File generatedPomXml = new File(temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
         assertTrue(generatedPomXml.canRead());
 
-        assertBomDependency("ch.qos.logback", "logback-core", "1.2.3", generatedPomXml);
-        assertBomImport("org.junit", "junit-bom", "5.3.2", generatedPomXml);
+        Files.readAllLines(generatedPomXml.toPath()).forEach(System.out::println);
+
+        assertBomProperty("1.2.3", generatedPomXml, "logback.version");
+        assertBomProperty("5.3.2", generatedPomXml, "junit-jupiter.version");
+        assertBomDependency("ch.qos.logback", "logback-core", "${logback.version}", generatedPomXml);
+        assertBomImport("org.junit", "junit-bom", "${junit-jupiter.version}", generatedPomXml);
     }
 
     private void assertBomProperty(String propertyValue, File generatedPomXml, String propertyName) throws Exception {
