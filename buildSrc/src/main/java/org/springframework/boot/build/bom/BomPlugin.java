@@ -16,9 +16,8 @@
 
 package org.springframework.boot.build.bom;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import groovy.util.Node;
+import groovy.xml.QName;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponent;
@@ -29,8 +28,8 @@ import org.gradle.api.publish.maven.MavenPom;
 import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 
-import groovy.util.Node;
-import groovy.xml.QName;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class BomPlugin implements Plugin<Project> {
 
@@ -75,11 +74,15 @@ public class BomPlugin implements Plugin<Project> {
 				this.bom.getProperties().forEach(properties::appendNode);
 				projectNode.children().add(5, properties);
 				Node dependencyManagement = findChild(projectNode, "dependencyManagement");
-				Node dependencies = findChild(dependencyManagement, "dependencies");
-				for (Node dependency: findChildren(dependencies, "dependency")) {
-						String groupId = findChild(dependency, "groupId").text();
-						String artifactId = findChild(dependency, "artifactId").text();
-						findChild(dependency, "version").setValue(bom.getVersion(groupId, artifactId));
+				if (dependencyManagement != null) {
+					Node dependencies = findChild(dependencyManagement, "dependencies");
+					if (dependencies != null) {
+                        for (Node dependency: findChildren(dependencies, "dependency")) {
+                            String groupId = findChild(dependency, "groupId").text();
+                            String artifactId = findChild(dependency, "artifactId").text();
+                            findChild(dependency, "version").setValue(bom.getVersion(groupId, artifactId));
+                        }
+                    }
 				}
 			});
 		}
