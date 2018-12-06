@@ -1,5 +1,7 @@
 plugins {
 	id 'java-gradle-plugin'
+	id 'io.spring.javaformat' version '0.0.6'
+	id 'checkstyle'
 }
 
 repositories {
@@ -7,8 +9,15 @@ repositories {
 }
 
 dependencies {
+	checkstyle 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.6'
 	testImplementation 'junit:junit:4.12'
 	testImplementation 'org.assertj:assertj-core:3.11.1'
+}
+
+checkstyle {
+ 	def archive = configurations.checkstyle.filter { it.name.startsWith('spring-javaformat-checkstyle')}
+	config = resources.text.fromArchiveEntry(archive, 'io/spring/javaformat/checkstyle/checkstyle.xml')
+	toolVersion = 8.11
 }
 
 gradlePlugin {
