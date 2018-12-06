@@ -30,6 +30,7 @@ dump.rdb
 interpolated*.xml
 lib/
 manifest.yml
+out
 overridedb.*
 settings.xml
 target
