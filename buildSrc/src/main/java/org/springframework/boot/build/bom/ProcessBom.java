@@ -30,8 +30,8 @@ import org.w3c.dom.NodeList;
 
 /**
  * Temporary helper {@link Task} to keep the bom configuration in {@code build.gradle}
- * aligned with the equivalent configuration in {@code pom.xml} during the Maven to
- * Gradle migration.
+ * aligned with the equivalent configuration in {@code pom.xml} during the Maven to Gradle
+ * migration.
  *
  * @author Andy Wilkinson
  */
@@ -39,31 +39,41 @@ public class ProcessBom extends AbstractTask {
 
 	@TaskAction
 	public void processBom() throws Exception {
-		Document bom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(getProject().file("pom.xml"));
+		Document bom = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+				.parse(getProject().file("pom.xml"));
 		XPath xpath = XPathFactory.newInstance().newXPath();
-		NodeList properties = (NodeList) xpath.evaluate("//properties/*", bom, XPathConstants.NODESET);
+		NodeList properties = (NodeList) xpath.evaluate("//properties/*", bom,
+				XPathConstants.NODESET);
 		System.out.println("bom {");
 		for (int i = 0; i < properties.getLength(); i++) {
 			Node property = properties.item(i);
 			if (property.getNodeName().endsWith(".version")) {
-				System.out.println("    property '" + property.getNodeName() + "', '" + property.getTextContent() + "'");
+				System.out.println("    property '" + property.getNodeName() + "', '"
+						+ property.getTextContent() + "'");
 			}
 		}
-		NodeList dependencies = (NodeList) xpath.evaluate("//dependencyManagement/dependencies/dependency", bom, XPathConstants.NODESET);
+		NodeList dependencies = (NodeList) xpath.evaluate(
+				"//dependencyManagement/dependencies/dependency", bom,
+				XPathConstants.NODESET);
 		for (int i = 0; i < dependencies.getLength(); i++) {
 			Node dependency = dependencies.item(i);
-			String groupId = (String) xpath.evaluate("groupId/text()", dependency, XPathConstants.STRING);
-			String artifactId = (String) xpath.evaluate("artifactId/text()", dependency, XPathConstants.STRING);
-			String version = (String) xpath.evaluate("version/text()", dependency, XPathConstants.STRING);
+			String groupId = (String) xpath.evaluate("groupId/text()", dependency,
+					XPathConstants.STRING);
+			String artifactId = (String) xpath.evaluate("artifactId/text()", dependency,
+					XPathConstants.STRING);
+			String version = (String) xpath.evaluate("version/text()", dependency,
+					XPathConstants.STRING);
 			if ("${revision}".equals(version)) {
 				version = "'" + getProject().getVersion() + "'";
 			}
 			else {
 				version = "'" + version + "'";
 			}
-			String scope = (String)xpath.evaluate("scope/text()", dependency, XPathConstants.STRING);
+			String scope = (String) xpath.evaluate("scope/text()", dependency,
+					XPathConstants.STRING);
 			String type = ("import".equals(scope)) ? "bomImport" : "dependency";
-			System.out.println("    " + type + " '" + groupId + "', '" + artifactId + "'," + version);
+			System.out.println("    " + type + " '" + groupId + "', '" + artifactId + "',"
+					+ version);
 		}
 		System.out.println("}");
 	}

@@ -21,6 +21,11 @@ import java.util.Map;
 
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 
+/**
+ * DSL extensions for {@link BomPlugin}.
+ *
+ * @author Andy Wilkinson
+ */
 public class BomExtension {
 
 	private final Map<String, String> properties = new LinkedHashMap<>();
@@ -41,21 +46,25 @@ public class BomExtension {
 
 	public void bomImport(String groupId, String artifactId, String version) {
 		this.bomImports.put(groupId + ":" + artifactId, version);
-		this.dependencyHandler.add("api", this.dependencyHandler.enforcedPlatform(createDependencyNotation(groupId, artifactId, version)));
+		this.dependencyHandler.add("api", this.dependencyHandler.enforcedPlatform(
+				createDependencyNotation(groupId, artifactId, version)));
 	}
 
 	public void dependency(String groupId, String artifactId, String version) {
 		this.dependencies.put(groupId + ":" + artifactId, version);
-		this.dependencyHandler.getConstraints().add("api", createDependencyNotation(groupId, artifactId, version));
+		this.dependencyHandler.getConstraints().add("api",
+				createDependencyNotation(groupId, artifactId, version));
 	}
 
-	private String createDependencyNotation(String groupId, String artifactId, String version) {
+	private String createDependencyNotation(String groupId, String artifactId,
+			String version) {
 		return groupId + ":" + artifactId + ":" + resolveVersion(version);
 	}
 
 	private String resolveVersion(String version) {
 		while (version.startsWith("${")) {
-			String resolved = properties.get(version.substring(2, version.length() - 1));
+			String resolved = this.properties
+					.get(version.substring(2, version.length() - 1));
 			if (resolved != null) {
 				version = resolved;
 			}
@@ -65,7 +74,6 @@ public class BomExtension {
 		}
 		return version;
 	}
-
 
 	Map<String, String> getProperties() {
 		return this.properties;
@@ -82,7 +90,8 @@ public class BomExtension {
 	String getVersion(String groupId, String artifactId) {
 		String coordinates = groupId + ":" + artifactId;
 		String dependencyVersion = this.dependencies.get(coordinates);
-		return dependencyVersion != null ? dependencyVersion : this.bomImports.get(coordinates);
+		return (dependencyVersion != null) ? dependencyVersion
+				: this.bomImports.get(coordinates);
 	}
 
 }
