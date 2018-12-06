@@ -16,18 +16,13 @@
 package org.springframework.boot.build.bom;
 
 import static junit.framework.TestCase.assertTrue;
-import static junit.framework.TestCase.fail;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
+import java.io.PrintWriter;
+import java.util.function.Consumer;
 
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
@@ -35,12 +30,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.w3c.dom.Document;
+import org.springframework.boot.build.assertj.NodeAssert;
 
 /**
  * Tests for {@link BomPlugin}.
  *
  * @author Eric Wendelin
+ * @author Andy Wilkinson
  */
 public class BomPluginIntegrationTest {
 
@@ -50,17 +46,13 @@ public class BomPluginIntegrationTest {
     private File buildFile;
 
     @Before
-    public void setup() {
-        try {
-            buildFile = temporaryFolder.newFile("build.gradle");
-        } catch (IOException e) {
-            fail("Could not create build.gradle file in temporary folder");
-        }
+    public void setup() throws IOException {
+        this.buildFile = this.temporaryFolder.newFile("build.gradle");
     }
 
     @Test
-    public void testCreatesProcessBomTask() throws Exception {
-        try (FileWriter out = new FileWriter(buildFile)) {
+    public void processBomTaskIsCreatedWhenPluginIsApplied() throws Exception {
+        try (FileWriter out = new FileWriter(this.buildFile)) {
             out.write("plugins { id 'org.springframework.boot.bom' }\n");
         }
         BuildResult buildResult = runGradle(temporaryFolder.getRoot(), "tasks", "--all");
@@ -68,124 +60,79 @@ public class BomPluginIntegrationTest {
     }
 
     @Test
-    public void testWritesDeclaredPropertiesToPom() throws Exception {
-        final String propertyName = "maven.version";
-        final String propertyValue = "3.5.4";
-
-        // TODO: use some util to make this prettier
-        try (FileWriter out = new FileWriter(buildFile)) {
-            out.write("plugins {\n" +
-                    "    id 'org.springframework.boot.bom'\n" +
-                    "}\n" +
-                    "bom {\n" +
-                    "    property '"+propertyName+"', '"+propertyValue+"'\n" +
-                    "}\n");
+    public void declaredPropertiesAreIncludedInGeneratedPom() throws Exception {
+        try (PrintWriter out = new PrintWriter(new FileWriter(this.buildFile))) {
+        	out.println("plugins {");
+        	out.println("    id 'org.springframework.boot.bom'");
+            out.println("}");
+            out.println("bom {");
+            out.println("    property 'maven.version', '3.5.4'");
+            out.println("}");
         }
-
-        runGradle(temporaryFolder.getRoot(), "generatePomFileForBomPublication", "-s");
-
-        File generatedPomXml = new File(temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
-        assertTrue(generatedPomXml.canRead());
-
-        assertBomProperty(propertyValue, generatedPomXml, propertyName);
+        generatePom((pom) -> {
+        	assertThat(pom).textAtPath("//properties/maven.version").isEqualTo("3.5.4");
+        });
     }
 
     @Test
-    public void testWriteDeclaredDependenciesToPom() throws Exception {
-        final String groupId = "ch.qos.logback";
-        final String artifactId = "logback-core";
-        final String version = "1.2.3";
-
-        try (FileWriter out = new FileWriter(buildFile)) {
-            out.write("plugins {\n" +
-                    "    id 'org.springframework.boot.bom'\n" +
-                    "}\n" +
-                    "bom {\n" +
-                    "    dependency '"+groupId+"', '"+artifactId+"', '"+version+"'" +
-                    "}\n");
+    public void declaredDependenciesAreIncludedInGeneratedPom() throws Exception {
+    	try (PrintWriter out = new PrintWriter(new FileWriter(this.buildFile))) {
+        	out.println("plugins {");
+        	out.println("    id 'org.springframework.boot.bom'");
+            out.println("}");
+            out.println("bom {");
+            out.println("    dependency 'ch.qos.logback', 'logback-core', '1.2.3'");
+            out.println("}");
         }
-
-        runGradle(temporaryFolder.getRoot(), "generatePomFileForBomPublication", "-s");
-
-        File generatedPomXml = new File(temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
-        assertTrue(generatedPomXml.canRead());
-        assertBomDependency(groupId, artifactId, version, generatedPomXml);
+        generatePom((pom) -> {
+        	NodeAssert dependency = pom.nodeAtPath("//dependencyManagement/dependencies/dependency");
+        	assertThat(dependency).textAtPath("groupId").isEqualTo("ch.qos.logback");
+        	assertThat(dependency).textAtPath("artifactId").isEqualTo("logback-core");
+        	assertThat(dependency).textAtPath("version").isEqualTo("1.2.3");
+        	assertThat(dependency).textAtPath("scope").isEqualTo("compile");
+        	assertThat(dependency).textAtPath("type").isNullOrEmpty();
+        });
     }
 
     @Test
-    public void testWriteDeclaredBomImportsToPom() throws Exception {
-        final String groupId = "org.junit";
-        final String artifactId = "junit-bom";
-        final String version = "5.3.2";
-
-        try (FileWriter out = new FileWriter(buildFile)) {
-            out.write("plugins {\n" +
-                    "    id 'org.springframework.boot.bom'\n" +
-                    "}\n" +
-                    "bom {\n" +
-                    "    bomImport '"+groupId+"', '"+artifactId+"', '"+version+"'" +
-                    "}\n");
+    public void declaredBomImportsAreIncludedInGeneratedPom() throws Exception {
+    	try (PrintWriter out = new PrintWriter(new FileWriter(this.buildFile))) {
+        	out.println("plugins {");
+        	out.println("    id 'org.springframework.boot.bom'");
+            out.println("}");
+            out.println("bom {");
+            out.println("    bomImport 'org.junit', 'junit-bom', '5.3.2'");
+            out.println("}");
         }
-
-        runGradle(temporaryFolder.getRoot(), "generatePomFileForBomPublication", "-s");
-
-        File generatedPomXml = new File(temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
-        assertTrue(generatedPomXml.canRead());
-        assertBomImport(groupId, artifactId, version, generatedPomXml);
+        generatePom((pom) -> {
+        	NodeAssert dependency = pom.nodeAtPath("//dependencyManagement/dependencies/dependency");
+        	assertThat(dependency).textAtPath("groupId").isEqualTo("org.junit");
+        	assertThat(dependency).textAtPath("artifactId").isEqualTo("junit-bom");
+        	assertThat(dependency).textAtPath("version").isEqualTo("5.3.2");
+        	assertThat(dependency).textAtPath("scope").isEqualTo("import");
+        	assertThat(dependency).textAtPath("type").isEqualTo("pom");
+        });
     }
 
     @Test
-    public void testDeclaresDependencyVersionsUsingProperties() throws Exception {
-        try (FileWriter out = new FileWriter(buildFile)) {
-            out.write("plugins {\n" +
-                    "    id 'org.springframework.boot.bom'\n" +
-                    "}\n" +
-                    "bom {\n" +
-                    "    property 'logback.version', '1.2.3'\n" +
-                    "    property 'junit-jupiter.version', '5.3.2'\n" +
-                    "    dependency 'ch.qos.logback', 'logback-core', '\\${logback.version}'\n" +
-                    "    bomImport 'org.junit', 'junit-bom', '\\${junit-jupiter.version}'\n" +
-                    "}\n");
+    public void dependencyVersionsUsePropertyReferences() throws Exception {
+    	try (PrintWriter out = new PrintWriter(new FileWriter(this.buildFile))) {
+        	out.println("plugins {");
+        	out.println("    id 'org.springframework.boot.bom'");
+            out.println("}");
+            out.println("bom {");
+            out.println("    property 'logback.version', '1.2.3'");
+            out.println("    property 'junit-jupiter.version', '5.3.2'");
+            out.println("    dependency 'ch.qos.logback', 'logback-core', '${logback.version}'");
+            out.println("    bomImport 'org.junit', 'junit-bom', '${junit-jupiter.version}'");
+            out.println("}");
         }
-
-        runGradle(temporaryFolder.getRoot(), "generatePomFileForBomPublication", "-s");
-
-        File generatedPomXml = new File(temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
-        assertTrue(generatedPomXml.canRead());
-
-        Files.readAllLines(generatedPomXml.toPath()).forEach(System.out::println);
-
-        assertBomProperty("1.2.3", generatedPomXml, "logback.version");
-        assertBomProperty("5.3.2", generatedPomXml, "junit-jupiter.version");
-        assertBomDependency("ch.qos.logback", "logback-core", "${logback.version}", generatedPomXml);
-        assertBomImport("org.junit", "junit-bom", "${junit-jupiter.version}", generatedPomXml);
-    }
-
-    private void assertBomProperty(String propertyValue, File generatedPomXml, String propertyName) throws Exception {
-        Document bom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(generatedPomXml);
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        assertEquals(propertyValue, xpath.evaluate("//properties/" + propertyName, bom, XPathConstants.STRING));
-    }
-
-    private void assertBomDependency(String groupId, String artifactId, String version, File generatedPomXml) throws Exception {
-        Document bom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(generatedPomXml);
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        assertEquals(groupId, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../groupId/text()", bom, XPathConstants.STRING));
-        assertEquals(artifactId, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../artifactId/text()", bom, XPathConstants.STRING));
-        assertEquals(version, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../version/text()", bom, XPathConstants.STRING));
-        assertEquals("compile", xpath.evaluate("//artifactId[text()='" + artifactId + "']/../scope/text()", bom, XPathConstants.STRING));
-    }
-
-    private void assertBomImport(String groupId, String artifactId, String version, File generatedPomXml) throws Exception {
-        Document bom = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(generatedPomXml);
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        assertEquals(groupId, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../groupId/text()", bom, XPathConstants.STRING));
-        assertEquals(artifactId, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../artifactId/text()", bom, XPathConstants.STRING));
-        assertEquals(version, xpath.evaluate("//artifactId[text()='" + artifactId + "']/../version/text()", bom, XPathConstants.STRING));
-        assertEquals("pom", xpath.evaluate("//artifactId[text()='" + artifactId + "']/../type/text()", bom, XPathConstants.STRING));
-        assertEquals("import", xpath.evaluate("//artifactId[text()='" + artifactId + "']/../scope/text()", bom, XPathConstants.STRING));
+    	generatePom((pom) -> {
+        	assertThat(pom).textAtPath("//properties/logback.version").isEqualTo("1.2.3");
+        	assertThat(pom).textAtPath("//properties/junit-jupiter.version").isEqualTo("5.3.2");
+        	assertThat(pom).textAtPath("//dependencyManagement/dependencies/dependency/artifactId[text()='logback-core']/../version").isEqualTo("${logback.version}");
+        	assertThat(pom).textAtPath("//dependencyManagement/dependencies/dependency/artifactId[text()='junit-bom']/../version").isEqualTo("${junit-jupiter.version}");
+        });
     }
 
     private BuildResult runGradle(File projectDir, String... args) {
@@ -194,5 +141,12 @@ public class BomPluginIntegrationTest {
                 .withArguments(args)
                 .withPluginClasspath()
                 .build();
+    }
+
+    private void generatePom(Consumer<NodeAssert> consumer) {
+        runGradle(this.temporaryFolder.getRoot(), "generatePomFileForBomPublication", "-s");
+        File generatedPomXml = new File(this.temporaryFolder.getRoot(), "build/publications/bom/pom-default.xml");
+        assertThat(generatedPomXml).isFile();
+        consumer.accept(new NodeAssert(generatedPomXml));
     }
 }
