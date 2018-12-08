@@ -8,5 +8,6 @@ include 'spring-boot-project:spring-boot-tools:spring-boot-configuration-metadat
 include 'spring-boot-project:spring-boot-tools:spring-boot-configuration-processor'
 include 'spring-boot-project:spring-boot-tools:spring-boot-loader'
 include 'spring-boot-project:spring-boot-tools:spring-boot-loader-tools'
+include 'spring-boot-project:spring-boot-tools:spring-boot-maven-plugin'
 include 'spring-boot-project:spring-boot-tools:spring-boot-test-support'
 include 'spring-boot-project:spring-boot'
