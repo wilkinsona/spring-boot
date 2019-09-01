@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package smoketest.hateoas.web;
+package smoketest.hateoas.webflux.web;
 
-import smoketest.hateoas.domain.Customer;
-import smoketest.hateoas.domain.CustomerRepository;
+import smoketest.hateoas.webflux.domain.Customer;
+import smoketest.hateoas.webflux.domain.CustomerRepository;
 
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;

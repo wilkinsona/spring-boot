@@ -9,15 +9,15 @@
 	</parent>
 	<artifactId>spring-boot-starter-hateoas</artifactId>
 	<name>Spring Boot HATEOAS Starter</name>
-	<description>Starter for building hypermedia-based RESTful web application with
-		Spring MVC and Spring HATEOAS</description>
+	<description>Starter for building hypermedia-based RESTful web applications with
+		Spring HATEOAS</description>
 	<properties>
 		<main.basedir>${basedir}/../../..</main.basedir>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.hateoas</groupId>
