@@ -23,12 +23,16 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.annotation.Configurations;
 import org.springframework.boot.context.annotation.UserConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -38,8 +42,9 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigRegistry;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.Ordered;
+import org.springframework.core.PriorityOrdered;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -422,7 +427,11 @@ public abstract class AbstractApplicationContextRunner<SELF extends AbstractAppl
 		this.runnerConfiguration.initializers.forEach((initializer) -> initializer.initialize(context));
 		Class<?>[] classes = Configurations.getClasses(this.runnerConfiguration.configurations);
 		if (classes.length > 0) {
-			((AnnotationConfigRegistry) context).register(classes);
+			context.addBeanFactoryPostProcessor(new ConfigurationClassesRegistrar(classes));
+			// GenericApplicationContext gac = (GenericApplicationContext) context;
+			// for (Class<?> aClass : classes) {
+			// gac.registerBean(aClass.getName(), aClass);
+			// }
 		}
 		if (refresh) {
 			context.refresh();
@@ -576,6 +585,41 @@ public abstract class AbstractApplicationContextRunner<SELF extends AbstractAppl
 			List<T> result = new ArrayList<>(list);
 			result.add(element);
 			return result;
+		}
+
+	}
+
+	/**
+	 * A {@link BeanDefinitionRegistryPostProcessor} that mimics what an
+	 * {@code ImportSelector} does. In particular, it makes sure registered configuration
+	 * classes use their FQN as bean name.
+	 */
+	private static final class ConfigurationClassesRegistrar
+			implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
+
+		private final Class<?>[] configurationClasses;
+
+		private ConfigurationClassesRegistrar(Class<?>[] configurationClasses) {
+			this.configurationClasses = configurationClasses;
+		}
+
+		@Override
+		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry)
+				throws BeansException {
+			for (Class<?> configurationClass : this.configurationClasses) {
+				beanDefinitionRegistry.registerBeanDefinition(configurationClass.getName(),
+						new RootBeanDefinition(configurationClass));
+			}
+		}
+
+		@Override
+		public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory)
+				throws BeansException {
+		}
+
+		@Override
+		public int getOrder() {
+			return Ordered.LOWEST_PRECEDENCE;
 		}
 
 	}

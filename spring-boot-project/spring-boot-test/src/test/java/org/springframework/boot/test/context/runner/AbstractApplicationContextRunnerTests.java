@@ -140,6 +140,22 @@ abstract class AbstractApplicationContextRunnerTests<T extends AbstractApplicati
 	}
 
 	@Test
+	public void runWithConfigurationsShouldUseFullyQualifiedClassBeanNames() {
+		get().withUserConfiguration(FooConfig.class)
+				.run((context) -> assertThat(context).hasBean(FooConfig.class.getName()));
+	}
+
+	@Test
+	public void runWithConfigurationsWithTheSameNameShouldRegisterBoth() {
+		get().withUserConfiguration(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class,
+				org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class)
+				.run((context) -> assertThat(context)
+						.hasSingleBean(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class)
+						.hasSingleBean(
+								org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class));
+	}
+
+	@Test
 	void runWithUserNamedBeanShouldRegisterBean() {
 		get().withBean("foo", String.class, () -> "foo").run((context) -> assertThat(context).hasBean("foo"));
 	}
