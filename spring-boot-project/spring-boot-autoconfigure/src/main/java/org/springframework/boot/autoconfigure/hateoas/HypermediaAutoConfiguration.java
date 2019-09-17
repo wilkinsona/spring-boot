@@ -22,18 +22,21 @@ import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.data.rest.RepositoryRestMvcAutoConfiguration;
 import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.client.LinkDiscoverers;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
 import org.springframework.hateoas.config.EnableHypermediaSupport.HypermediaType;
+import org.springframework.hateoas.mediatype.hal.HalConfiguration;
+import org.springframework.http.MediaType;
 import org.springframework.plugin.core.Plugin;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -52,7 +55,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @AutoConfigureAfter({ WebMvcAutoConfiguration.class, JacksonAutoConfiguration.class,
 		HttpMessageConvertersAutoConfiguration.class, RepositoryRestMvcAutoConfiguration.class })
 @EnableConfigurationProperties(HateoasProperties.class)
-@Import(HypermediaHttpMessageConverterConfiguration.class)
 public class HypermediaAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
@@ -60,6 +62,14 @@ public class HypermediaAutoConfiguration {
 	@ConditionalOnClass(ObjectMapper.class)
 	@EnableHypermediaSupport(type = HypermediaType.HAL)
 	protected static class HypermediaConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		@ConditionalOnProperty(prefix = "spring.hateoas", name = "use-hal-as-default-json-media-type",
+				matchIfMissing = true)
+		HalConfiguration halConfiguration() {
+			return new HalConfiguration().withAdditionalMediatype(MediaType.APPLICATION_JSON);
+		}
 
 	}
 
