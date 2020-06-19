@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,47 +19,31 @@ package org.springframework.boot.autoconfigure.condition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.boot.autoconfigure.condition.ConditionMessage.Style;
-import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 
 /**
- * {@link Condition} that checks for specific resources.
+ * Adapter that enables annotation-based usage of {@link OnResourceFunctionalCondition}.
  *
  * @author Dave Syer
  * @see ConditionalOnResource
  */
 @Order(Ordered.HIGHEST_PRECEDENCE + 20)
-class OnResourceCondition extends SpringBootCondition {
+class OnResourceCondition extends AnnotationCondition {
 
 	@Override
-	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		MultiValueMap<String, Object> attributes = metadata
 				.getAllAnnotationAttributes(ConditionalOnResource.class.getName(), true);
-		ResourceLoader loader = context.getResourceLoader();
 		List<String> locations = new ArrayList<>();
 		collectValues(locations, attributes.get("resources"));
 		Assert.isTrue(!locations.isEmpty(),
 				"@ConditionalOnResource annotations must specify at least one resource location");
-		List<String> missing = new ArrayList<>();
-		for (String location : locations) {
-			String resource = context.getEnvironment().resolvePlaceholders(location);
-			if (!loader.getResource(resource).exists()) {
-				missing.add(location);
-			}
-		}
-		if (!missing.isEmpty()) {
-			return ConditionOutcome.noMatch(ConditionMessage.forCondition(ConditionalOnResource.class)
-					.didNotFind("resource", "resources").items(Style.QUOTE, missing));
-		}
-		return ConditionOutcome.match(ConditionMessage.forCondition(ConditionalOnResource.class)
-				.found("location", "locations").items(locations));
+		return new OnResourceFunctionalCondition(getLocation(metadata), locations).matches(context);
 	}
 
 	private void collectValues(List<String> names, List<Object> values) {

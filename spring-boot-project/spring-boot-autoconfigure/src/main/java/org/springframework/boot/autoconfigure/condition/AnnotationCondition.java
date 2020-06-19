@@ -16,20 +16,27 @@
 
 package org.springframework.boot.autoconfigure.condition;
 
-import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Condition;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.core.type.ClassMetadata;
+import org.springframework.core.type.MethodMetadata;
 
 /**
- * Adapter that enables annotation-based usage of
- * {@link OnWarDeploymentFunctionalCondition}.
- *
- * @author Madhura Bhave
+ * @author awilkinson
  */
-class OnWarDeploymentCondition extends AnnotationCondition {
+public abstract class AnnotationCondition implements Condition {
 
-	@Override
-	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-		return new OnWarDeploymentFunctionalCondition(getLocation(metadata)).matches(context);
+	protected String getLocation(AnnotatedTypeMetadata metadata) {
+		return getClassOrMethodName(metadata);
+	}
+
+	private static String getClassOrMethodName(AnnotatedTypeMetadata metadata) {
+		if (metadata instanceof ClassMetadata) {
+			ClassMetadata classMetadata = (ClassMetadata) metadata;
+			return classMetadata.getClassName();
+		}
+		MethodMetadata methodMetadata = (MethodMetadata) metadata;
+		return methodMetadata.getDeclaringClassName() + "#" + methodMetadata.getMethodName();
 	}
 
 }

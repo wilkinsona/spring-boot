@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,25 @@
 
 package org.springframework.boot.autoconfigure.condition;
 
+import java.util.List;
 import java.util.function.Supplier;
 
+import org.springframework.boot.context.properties.bind.BindResult;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.ConditionContext;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Adapter that enables annotation-based usage of
- * {@link OnPropertyListFunctionalCondition}.
+ * {@link FunctionalCondition} that checks if a property whose value is a list is defined
+ * in the environment.
  *
  * @author Eneias Silva
  * @author Stephane Nicoll
  * @since 2.0.5
  */
-public class OnPropertyListCondition extends AnnotationCondition {
+public class OnPropertyListFunctionalCondition extends SpringBootFunctionalCondition {
+
+	private static final Bindable<List<String>> STRING_LIST = Bindable.listOf(String.class);
 
 	private final String propertyName;
 
@@ -37,19 +42,26 @@ public class OnPropertyListCondition extends AnnotationCondition {
 
 	/**
 	 * Create a new instance with the property to check and the message builder to use.
+	 * @param location location where the condition is used
 	 * @param propertyName the name of the property
 	 * @param messageBuilder a message builder supplier that should provide a fresh
 	 * instance on each call
 	 */
-	protected OnPropertyListCondition(String propertyName, Supplier<ConditionMessage.Builder> messageBuilder) {
+	protected OnPropertyListFunctionalCondition(String location, String propertyName,
+			Supplier<ConditionMessage.Builder> messageBuilder) {
+		super(location);
 		this.propertyName = propertyName;
 		this.messageBuilder = messageBuilder;
 	}
 
 	@Override
-	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-		return new OnPropertyListFunctionalCondition(getLocation(metadata), this.propertyName, this.messageBuilder)
-				.matches(context);
+	public ConditionOutcome getMatchOutcome(ConditionContext context) {
+		BindResult<?> property = Binder.get(context.getEnvironment()).bind(this.propertyName, STRING_LIST);
+		ConditionMessage.Builder messageBuilder = this.messageBuilder.get();
+		if (property.isBound()) {
+			return ConditionOutcome.match(messageBuilder.found("property").items(this.propertyName));
+		}
+		return ConditionOutcome.noMatch(messageBuilder.didNotFind("property").items(this.propertyName));
 	}
 
 }

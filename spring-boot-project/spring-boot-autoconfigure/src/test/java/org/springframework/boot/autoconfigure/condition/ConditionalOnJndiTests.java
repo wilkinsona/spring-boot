@@ -17,6 +17,7 @@
 package org.springframework.boot.autoconfigure.condition;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.Context;
@@ -29,8 +30,10 @@ import org.springframework.boot.autoconfigure.jndi.JndiPropertiesHidingClassLoad
 import org.springframework.boot.autoconfigure.jndi.TestableInitialContextFactory;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.core.type.MethodMetadata;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -101,15 +104,13 @@ class ConditionalOnJndiTests {
 
 	@Test
 	void jndiLocationNotFound() {
-		ConditionOutcome outcome = this.condition.getMatchOutcome(null, mockMetaData("java:/a"));
-		assertThat(outcome.isMatch()).isFalse();
+		assertThat(this.condition.matches(mock(ConditionContext.class), mockMetaData("java:/a"))).isFalse();
 	}
 
 	@Test
 	void jndiLocationFound() {
 		this.condition.setFoundLocation("java:/b");
-		ConditionOutcome outcome = this.condition.getMatchOutcome(null, mockMetaData("java:/a", "java:/b"));
-		assertThat(outcome.isMatch()).isTrue();
+		assertThat(this.condition.matches(mock(ConditionContext.class), mockMetaData("java:/a", "java:/b"))).isTrue();
 	}
 
 	private void setupJndi() {
@@ -118,7 +119,7 @@ class ConditionalOnJndiTests {
 	}
 
 	private AnnotatedTypeMetadata mockMetaData(String... value) {
-		AnnotatedTypeMetadata metadata = mock(AnnotatedTypeMetadata.class);
+		MethodMetadata metadata = mock(MethodMetadata.class);
 		Map<String, Object> attributes = new HashMap<>();
 		attributes.put("value", value);
 		given(metadata.getAnnotationAttributes(ConditionalOnJndi.class.getName())).willReturn(attributes);
@@ -149,27 +150,42 @@ class ConditionalOnJndiTests {
 
 	static class MockableOnJndi extends OnJndiCondition {
 
-		private boolean jndiAvailable = true;
-
 		private String foundLocation;
 
-		@Override
-		protected boolean isJndiAvailable() {
-			return this.jndiAvailable;
-		}
+		private boolean jndiAvailable = true;
 
 		@Override
-		protected JndiLocator getJndiLocator(String[] locations) {
-			return new JndiLocator(locations) {
-				@Override
-				public String lookupFirstLocation() {
-					return MockableOnJndi.this.foundLocation;
-				}
-			};
+		OnJndiFunctionalCondition createFunctionalCondition(String location, List<String> jndiLocations) {
+			return new MockableFunctionalOnJndi(location, jndiLocations);
 		}
 
 		void setFoundLocation(String foundLocation) {
 			this.foundLocation = foundLocation;
+		}
+
+		class MockableFunctionalOnJndi extends OnJndiFunctionalCondition {
+
+			MockableFunctionalOnJndi(String location, List<String> jndiLocations) {
+				super(location, jndiLocations);
+			}
+
+			@Override
+			protected boolean isJndiAvailable() {
+				return MockableOnJndi.this.jndiAvailable;
+			}
+
+			@Override
+			protected JndiLocator getJndiLocator(List<String> locations) {
+				return new JndiLocator(locations) {
+
+					@Override
+					public String lookupFirstLocation() {
+						return MockableOnJndi.this.foundLocation;
+					}
+
+				};
+			}
+
 		}
 
 	}

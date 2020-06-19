@@ -16,20 +16,27 @@
 
 package org.springframework.boot.autoconfigure.condition;
 
+import java.util.function.Supplier;
+
 import org.springframework.context.annotation.ConditionContext;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Adapter that enables annotation-based usage of
- * {@link OnWarDeploymentFunctionalCondition}.
- *
- * @author Madhura Bhave
+ * @author awilkinson
  */
-class OnWarDeploymentCondition extends AnnotationCondition {
+public class OnBeanFunctionalCondition extends SpringBootFunctionalCondition {
+
+	public OnBeanFunctionalCondition(String location) {
+		super(location);
+	}
 
 	@Override
-	public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-		return new OnWarDeploymentFunctionalCondition(getLocation(metadata)).matches(context);
+	public ConditionOutcome getMatchOutcome(ConditionContext context) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Auto-generated method stub");
+	}
+
+	public OnBeanFunctionalCondition ofType(Supplier<Class<?>> clazz) {
+		return this;
 	}
 
 }
