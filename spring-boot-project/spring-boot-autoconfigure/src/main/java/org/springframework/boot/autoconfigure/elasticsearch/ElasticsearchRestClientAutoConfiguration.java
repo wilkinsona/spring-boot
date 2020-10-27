@@ -19,6 +19,8 @@ package org.springframework.boot.autoconfigure.elasticsearch;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -51,22 +53,30 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(RestHighLevelClient.class)
 @ConditionalOnMissingBean(RestClient.class)
-@EnableConfigurationProperties(ElasticsearchRestClientProperties.class)
+@EnableConfigurationProperties(ElasticsearchProperties.class)
 public class ElasticsearchRestClientAutoConfiguration {
+
+	@SuppressWarnings("deprecation")
+	private static List<String> determineUris(ElasticsearchProperties properties) {
+		if (!Collections.singletonList("http://localhost:9200").equals(properties.getRest().getUris())) {
+			return properties.getRest().getUris();
+		}
+		return properties.getUris();
+	}
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(RestClientBuilder.class)
 	static class RestClientBuilderConfiguration {
 
 		@Bean
-		RestClientBuilderCustomizer defaultRestClientBuilderCustomizer(ElasticsearchRestClientProperties properties) {
+		RestClientBuilderCustomizer defaultRestClientBuilderCustomizer(ElasticsearchProperties properties) {
 			return new DefaultRestClientBuilderCustomizer(properties);
 		}
 
 		@Bean
-		RestClientBuilder elasticsearchRestClientBuilder(ElasticsearchRestClientProperties properties,
+		RestClientBuilder elasticsearchRestClientBuilder(ElasticsearchProperties properties,
 				ObjectProvider<RestClientBuilderCustomizer> builderCustomizers) {
-			HttpHost[] hosts = properties.getUris().stream().map(this::createHttpHost).toArray(HttpHost[]::new);
+			HttpHost[] hosts = determineUris(properties).stream().map(this::createHttpHost).toArray(HttpHost[]::new);
 			RestClientBuilder builder = RestClient.builder(hosts);
 			builder.setHttpClientConfigCallback((httpClientBuilder) -> {
 				builderCustomizers.orderedStream().forEach((customizer) -> customizer.customize(httpClientBuilder));
@@ -119,9 +129,9 @@ public class ElasticsearchRestClientAutoConfiguration {
 
 		private static final PropertyMapper map = PropertyMapper.get();
 
-		private final ElasticsearchRestClientProperties properties;
+		private final ElasticsearchProperties properties;
 
-		DefaultRestClientBuilderCustomizer(ElasticsearchRestClientProperties properties) {
+		DefaultRestClientBuilderCustomizer(ElasticsearchProperties properties) {
 			this.properties = properties;
 		}
 
@@ -136,9 +146,9 @@ public class ElasticsearchRestClientAutoConfiguration {
 
 		@Override
 		public void customize(RequestConfig.Builder builder) {
-			map.from(this.properties::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis)
+			map.from(this.properties.getRest()::getConnectionTimeout).whenNonNull().asInt(Duration::toMillis)
 					.to(builder::setConnectTimeout);
-			map.from(this.properties::getReadTimeout).whenNonNull().asInt(Duration::toMillis)
+			map.from(this.properties.getRest()::getReadTimeout).whenNonNull().asInt(Duration::toMillis)
 					.to(builder::setSocketTimeout);
 		}
 
@@ -146,14 +156,25 @@ public class ElasticsearchRestClientAutoConfiguration {
 
 	private static class PropertiesCredentialsProvider extends BasicCredentialsProvider {
 
-		PropertiesCredentialsProvider(ElasticsearchRestClientProperties properties) {
-			if (StringUtils.hasText(properties.getUsername())) {
-				Credentials credentials = new UsernamePasswordCredentials(properties.getUsername(),
-						properties.getPassword());
+		PropertiesCredentialsProvider(ElasticsearchProperties properties) {
+			Credentials credentials = determineCredentials(properties);
+			if (credentials != null) {
 				setCredentials(AuthScope.ANY, credentials);
 			}
-			properties.getUris().stream().map(this::toUri).filter(this::hasUserInfo)
+			determineUris(properties).stream().map(this::toUri).filter(this::hasUserInfo)
 					.forEach(this::addUserInfoCredentials);
+		}
+
+		@SuppressWarnings("deprecation")
+		private Credentials determineCredentials(ElasticsearchProperties properties) {
+			if (StringUtils.hasText(properties.getUsername())) {
+				return new UsernamePasswordCredentials(properties.getUsername(), properties.getPassword());
+			}
+			if (StringUtils.hasText(properties.getRest().getUsername())) {
+				return new UsernamePasswordCredentials(properties.getRest().getUsername(),
+						properties.getRest().getPassword());
+			}
+			return null;
 		}
 
 		private URI toUri(String uri) {

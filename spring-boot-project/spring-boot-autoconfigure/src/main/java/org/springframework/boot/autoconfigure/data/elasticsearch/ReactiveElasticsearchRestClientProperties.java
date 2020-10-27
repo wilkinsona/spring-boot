@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.util.unit.DataSize;
 
 /**
@@ -69,10 +70,13 @@ public class ReactiveElasticsearchRestClientProperties {
 	 */
 	private DataSize maxInMemorySize;
 
+	@Deprecated
+	@DeprecatedConfigurationProperty(replacement = "spring.elasticsearch.uris")
 	public List<String> getEndpoints() {
 		return this.endpoints;
 	}
 
+	@Deprecated
 	public void setEndpoints(List<String> endpoints) {
 		this.endpoints = endpoints;
 	}
@@ -85,18 +89,24 @@ public class ReactiveElasticsearchRestClientProperties {
 		this.useSsl = useSsl;
 	}
 
+	@Deprecated
+	@DeprecatedConfigurationProperty(replacement = "spring.elasticsearch.username")
 	public String getUsername() {
 		return this.username;
 	}
 
+	@Deprecated
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
+	@Deprecated
+	@DeprecatedConfigurationProperty(replacement = "spring.elasticsearch.password")
 	public String getPassword() {
 		return this.password;
 	}
 
+	@Deprecated
 	public void setPassword(String password) {
 		this.password = password;
 	}

@@ -35,6 +35,8 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -140,10 +142,10 @@ class ElasticsearchRestClientAutoConfigurationTests {
 				.isEqualTo(Math.toIntExact(connectTimeout.toMillis()));
 	}
 
-	@Test
-	void restClientCanQueryElasticsearchNode() {
-		this.contextRunner
-				.withPropertyValues("spring.elasticsearch.rest.uris=http://" + elasticsearch.getHttpHostAddress())
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch", "spring.elasticsearch.rest" })
+	void restClientCanQueryElasticsearchNode(String prefix) {
+		this.contextRunner.withPropertyValues(prefix + ".uris=http://" + elasticsearch.getHttpHostAddress())
 				.run((context) -> {
 					RestHighLevelClient client = context.getBean(RestHighLevelClient.class);
 					Map<String, String> source = new HashMap<>();
@@ -156,50 +158,61 @@ class ElasticsearchRestClientAutoConfigurationTests {
 				});
 	}
 
-	@Test
-	void configureUriWithUsernameOnly() {
-		this.contextRunner.withPropertyValues("spring.elasticsearch.rest.uris=http://user@localhost:9200")
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch", "spring.elasticsearch.rest" })
+	void restClientWithDeprecatedUrisPropertyCanQueryElasticsearchNode(String prefix) {
+		this.contextRunner.withPropertyValues(prefix + ".uris=http://" + elasticsearch.getHttpHostAddress())
 				.run((context) -> {
-					RestClient client = context.getBean(RestHighLevelClient.class).getLowLevelClient();
-					assertThat(client.getNodes().stream().map(Node::getHost).map(HttpHost::toString))
-							.containsExactly("http://localhost:9200");
-					assertThat(client).extracting("client")
-							.extracting("credentialsProvider",
-									InstanceOfAssertFactories.type(CredentialsProvider.class))
-							.satisfies((credentialsProvider) -> {
-								Credentials credentials = credentialsProvider
-										.getCredentials(new AuthScope("localhost", 9200));
-								assertThat(credentials.getUserPrincipal().getName()).isEqualTo("user");
-								assertThat(credentials.getPassword()).isNull();
-							});
+					RestHighLevelClient client = context.getBean(RestHighLevelClient.class);
+					Map<String, String> source = new HashMap<>();
+					source.put("a", "alpha");
+					source.put("b", "bravo");
+					IndexRequest index = new IndexRequest("test").id("1").source(source);
+					client.index(index, RequestOptions.DEFAULT);
+					GetRequest getRequest = new GetRequest("test").id("1");
+					assertThat(client.get(getRequest, RequestOptions.DEFAULT).isExists()).isTrue();
 				});
 	}
 
-	@Test
-	void configureUriWithUsernameAndEmptyPassword() {
-		this.contextRunner.withPropertyValues("spring.elasticsearch.rest.uris=http://user:@localhost:9200")
-				.run((context) -> {
-					RestClient client = context.getBean(RestHighLevelClient.class).getLowLevelClient();
-					assertThat(client.getNodes().stream().map(Node::getHost).map(HttpHost::toString))
-							.containsExactly("http://localhost:9200");
-					assertThat(client).extracting("client")
-							.extracting("credentialsProvider",
-									InstanceOfAssertFactories.type(CredentialsProvider.class))
-							.satisfies((credentialsProvider) -> {
-								Credentials credentials = credentialsProvider
-										.getCredentials(new AuthScope("localhost", 9200));
-								assertThat(credentials.getUserPrincipal().getName()).isEqualTo("user");
-								assertThat(credentials.getPassword()).isEmpty();
-							});
-				});
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch", "spring.elasticsearch.rest" })
+	void configureUriWithUsernameOnly(String prefix) {
+		this.contextRunner.withPropertyValues(prefix + ".uris=http://user@localhost:9200").run((context) -> {
+			RestClient client = context.getBean(RestHighLevelClient.class).getLowLevelClient();
+			assertThat(client.getNodes().stream().map(Node::getHost).map(HttpHost::toString))
+					.containsExactly("http://localhost:9200");
+			assertThat(client).extracting("client")
+					.extracting("credentialsProvider", InstanceOfAssertFactories.type(CredentialsProvider.class))
+					.satisfies((credentialsProvider) -> {
+						Credentials credentials = credentialsProvider.getCredentials(new AuthScope("localhost", 9200));
+						assertThat(credentials.getUserPrincipal().getName()).isEqualTo("user");
+						assertThat(credentials.getPassword()).isNull();
+					});
+		});
 	}
 
-	@Test
-	void configureUriWithUsernameAndPasswordWhenUsernameAndPasswordPropertiesSet() {
-		this.contextRunner
-				.withPropertyValues("spring.elasticsearch.rest.uris=http://user:password@localhost:9200,localhost:9201",
-						"spring.elasticsearch.rest.username=admin", "spring.elasticsearch.rest.password=admin")
-				.run((context) -> {
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch", "spring.elasticsearch.rest" })
+	void configureUriWithUsernameAndEmptyPassword(String prefix) {
+		this.contextRunner.withPropertyValues(prefix + ".uris=http://user:@localhost:9200").run((context) -> {
+			RestClient client = context.getBean(RestHighLevelClient.class).getLowLevelClient();
+			assertThat(client.getNodes().stream().map(Node::getHost).map(HttpHost::toString))
+					.containsExactly("http://localhost:9200");
+			assertThat(client).extracting("client")
+					.extracting("credentialsProvider", InstanceOfAssertFactories.type(CredentialsProvider.class))
+					.satisfies((credentialsProvider) -> {
+						Credentials credentials = credentialsProvider.getCredentials(new AuthScope("localhost", 9200));
+						assertThat(credentials.getUserPrincipal().getName()).isEqualTo("user");
+						assertThat(credentials.getPassword()).isEmpty();
+					});
+		});
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch", "spring.elasticsearch.rest" })
+	void configureUriWithUsernameAndPasswordWhenUsernameAndPasswordPropertiesSet(String prefix) {
+		this.contextRunner.withPropertyValues(prefix + ".uris=http://user:password@localhost:9200,localhost:9201",
+				prefix + ".username=admin", prefix + ".password=admin").run((context) -> {
 					RestClient client = context.getBean(RestHighLevelClient.class).getLowLevelClient();
 					assertThat(client.getNodes().stream().map(Node::getHost).map(HttpHost::toString))
 							.containsExactly("http://localhost:9200", "http://localhost:9201");

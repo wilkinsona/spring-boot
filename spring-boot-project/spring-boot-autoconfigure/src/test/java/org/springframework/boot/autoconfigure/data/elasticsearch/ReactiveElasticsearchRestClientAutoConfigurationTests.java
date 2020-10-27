@@ -24,6 +24,8 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.index.get.GetResult;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -72,11 +74,11 @@ public class ReactiveElasticsearchRestClientAutoConfigurationTests {
 						.hasSingleBean(ClientConfiguration.class).hasBean("customClientConfiguration"));
 	}
 
-	@Test
-	void restClientCanQueryElasticsearchNode() {
+	@ParameterizedTest
+	@ValueSource(strings = { "spring.elasticsearch.uris", "spring.data.elasticsearch.client.reactive.endpoints" })
+	void restClientCanQueryElasticsearchNode(String uriProperty) {
 		this.contextRunner.withPropertyValues(
-				"spring.data.elasticsearch.client.reactive.endpoints=" + elasticsearch.getHost() + ":"
-						+ elasticsearch.getFirstMappedPort(),
+				uriProperty + "=http://" + elasticsearch.getHost() + ":" + elasticsearch.getFirstMappedPort(),
 				"spring.data.elasticsearch.client.reactive.connection-timeout=120s",
 				"spring.data.elasticsearch.client.reactive.socket-timeout=120s").run((context) -> {
 					ReactiveElasticsearchClient client = context.getBean(ReactiveElasticsearchClient.class);
