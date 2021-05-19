@@ -17,21 +17,18 @@
 package org.springframework.boot.web.servlet.filter;
 
 import java.io.IOException;
-import java.util.Collection;
 
 import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpFilter;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.SpringSecurityMessageSource;
@@ -42,7 +39,7 @@ import org.springframework.security.web.access.intercept.FilterInvocationSecurit
 /**
  * @author Madhura Bhave
  */
-public class ErrorPageSecurityInterceptor implements Filter {
+public class ErrorPageSecurityInterceptor extends HttpFilter {
 
 	private AccessDecisionManager accessDecisionManager;
 
@@ -50,33 +47,30 @@ public class ErrorPageSecurityInterceptor implements Filter {
 
 	private FilterInvocationSecurityMetadataSource metadataSource;
 
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+	@Override
+	protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
-		FilterInvocation filterInvocation = new FilterInvocation(request, response, chain);
-		if (filterInvocation.getRequest().getDispatcherType().equals(DispatcherType.ERROR)) {
+		if (request.getDispatcherType().equals(DispatcherType.ERROR)) {
 			try {
-				attemptAuthorization(filterInvocation);
-				filterInvocation.getChain().doFilter(filterInvocation.getRequest(), filterInvocation.getResponse());
+				attemptAuthorization(request, response, chain);
 			}
 			catch (AccessDeniedException accessDeniedException) {
-				HttpServletResponse invocationResponse = filterInvocation.getResponse();
-				invocationResponse.sendError(invocationResponse.getStatus(),
-						HttpStatus.valueOf(filterInvocation.getResponse().getStatus()).getReasonPhrase());
+				int status = response.getStatus();
+				response.sendError(status, HttpStatus.valueOf(status).getReasonPhrase());
+				return;
 			}
 		}
-		else {
-			filterInvocation.getChain().doFilter(filterInvocation.getRequest(), filterInvocation.getResponse());
-		}
+		chain.doFilter(request, response);
 	}
 
-	private void attemptAuthorization(FilterInvocation invocation) {
-		Collection<ConfigAttribute> attributes = this.metadataSource.getAttributes(invocation);
-		if (SecurityContextHolder.getContext().getAuthentication() == null) {
+	private void attemptAuthorization(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null) {
 			credentialsNotFound(this.messages.getMessage("AbstractSecurityInterceptor.authenticationNotFound",
 					"An Authentication object was not found in the SecurityContext"));
 		}
-		Authentication authenticated = SecurityContextHolder.getContext().getAuthentication();
-		this.accessDecisionManager.decide(authenticated, invocation, attributes);
+		FilterInvocation invocation = new FilterInvocation(request, response, chain);
+		this.accessDecisionManager.decide(authentication, invocation, this.metadataSource.getAttributes(invocation));
 	}
 
 	private void credentialsNotFound(String reason) {
