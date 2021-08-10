@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,15 +47,15 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
  */
 abstract class AbstractJsonMarshalTesterTests {
 
-	private static final String JSON = "{\"name\":\"Spring\",\"age\":123}";
+	protected static final String JSON = "{\"name\":\"Spring\",\"age\":123}";
 
 	private static final String MAP_JSON = "{\"a\":" + JSON + "}";
 
 	private static final String ARRAY_JSON = "[" + JSON + "]";
 
-	private static final ExampleObject OBJECT = createExampleObject("Spring", 123);
+	protected static final ExampleObject OBJECT = createExampleObject("Spring", 123);
 
-	private static final ResolvableType TYPE = ResolvableType.forClass(ExampleObject.class);
+	protected static final ResolvableType TYPE = ResolvableType.forClass(ExampleObject.class);
 
 	@Test
 	void writeShouldReturnJsonContent() throws Exception {

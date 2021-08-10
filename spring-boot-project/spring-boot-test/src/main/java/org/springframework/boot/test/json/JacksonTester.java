@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,27 @@ public class JacksonTester<T> extends AbstractJsonMarshalTester<T> {
 	protected JacksonTester(ObjectMapper objectMapper) {
 		Assert.notNull(objectMapper, "ObjectMapper must not be null");
 		this.objectMapper = objectMapper;
+	}
+
+	/**
+	 * Create a new {@link JacksonTester} instance.
+	 * @param type the type under test which is also used for resource loading.
+	 * @param objectMapper the Jackson object mapper
+	 * @since 2.6.0
+	 */
+	public JacksonTester(Class<T> type, ObjectMapper objectMapper) {
+		this(type, ResolvableType.forClass(type), objectMapper);
+	}
+
+	/**
+	 * Create a new {@link JacksonTester} instance.
+	 * @param type the type under test. Its {@link ResolvableType#getRawClass() raw class}
+	 * is used for resource loading.
+	 * @param objectMapper the Jackson object mapper
+	 * @since 2.6.0
+	 */
+	public JacksonTester(ResolvableType type, ObjectMapper objectMapper) {
+		this(type.getRawClass(), type, objectMapper);
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,30 @@ class JacksonTesterTests extends AbstractJsonMarshalTesterTests {
 		assertThat(test.base).isNotNull();
 		assertThat(test.test.getType().resolve()).isEqualTo(List.class);
 		assertThat(test.test.getType().resolveGeneric()).isEqualTo(ExampleObject.class);
+	}
+
+	@Test
+	void writeWhenTesterCreatedWithClassShouldReturnJsonContent() throws Exception {
+		JsonContent<ExampleObject> content = new JacksonTester<>(ExampleObject.class, new ObjectMapper()).write(OBJECT);
+		assertThat(content).isEqualToJson(JSON);
+	}
+
+	@Test
+	void writeWhenTesterCreatedWithResolvableTypeShouldReturnJsonContent() throws Exception {
+		JsonContent<Object> content = new JacksonTester<>(TYPE, new ObjectMapper()).write(OBJECT);
+		assertThat(content).isEqualToJson(JSON);
+	}
+
+	@Test
+	void readResourcePathWhenTesterCreatedWithClassShouldReturnObject() throws Exception {
+		AbstractJsonMarshalTester<ExampleObject> tester = new JacksonTester<>(ExampleObject.class, new ObjectMapper());
+		assertThat(tester.read("example.json")).isEqualTo(OBJECT);
+	}
+
+	@Test
+	void readResourcePathWhenTesterCreatedWithResolvableTypeShouldReturnObject() throws Exception {
+		AbstractJsonMarshalTester<ExampleObject> tester = new JacksonTester<>(TYPE, new ObjectMapper());
+		assertThat(tester.read("example.json")).isEqualTo(OBJECT);
 	}
 
 	@Override
