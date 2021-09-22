@@ -19,8 +19,8 @@ package org.springframework.boot.build.bom;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import groovy.namespace.QName;
 import groovy.util.Node;
-import groovy.xml.QName;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
