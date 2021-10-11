@@ -265,11 +265,23 @@ public class Restarter {
 			if (error == null) {
 				return;
 			}
+			if (!withinSpringApplicationRun(error)) {
+				return;
+			}
 			if (failureHandler.handle(error) == Outcome.ABORT) {
 				return;
 			}
 		}
 		while (true);
+	}
+
+	private boolean withinSpringApplicationRun(Throwable error) {
+		for (StackTraceElement element : error.getStackTrace()) {
+			if (element.getClass().equals(SpringApplication.class) && element.getMethodName().equals("run")) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private Throwable doStart() throws Exception {
