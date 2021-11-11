@@ -1822,6 +1822,13 @@ bom {
 			]
 		}
 	}
+	library("Yasson", "1.0.9") {
+		group("org.eclipse") {
+			modules = [
+				"yasson"
+			]
+		}
+	}
 }
 
 generateMetadataFileForMavenPublication {
