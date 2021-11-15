@@ -25,8 +25,8 @@ import java.lang.annotation.Target;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.xml.bind.annotation.XmlTransient;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +117,7 @@ class JerseyAutoConfigurationObjectMapperProviderTests {
 			this.body = body;
 		}
 
-		@XmlTransient
+		@JsonIgnore
 		public String getFoo() {
 			return "foo";
 		}

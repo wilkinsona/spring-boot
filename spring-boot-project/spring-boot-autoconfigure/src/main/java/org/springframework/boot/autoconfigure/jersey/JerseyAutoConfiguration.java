@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRegistration;
 import javax.ws.rs.ext.ContextResolver;
-import javax.xml.bind.annotation.XmlElement;
 
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.cfg.MapperConfig;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -39,7 +35,6 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
@@ -191,29 +186,9 @@ public class JerseyAutoConfiguration implements ServletContextAware {
 		@Bean
 		ResourceConfigCustomizer resourceConfigCustomizer(final ObjectMapper objectMapper) {
 			return (ResourceConfig config) -> {
-				config.register(JacksonFeature.class);
+				config.register(SpringBootJacksonFeature.class);
 				config.register(new ObjectMapperContextResolver(objectMapper), ContextResolver.class);
 			};
-		}
-
-		@Configuration(proxyBeanMethods = false)
-		@ConditionalOnClass({ JaxbAnnotationIntrospector.class, XmlElement.class })
-		static class JaxbObjectMapperCustomizer {
-
-			@Autowired
-			void addJaxbAnnotationIntrospector(ObjectMapper objectMapper) {
-				JaxbAnnotationIntrospector jaxbAnnotationIntrospector = new JaxbAnnotationIntrospector(
-						objectMapper.getTypeFactory());
-				objectMapper.setAnnotationIntrospectors(
-						createPair(objectMapper.getSerializationConfig(), jaxbAnnotationIntrospector),
-						createPair(objectMapper.getDeserializationConfig(), jaxbAnnotationIntrospector));
-			}
-
-			private AnnotationIntrospector createPair(MapperConfig<?> config,
-					JaxbAnnotationIntrospector jaxbAnnotationIntrospector) {
-				return AnnotationIntrospector.pair(config.getAnnotationIntrospector(), jaxbAnnotationIntrospector);
-			}
-
 		}
 
 		private static final class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
