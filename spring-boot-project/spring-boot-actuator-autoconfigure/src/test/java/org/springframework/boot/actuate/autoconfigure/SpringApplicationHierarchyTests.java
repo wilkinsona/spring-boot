@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2021 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfigu
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration;
@@ -67,22 +65,18 @@ class SpringApplicationHierarchyTests {
 	}
 
 	@Configuration
-	@EnableAutoConfiguration(exclude = { ElasticsearchDataAutoConfiguration.class,
-			ElasticsearchRepositoriesAutoConfiguration.class, CassandraAutoConfiguration.class,
-			CassandraDataAutoConfiguration.class, MongoDataAutoConfiguration.class,
-			MongoReactiveDataAutoConfiguration.class, Neo4jAutoConfiguration.class, Neo4jDataAutoConfiguration.class,
-			Neo4jRepositoriesAutoConfiguration.class, RedisAutoConfiguration.class,
+	@EnableAutoConfiguration(exclude = { CassandraAutoConfiguration.class, CassandraDataAutoConfiguration.class,
+			MongoDataAutoConfiguration.class, MongoReactiveDataAutoConfiguration.class, Neo4jAutoConfiguration.class,
+			Neo4jDataAutoConfiguration.class, Neo4jRepositoriesAutoConfiguration.class, RedisAutoConfiguration.class,
 			RedisRepositoriesAutoConfiguration.class, FlywayAutoConfiguration.class, MetricsAutoConfiguration.class })
 	static class Parent {
 
 	}
 
 	@Configuration
-	@EnableAutoConfiguration(exclude = { ElasticsearchDataAutoConfiguration.class,
-			ElasticsearchRepositoriesAutoConfiguration.class, CassandraAutoConfiguration.class,
-			CassandraDataAutoConfiguration.class, MongoDataAutoConfiguration.class,
-			MongoReactiveDataAutoConfiguration.class, Neo4jAutoConfiguration.class, Neo4jDataAutoConfiguration.class,
-			Neo4jRepositoriesAutoConfiguration.class, RedisAutoConfiguration.class,
+	@EnableAutoConfiguration(exclude = { CassandraAutoConfiguration.class, CassandraDataAutoConfiguration.class,
+			MongoDataAutoConfiguration.class, MongoReactiveDataAutoConfiguration.class, Neo4jAutoConfiguration.class,
+			Neo4jDataAutoConfiguration.class, Neo4jRepositoriesAutoConfiguration.class, RedisAutoConfiguration.class,
 			RedisRepositoriesAutoConfiguration.class, FlywayAutoConfiguration.class, MetricsAutoConfiguration.class })
 	static class Child {
 

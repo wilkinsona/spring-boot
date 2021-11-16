@@ -158,9 +158,6 @@ dependencies {
 	optional("org.springframework.data:spring-data-cassandra") {
 		exclude group: "org.slf4j", module: "jcl-over-slf4j"
 	}
-	optional("org.springframework.data:spring-data-elasticsearch") {
-		exclude group: "org.elasticsearch.client", module: "transport"
-	}
 	optional("org.springframework.data:spring-data-jdbc")
 	optional("org.springframework.data:spring-data-ldap")
 	optional("org.springframework.data:spring-data-mongodb")

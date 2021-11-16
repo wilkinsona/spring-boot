@@ -25,7 +25,6 @@ import org.springframework.boot.actuate.health.ReactiveHealthEndpointWebExtensio
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.cassandra.CassandraDataAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.mongo.MongoReactiveDataAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.neo4j.Neo4jDataAutoConfiguration;
@@ -78,9 +77,8 @@ class WebEndpointsAutoConfigurationIntegrationTests {
 			CassandraAutoConfiguration.class, CassandraDataAutoConfiguration.class, Neo4jDataAutoConfiguration.class,
 			Neo4jRepositoriesAutoConfiguration.class, MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
 			MongoReactiveAutoConfiguration.class, MongoReactiveDataAutoConfiguration.class,
-			RepositoryRestMvcAutoConfiguration.class, HazelcastAutoConfiguration.class,
-			ElasticsearchDataAutoConfiguration.class, SolrAutoConfiguration.class, RedisAutoConfiguration.class,
-			RedisRepositoriesAutoConfiguration.class, MetricsAutoConfiguration.class })
+			RepositoryRestMvcAutoConfiguration.class, HazelcastAutoConfiguration.class, SolrAutoConfiguration.class,
+			RedisAutoConfiguration.class, RedisRepositoriesAutoConfiguration.class, MetricsAutoConfiguration.class })
 	@SpringBootConfiguration
 	static class WebEndpointTestApplication {
 

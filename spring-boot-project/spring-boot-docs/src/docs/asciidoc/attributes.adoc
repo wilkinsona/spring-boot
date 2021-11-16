@@ -57,8 +57,6 @@
 :spring-data: https://spring.io/projects/spring-data
 :spring-data-cassandra: https://spring.io/projects/spring-data-cassandra
 :spring-data-commons-api: https://docs.spring.io/spring-data/commons/docs/{spring-data-commons-version}/api/org/springframework/data
-:spring-data-elasticsearch: https://spring.io/projects/spring-data-elasticsearch
-:spring-data-elasticsearch-docs: https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/
 :spring-data-envers: https://spring.io/projects/spring-data-envers
 :spring-data-envers-doc: https://docs.spring.io/spring-data/envers/docs/{spring-data-envers-version}/reference/html/
 :spring-data-gemfire: https://spring.io/projects/spring-data-gemfire

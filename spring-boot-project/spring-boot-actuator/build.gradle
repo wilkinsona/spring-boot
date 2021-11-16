@@ -49,6 +49,9 @@ dependencies {
 		exclude(group: "javax.servlet", module: "javax.servlet-api")
 	}
 	optional("org.elasticsearch:elasticsearch")
+	optional("org.elasticsearch.client:elasticsearch-rest-high-level-client") {
+		exclude group: "commons-logging", module: "commons-logging"
+	}
 	optional("org.flywaydb:flyway-core")
 	optional("org.glassfish.jersey.core:jersey-server")
 	optional("org.glassfish.jersey.containers:jersey-container-servlet-core")
@@ -69,9 +72,6 @@ dependencies {
 	optional("org.springframework.amqp:spring-rabbit")
 	optional("org.springframework.data:spring-data-cassandra") {
 		exclude group: "org.slf4j", module: "jcl-over-slf4j"
-	}
-	optional("org.springframework.data:spring-data-elasticsearch") {
-		exclude(group: "commons-logging", module: "commons-logging")
 	}
 	optional("org.springframework.data:spring-data-ldap")
 	optional("org.springframework.data:spring-data-mongodb")

@@ -100,6 +100,9 @@ dependencies {
 	optional("org.elasticsearch.client:elasticsearch-rest-client") {
 		exclude group: "commons-logging", module: "commons-logging"
 	}
+	optional("org.elasticsearch.client:elasticsearch-rest-high-level-client") {
+		exclude group: "commons-logging", module: "commons-logging"
+	}
 	optional("org.flywaydb:flyway-core")
 	optional("org.glassfish.jersey.core:jersey-server")
 	optional("org.glassfish.jersey.containers:jersey-container-servlet-core")
@@ -138,9 +141,6 @@ dependencies {
 	optional("org.springframework.data:spring-data-ldap")
 	optional("org.springframework.data:spring-data-mongodb")
 	optional("org.springframework.data:spring-data-redis")
-	optional("org.springframework.data:spring-data-elasticsearch") {
-		exclude group: "commons-logging", module: "commons-logging"
-	}
 	optional("org.springframework.integration:spring-integration-core")
 	optional("org.springframework.kafka:spring-kafka")
 	optional("org.springframework.security:spring-security-config")

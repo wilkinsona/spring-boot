@@ -4,7 +4,6 @@ Spring Data provides additional projects that help you access a variety of NoSQL
 
 * {spring-data-mongodb}[MongoDB]
 * {spring-data-neo4j}[Neo4J]
-* {spring-data-elasticsearch}[Elasticsearch]
 * {spring-data-redis}[Redis]
 * {spring-data-gemfire}[GemFire] or {spring-data-geode}[Geode]
 * {spring-data-cassandra}[Cassandra]
@@ -263,12 +262,7 @@ If you add your own `@Bean` of type `SolrClient`, it replaces the default.
 https://www.elastic.co/products/elasticsearch[Elasticsearch] is an open source, distributed, RESTful search and analytics engine.
 Spring Boot offers basic auto-configuration for Elasticsearch clients.
 
-Spring Boot supports several clients:
-
-* The official Java "Low Level" and "High Level" REST clients
-* The `ReactiveElasticsearchClient` provided by Spring Data Elasticsearch
-
-Spring Boot provides a dedicated "`Starter`", `spring-boot-starter-data-elasticsearch`.
+Spring Boot supports the official Java "Low Level" and "High Level" REST clients.
 
 
 
@@ -309,73 +303,6 @@ You can further tune how `Sniffer` is configured, as shown in the following exam
 	      sniffer:
 	        interval: 10m
 	        delay-after-failure: 30s
-----
-
-
-
-[[data.nosql.elasticsearch.connecting-using-rest.webclient]]
-===== Connecting to Elasticsearch using ReactiveElasticsearchClient
-{spring-data-elasticsearch}[Spring Data Elasticsearch] ships `ReactiveElasticsearchClient` for querying Elasticsearch instances in a reactive fashion.
-It is built on top of WebFlux's `WebClient`, so both `spring-boot-starter-elasticsearch` and `spring-boot-starter-webflux` dependencies are useful to enable this support.
-
-By default, Spring Boot will auto-configure and register a `ReactiveElasticsearchClient`.
-In addition to the properties described previously, the `spring.elasticsearch.webclient.*` properties can be used to configure reactive-specific settings, as shown in the following example:
-
-[source,yaml,indent=0,subs="verbatim",configprops,configblocks]
-----
-	spring:
-	  elasticsearch:
-	    webclient:
-	      max-in-memory-size: 1MB
-----
-
-If the `spring.elasticsearch.*` and `spring.elasticsearch.webclient.*` configuration properties are not enough and you'd like to fully control the client configuration, you can register a custom `ClientConfiguration` bean.
-
-
-
-[[data.nosql.elasticsearch.connecting-using-spring-data]]
-==== Connecting to Elasticsearch by Using Spring Data
-To connect to Elasticsearch, a `RestHighLevelClient` bean must be defined,
-auto-configured by Spring Boot or manually provided by the application (see previous sections).
-With this configuration in place, an
-`ElasticsearchRestTemplate` can be injected like any other Spring bean,
-as shown in the following example:
-
-[source,java,indent=0,subs="verbatim"]
-----
-include::{docs-java}/data/nosql/elasticsearch/connectingusingspringdata/MyBean.java[]
-----
-
-In the presence of `spring-data-elasticsearch` and the required dependencies for using a `WebClient` (typically `spring-boot-starter-webflux`), Spring Boot can also auto-configure a <<features#data.nosql.elasticsearch.connecting-using-rest.webclient,ReactiveElasticsearchClient>> and a `ReactiveElasticsearchTemplate` as beans.
-They are the reactive equivalent of the other REST clients.
-
-
-
-[[data.nosql.elasticsearch.repositories]]
-==== Spring Data Elasticsearch Repositories
-Spring Data includes repository support for Elasticsearch.
-As with the JPA repositories discussed earlier, the basic principle is that queries are constructed for you automatically based on method names.
-
-In fact, both Spring Data JPA and Spring Data Elasticsearch share the same common infrastructure.
-You could take the JPA example from earlier and, assuming that `City` is now an Elasticsearch `@Document` class rather than a JPA `@Entity`, it works in the same way.
-
-TIP: For complete details of Spring Data Elasticsearch, see the {spring-data-elasticsearch-docs}[reference documentation].
-
-Spring Boot supports both classic and reactive Elasticsearch repositories, using the `ElasticsearchRestTemplate` or `ReactiveElasticsearchTemplate` beans.
-Most likely those beans are auto-configured by Spring Boot given the required dependencies are present.
-
-If you wish to use your own template for backing the Elasticsearch repositories, you can add your own `ElasticsearchRestTemplate` or `ElasticsearchOperations` `@Bean`, as long as it is named `"elasticsearchTemplate"`.
-Same applies to `ReactiveElasticsearchTemplate` and `ReactiveElasticsearchOperations`, with the bean name `"reactiveElasticsearchTemplate"`.
-
-You can choose to disable the repositories support with the following property:
-
-[source,yaml,indent=0,subs="verbatim",configprops,configblocks]
-----
-    spring:
-      data:
-        elasticsearch:
-          repositories:
-            enabled: false
 ----
 
 

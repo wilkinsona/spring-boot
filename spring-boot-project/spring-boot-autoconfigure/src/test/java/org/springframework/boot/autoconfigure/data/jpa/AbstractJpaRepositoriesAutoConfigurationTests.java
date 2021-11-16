@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.TestAutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.autoconfigure.data.alt.elasticsearch.CityElasticsearchDbRepository;
 import org.springframework.boot.autoconfigure.data.alt.jpa.CityJpaRepository;
 import org.springframework.boot.autoconfigure.data.alt.mongo.CityMongoDbRepository;
 import org.springframework.boot.autoconfigure.data.jpa.city.City;
@@ -163,8 +162,7 @@ abstract class AbstractJpaRepositoriesAutoConfigurationTests {
 	@Configuration(proxyBeanMethods = false)
 	@EnableJpaRepositories(
 			basePackageClasses = org.springframework.boot.autoconfigure.data.alt.jpa.CityJpaRepository.class,
-			excludeFilters = { @Filter(type = FilterType.ASSIGNABLE_TYPE, value = CityMongoDbRepository.class),
-					@Filter(type = FilterType.ASSIGNABLE_TYPE, value = CityElasticsearchDbRepository.class) })
+			excludeFilters = { @Filter(type = FilterType.ASSIGNABLE_TYPE, value = CityMongoDbRepository.class) })
 	@TestAutoConfigurationPackage(City.class)
 	static class CustomConfiguration {
 
