@@ -94,6 +94,7 @@ dependencies {
 	}
 	implementation("org.apache.tomcat.embed:tomcat-embed-core")
 	implementation("org.assertj:assertj-core")
+	implementation("org.codehaus.groovy:groovy")
 	implementation("org.glassfish.jersey.core:jersey-server")
 	implementation("org.glassfish.jersey.containers:jersey-container-servlet-core")
 	implementation("org.hibernate:hibernate-jcache") {
@@ -137,11 +138,6 @@ dependencies {
 	implementation("org.springframework.kafka:spring-kafka-test")
 	implementation("org.springframework.restdocs:spring-restdocs-mockmvc") {
 		exclude group: "javax.servlet", module: "javax.servlet-api"
-	}
-	implementation("org.springframework.restdocs:spring-restdocs-restassured") {
-		exclude group: "commons-logging", module: "commons-logging"
-		exclude group: "javax.activation", module: "activation"
-		exclude group: "javax.xml.bind", module: "jaxb-api"
 	}
 	implementation("org.springframework.restdocs:spring-restdocs-webtestclient")
 	implementation("org.springframework.security:spring-security-config")
