@@ -24,6 +24,7 @@ import java.util.Map;
 import org.gradle.api.GradleException;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -53,9 +54,10 @@ class BootBuildImageTests {
 
 	Project project;
 
-	private final BootBuildImage buildImage;
+	private BootBuildImage buildImage;
 
-	BootBuildImageTests() {
+	@BeforeEach
+	void setUp() {
 		File projectDir = new File(this.temp, "project");
 		projectDir.mkdirs();
 		this.project = GradleProjectBuilder.builder().withProjectDir(projectDir).withName("build-image-test").build();
