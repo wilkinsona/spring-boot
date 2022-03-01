@@ -24,6 +24,7 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
@@ -52,6 +53,8 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 
 	private final Set<String> undefinablePackages = ConcurrentHashMap.newKeySet();
 
+	private final ClassLoaderCache loaderCache = new ClassLoaderCache();
+
 	/**
 	 * Create a new {@link LaunchedClassLoader} instance.
 	 * @param urls the URLs from which to load classes and resources
@@ -65,12 +68,16 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 
 	@Override
 	public URL findResource(String name) {
+		Optional<URL> optional = this.loaderCache.getResourceCache(name);
+		if (optional != null) {
+			return optional.orElse(null);
+		}
 		if (!this.hasJarUrls) {
-			return super.findResource(name);
+			return this.loaderCache.cacheResourceUrl(name, super.findResource(name));
 		}
 		Optimizations.enable(false);
 		try {
-			return super.findResource(name);
+			return this.loaderCache.cacheResourceUrl(name, super.findResource(name));
 		}
 		finally {
 			Optimizations.disable();
@@ -79,12 +86,16 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 
 	@Override
 	public Enumeration<URL> findResources(String name) throws IOException {
+		Optional<Enumeration<URL>> optional = this.loaderCache.getResourcesCache(name);
+		if (optional != null) {
+			return optional.orElse(null);
+		}
 		if (!this.hasJarUrls) {
-			return super.findResources(name);
+			return this.loaderCache.cacheResourceUrls(name, super.findResources(name));
 		}
 		Optimizations.enable(false);
 		try {
-			return new OptimizedEnumeration(super.findResources(name));
+			return this.loaderCache.cacheResourceUrls(name, new OptimizedEnumeration(super.findResources(name)));
 		}
 		finally {
 			Optimizations.disable();
@@ -93,6 +104,21 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 
 	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+		this.loaderCache.fastClassNotFoundException(name);
+		try {
+			return loadClassInternal(name, resolve);
+		}
+		catch (ClassNotFoundException ex) {
+			this.loaderCache.cacheClassNotFoundException(name, ex);
+			throw ex;
+		}
+	}
+
+	public void setEnableCache(boolean enableCache) {
+		this.loaderCache.setEnableCache(enableCache);
+	}
+
+	private Class<?> loadClassInternal(String name, boolean resolve) throws ClassNotFoundException {
 		if (!this.hasJarUrls) {
 			return super.loadClass(name, resolve);
 		}
@@ -201,6 +227,7 @@ public abstract class JarUrlClassLoader extends URLClassLoader {
 	 * {@code ClearCachesApplicationListener}.
 	 */
 	public void clearCache() {
+		this.loaderCache.clearCache();
 		Handler.clearCache();
 		org.springframework.boot.loader.net.protocol.nested.Handler.clearCache();
 		try {
