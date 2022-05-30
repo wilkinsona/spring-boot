@@ -47,11 +47,15 @@ class ResetMocksTestExecutionListenerTests {
 	@Autowired
 	private ApplicationContext context;
 
+	@SpyBean
+	ToSpy spied;
+
 	@Test
 	void test001() {
 		given(getMock("none").greeting()).willReturn("none");
 		given(getMock("before").greeting()).willReturn("before");
 		given(getMock("after").greeting()).willReturn("after");
+		given(this.spied.action()).willReturn("spied");
 	}
 
 	@Test
@@ -59,6 +63,7 @@ class ResetMocksTestExecutionListenerTests {
 		assertThat(getMock("none").greeting()).isEqualTo("none");
 		assertThat(getMock("before").greeting()).isNull();
 		assertThat(getMock("after").greeting()).isNull();
+		assertThat(this.spied.action()).isNull();
 	}
 
 	ExampleService getMock(String name) {
@@ -102,6 +107,11 @@ class ResetMocksTestExecutionListenerTests {
 			return new BrokenFactoryBean();
 		}
 
+		@Bean
+		ToSpyFactoryBean toSpyFactoryBean() {
+			return new ToSpyFactoryBean();
+		}
+
 	}
 
 	static class BrokenFactoryBean implements FactoryBean<String> {
@@ -119,6 +129,34 @@ class ResetMocksTestExecutionListenerTests {
 		@Override
 		public boolean isSingleton() {
 			return true;
+		}
+
+	}
+
+	interface ToMock {
+
+		String action();
+
+	}
+
+	static class ToSpy {
+
+		String action() {
+			return null;
+		}
+
+	}
+
+	static class ToSpyFactoryBean implements FactoryBean<ToSpy> {
+
+		@Override
+		public ToSpy getObject() throws Exception {
+			return new ToSpy();
+		}
+
+		@Override
+		public Class<?> getObjectType() {
+			return ToSpy.class;
 		}
 
 	}
