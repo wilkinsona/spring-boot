@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.boot.actuate.endpoint.InvocationContext;
 import org.springframework.boot.actuate.endpoint.invoke.MissingParametersException;
+import org.springframework.boot.actuate.endpoint.invoke.OperationArgumentsResolver;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
 import org.springframework.boot.actuate.endpoint.invoke.OperationParameter;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
@@ -37,7 +38,7 @@ import org.springframework.util.ReflectionUtils;
  * @author Phillip Webb
  * @since 2.0.0
  */
-public class ReflectiveOperationInvoker implements OperationInvoker {
+public class ReflectiveOperationInvoker implements OperationInvoker, OperationArgumentsResolver {
 
 	private final Object target;
 
@@ -68,10 +69,15 @@ public class ReflectiveOperationInvoker implements OperationInvoker {
 	@Override
 	public Object invoke(InvocationContext context) {
 		validateRequiredParameters(context);
-		Method method = this.operationMethod.getMethod();
 		Object[] resolvedArguments = resolveArguments(context);
+		return invoke(context, resolvedArguments);
+	}
+
+	@Override
+	public Object invoke(InvocationContext context, Object[] arguments) throws MissingParametersException {
+		Method method = this.operationMethod.getMethod();
 		ReflectionUtils.makeAccessible(method);
-		return ReflectionUtils.invokeMethod(method, this.target, resolvedArguments);
+		return ReflectionUtils.invokeMethod(method, this.target, arguments);
 	}
 
 	private void validateRequiredParameters(InvocationContext context) {
@@ -92,7 +98,9 @@ public class ReflectiveOperationInvoker implements OperationInvoker {
 		return context.getArguments().get(parameter.getName()) == null;
 	}
 
-	private Object[] resolveArguments(InvocationContext context) {
+	@Override
+	public Object[] resolveArguments(InvocationContext context) {
+		validateRequiredParameters(context);
 		return this.operationMethod.getParameters().stream().map((parameter) -> resolveArgument(parameter, context))
 				.toArray();
 	}

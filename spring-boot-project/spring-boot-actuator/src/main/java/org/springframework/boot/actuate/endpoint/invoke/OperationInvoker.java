@@ -36,4 +36,8 @@ public interface OperationInvoker {
 	 */
 	Object invoke(InvocationContext context) throws MissingParametersException;
 
+	default Object invoke(InvocationContext context, Object[] arguments) throws MissingParametersException {
+		return invoke(context);
+	}
+
 }
