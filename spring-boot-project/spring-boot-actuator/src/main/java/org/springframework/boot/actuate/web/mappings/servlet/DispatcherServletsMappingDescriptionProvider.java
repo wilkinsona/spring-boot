@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,10 +34,17 @@ import org.springframework.boot.actuate.web.mappings.HandlerMethodDescription;
 import org.springframework.boot.actuate.web.mappings.MappingDescriptionProvider;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.function.HandlerFunction;
+import org.springframework.web.servlet.function.RequestPredicate;
+import org.springframework.web.servlet.function.RouterFunction;
+import org.springframework.web.servlet.function.RouterFunctions.Visitor;
+import org.springframework.web.servlet.function.ServerRequest;
+import org.springframework.web.servlet.function.support.RouterFunctionMapping;
 import org.springframework.web.servlet.handler.AbstractUrlHandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfoHandlerMapping;
@@ -57,6 +66,7 @@ public class DispatcherServletsMappingDescriptionProvider implements MappingDesc
 		List<HandlerMappingDescriptionProvider<?>> providers = new ArrayList<>();
 		providers.add(new RequestMappingInfoHandlerMappingDescriptionProvider());
 		providers.add(new UrlHandlerMappingDescriptionProvider());
+		providers.add(new RouterFunctionMappingDescriptionProvider());
 		providers.add(new IterableDelegatesHandlerMappingDescriptionProvider(new ArrayList<>(providers)));
 		descriptionProviders = Collections.unmodifiableList(providers);
 	}
@@ -191,6 +201,60 @@ public class DispatcherServletsMappingDescriptionProvider implements MappingDesc
 						DispatcherServletsMappingDescriptionProvider.describe(delegate, this.descriptionProviders));
 			}
 			return descriptions;
+		}
+
+	}
+
+	private static final class RouterFunctionMappingDescriptionProvider
+			implements HandlerMappingDescriptionProvider<RouterFunctionMapping> {
+
+		@Override
+		public Class<RouterFunctionMapping> getMappingClass() {
+			return RouterFunctionMapping.class;
+		}
+
+		@Override
+		public List<DispatcherServletMappingDescription> describe(RouterFunctionMapping handlerMapping) {
+			MappingDescriptionVisitor visitor = new MappingDescriptionVisitor();
+			RouterFunction<?> routerFunction = handlerMapping.getRouterFunction();
+			if (routerFunction != null) {
+				routerFunction.accept(visitor);
+			}
+			return visitor.descriptions;
+		}
+
+		private static final class MappingDescriptionVisitor implements Visitor {
+
+			private final List<DispatcherServletMappingDescription> descriptions = new ArrayList<>();
+
+			@Override
+			public void startNested(RequestPredicate predicate) {
+			}
+
+			@Override
+			public void endNested(RequestPredicate predicate) {
+			}
+
+			@Override
+			public void route(RequestPredicate predicate, HandlerFunction<?> handlerFunction) {
+				DispatcherServletMappingDetails details = new DispatcherServletMappingDetails();
+				details.setHandlerFunction(new HandlerFunctionDescription(handlerFunction));
+				this.descriptions.add(new DispatcherServletMappingDescription(predicate.toString(),
+						handlerFunction.toString(), details));
+			}
+
+			@Override
+			public void attributes(Map<String, Object> attributes) {
+			}
+
+			@Override
+			public void unknown(RouterFunction<?> routerFunction) {
+			}
+
+			@Override
+			public void resources(Function<ServerRequest, Optional<Resource>> lookupFunction) {
+			}
+
 		}
 
 	}

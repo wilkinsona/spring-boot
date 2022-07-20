@@ -58,6 +58,8 @@ import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.function.RequestPredicates;
+import org.springframework.web.servlet.function.RouterFunctions;
 import org.springframework.web.util.pattern.PathPatternParser;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -245,9 +247,26 @@ class MappingsEndpointTests {
 			return dispatcherServlet;
 		}
 
+		@Bean
+		org.springframework.web.servlet.function.RouterFunction<org.springframework.web.servlet.function.ServerResponse> routerFunction() {
+			return RouterFunctions
+					.route(RequestPredicates.GET("/one"),
+							(request) -> org.springframework.web.servlet.function.ServerResponse.ok().build())
+					.andRoute(RequestPredicates.POST("/two"),
+							(request) -> org.springframework.web.servlet.function.ServerResponse.ok().build());
+		}
+
 		@RequestMapping("/three")
 		void three() {
 
+		}
+
+		@Bean
+		org.springframework.web.servlet.function.RouterFunction<org.springframework.web.servlet.function.ServerResponse> routerFunctionWithAttributes() {
+			return RouterFunctions
+					.route(RequestPredicates.GET("/four"),
+							(request) -> org.springframework.web.servlet.function.ServerResponse.ok().build())
+					.withAttribute("test", "test");
 		}
 
 	}
