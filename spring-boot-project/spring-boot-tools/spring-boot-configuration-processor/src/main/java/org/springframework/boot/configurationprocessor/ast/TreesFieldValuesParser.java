@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationprocessor.fieldvalues.javac;
+package org.springframework.boot.configurationprocessor.ast;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,17 +29,17 @@ import javax.lang.model.element.TypeElement;
 import org.springframework.boot.configurationprocessor.fieldvalues.FieldValuesParser;
 
 /**
- * {@link FieldValuesParser} implementation for the standard Java compiler.
+ * {@link Trees}-based implementation of {@link FieldValuesParser}.
  *
  * @author Phillip Webb
  * @author Stephane Nicoll
- * @since 1.2.0
+ * @since 2.6.11
  */
-public class JavaCompilerFieldValuesParser implements FieldValuesParser {
+public class TreesFieldValuesParser implements FieldValuesParser {
 
 	private final Trees trees;
 
-	public JavaCompilerFieldValuesParser(ProcessingEnvironment env) throws Exception {
+	public TreesFieldValuesParser(ProcessingEnvironment env) throws Exception {
 		this.trees = Trees.instance(env);
 	}
 

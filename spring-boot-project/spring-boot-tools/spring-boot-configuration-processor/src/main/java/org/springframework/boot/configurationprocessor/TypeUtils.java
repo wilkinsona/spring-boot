@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,12 +84,15 @@ class TypeUtils {
 
 	private final Map<TypeElement, TypeDescriptor> typeDescriptors = new HashMap<>();
 
+	private final ElementOriginResolver elementOriginResolver;
+
 	TypeUtils(ProcessingEnvironment env) {
 		this.env = env;
 		this.types = env.getTypeUtils();
 		this.typeExtractor = new TypeExtractor(this.types);
 		this.collectionType = getDeclaredType(this.types, Collection.class, 1);
 		this.mapType = getDeclaredType(this.types, Map.class, 2);
+		this.elementOriginResolver = ElementOriginResolver.forEnvironment(env);
 	}
 
 	private TypeMirror getDeclaredType(Types types, Class<?> typeClass, int numberOfTypeArgs) {
@@ -175,12 +178,26 @@ class TypeUtils {
 				|| this.env.getTypeUtils().isAssignable(type, this.mapType);
 	}
 
-	String getJavaDoc(Element element) {
+	String getJavadoc(Element element) {
+		if (!isJavadocAvailable(element)) {
+			return null;
+		}
 		String javadoc = (element != null) ? this.env.getElementUtils().getDocComment(element) : null;
 		if (javadoc != null) {
 			javadoc = NEW_LINE_PATTERN.matcher(javadoc).replaceAll("").trim();
 		}
-		return (javadoc == null || javadoc.isEmpty()) ? null : javadoc;
+		else {
+			javadoc = "";
+		}
+		return javadoc;
+	}
+
+	private boolean isJavadocAvailable(Element element) {
+		return ElementOrigin.CLASS != getElementOrigin(element);
+	}
+
+	ElementOrigin getElementOrigin(Element element) {
+		return this.elementOriginResolver.resolveOrigin(element);
 	}
 
 	/**

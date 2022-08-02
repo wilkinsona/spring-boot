@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,27 @@ public class ConfigurationMetadata {
 	}
 
 	/**
-	 * Add item meta-data if it's not already present.
-	 * @param itemMetadata the meta-data to add
+	 * Add item metadata if it's not already present.
+	 * @param itemMetadata the metadata to add
 	 * @since 2.4.0
 	 */
 	public void addIfMissing(ItemMetadata itemMetadata) {
 		add(this.items, itemMetadata.getName(), itemMetadata, true);
+	}
+
+	/**
+	 * If the metadata is already present but its description is unavailable, the
+	 * description is updated with that of the given {@code itemMetadata}.
+	 * @param itemMetadata the metadata to use as a description source
+	 * @since 2.6.11
+	 */
+	public void updateDescription(ItemMetadata itemMetadata) {
+		ItemMetadata existingMetadata = findMatchingItemMetadata(itemMetadata);
+		if (existingMetadata != null) {
+			if (ItemDescription.UNAVAILABLE == existingMetadata.getDescription()) {
+				existingMetadata.setDescription(itemMetadata.getDescription());
+			}
+		}
 	}
 
 	/**
@@ -114,7 +129,7 @@ public class ConfigurationMetadata {
 	protected void mergeItemMetadata(ItemMetadata metadata) {
 		ItemMetadata matching = findMatchingItemMetadata(metadata);
 		if (matching != null) {
-			if (metadata.getDescription() != null) {
+			if (metadata.getDescription().getContent() != null) {
 				matching.setDescription(metadata.getDescription());
 			}
 			if (metadata.getDefaultValue() != null) {
@@ -144,11 +159,13 @@ public class ConfigurationMetadata {
 		}
 	}
 
-	private <K, V> void add(Map<K, List<V>> map, K key, V value, boolean ifMissing) {
+	private <K, V> boolean add(Map<K, List<V>> map, K key, V value, boolean ifMissing) {
 		List<V> values = map.computeIfAbsent(key, (k) -> new ArrayList<>());
 		if (!ifMissing || values.isEmpty()) {
 			values.add(value);
+			return true;
 		}
+		return false;
 	}
 
 	private ItemMetadata findMatchingItemMetadata(ItemMetadata metadata) {

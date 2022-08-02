@@ -25,8 +25,10 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.Directory;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
@@ -73,6 +75,7 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 			configureAdditionalMetadataLocationsCompilerArgument(project);
 			registerCheckAdditionalMetadataTask(project);
 			addMetadataArtifact(project);
+			registerPreserveMetadataTask(project);
 		});
 	}
 
@@ -122,6 +125,27 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 		});
 		project.getTasks().named(LifecycleBasePlugin.CHECK_TASK_NAME)
 				.configure((check) -> check.dependsOn(checkConfigurationMetadata));
+	}
+
+	private void registerPreserveMetadataTask(Project project) {
+		Provider<Directory> preservedMetadataLocation = project.getLayout().getBuildDirectory()
+				.dir("preserved-spring-configuration-metadata/" + JavaPlugin.COMPILE_JAVA_TASK_NAME);
+		TaskProvider<JavaCompile> compileJava = project.getTasks().named(JavaPlugin.COMPILE_JAVA_TASK_NAME,
+				JavaCompile.class);
+		TaskProvider<PreserveSpringConfigurationMetadata> preserveMetadata = project.getTasks()
+				.register("preserveSpringConfigurationMetadata", PreserveSpringConfigurationMetadata.class, (task) -> {
+					task.getMetadataLocation()
+							.set(compileJava.map(JavaCompile::getDestinationDirectory)
+									.flatMap((destinationDirectory) -> destinationDirectory
+											.file("META-INF/spring-configuration-metadata.json")));
+					task.getOutputDirectory().set(preservedMetadataLocation);
+				});
+		compileJava.configure((task) -> {
+			task.finalizedBy(preserveMetadata);
+			task.getOptions().getCompilerArgs()
+					.add("-Aorg.springframework.boot.configurationprocessor.previousMetadataLocation="
+							+ preservedMetadataLocation.map(project.getRootProject()::relativePath).get());
+		});
 	}
 
 }

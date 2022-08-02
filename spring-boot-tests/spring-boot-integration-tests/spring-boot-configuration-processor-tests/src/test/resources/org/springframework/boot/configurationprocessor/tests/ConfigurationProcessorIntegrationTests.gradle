@@ -1,0 +1,18 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '{bootVersion}'
+}
+
+repositories {
+	maven {
+		url "{mavenRepository}"
+	}
+	mavenCentral()
+	maven { url "https://repo.spring.io/milestone" }
+	maven { url "https://repo.spring.io/snapshot" }
+}
+
+dependencies {
+	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor:{bootVersion}")
+	implementation("org.springframework.boot:spring-boot-starter-validation:{bootVersion}")
+}

@@ -31,6 +31,7 @@ import org.gradle.api.attributes.AttributeContainer;
 import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.ApplicationPlugin;
@@ -49,6 +50,7 @@ import org.gradle.jvm.toolchain.JavaToolchainSpec;
 
 import org.springframework.boot.gradle.tasks.bundling.BootBuildImage;
 import org.springframework.boot.gradle.tasks.bundling.BootJar;
+import org.springframework.boot.gradle.tasks.context.properties.PreserveSpringConfigurationMetadata;
 import org.springframework.boot.gradle.tasks.run.BootRun;
 import org.springframework.util.StringUtils;
 
@@ -85,6 +87,7 @@ final class JavaPluginAction implements PluginApplicationAction {
 		project.afterEvaluate(this::configureUtf8Encoding);
 		configureParametersCompilerArg(project);
 		configureAdditionalMetadataLocations(project);
+		configurePreserveMetadataTask(project);
 	}
 
 	private void classifyJarTask(Project project) {
@@ -216,6 +219,27 @@ final class JavaPluginAction implements PluginApplicationAction {
 		productionRuntimeClasspath.setCanBeResolved(runtimeClasspath.isCanBeResolved());
 		productionRuntimeClasspath.setCanBeConsumed(runtimeClasspath.isCanBeConsumed());
 		runtimeClasspath.extendsFrom(developmentOnly);
+	}
+
+	private void configurePreserveMetadataTask(Project project) {
+		Provider<Directory> preservedMetadataLocation = project.getLayout().getBuildDirectory()
+				.dir("preserved-spring-configuration-metadata/" + JavaPlugin.COMPILE_JAVA_TASK_NAME);
+		TaskProvider<JavaCompile> compileJava = project.getTasks().named(JavaPlugin.COMPILE_JAVA_TASK_NAME,
+				JavaCompile.class);
+		TaskProvider<PreserveSpringConfigurationMetadata> preserveMetadata = project.getTasks()
+				.register("preserveSpringConfigurationMetadata", PreserveSpringConfigurationMetadata.class, (task) -> {
+					task.getMetadataLocation()
+							.set(compileJava.map(JavaCompile::getDestinationDirectory)
+									.flatMap((destinationDirectory) -> destinationDirectory
+											.file("META-INF/spring-configuration-metadata.json")));
+					task.getOutputDirectory().set(preservedMetadataLocation);
+				});
+		compileJava.configure((task) -> {
+			task.finalizedBy(preserveMetadata);
+			task.getOptions().getCompilerArgs()
+					.add("-Aorg.springframework.boot.configurationprocessor.previousMetadataLocation="
+							+ preservedMetadataLocation.map(project.getRootProject()::relativePath).get());
+		});
 	}
 
 	/**

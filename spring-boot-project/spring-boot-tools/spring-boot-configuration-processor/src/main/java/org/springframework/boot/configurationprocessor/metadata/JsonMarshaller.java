@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ public class JsonMarshaller {
 		String sourceMethod = object.optString("sourceMethod", null);
 		Object defaultValue = readItemValue(object.opt("defaultValue"));
 		ItemDeprecation deprecation = toItemDeprecation(object);
-		return new ItemMetadata(itemType, name, null, type, sourceType, sourceMethod, description, defaultValue,
-				deprecation);
+		return new ItemMetadata(itemType, name, null, type, sourceType, sourceMethod, ItemDescription.of(description),
+				defaultValue, deprecation);
 	}
 
 	private ItemDeprecation toItemDeprecation(JSONObject object) throws Exception {

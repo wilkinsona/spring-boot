@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public final class ItemMetadata implements Comparable<ItemMetadata> {
 
 	private String type;
 
-	private String description;
+	private ItemDescription description;
 
 	private String sourceType;
 
@@ -45,13 +45,13 @@ public final class ItemMetadata implements Comparable<ItemMetadata> {
 	private ItemDeprecation deprecation;
 
 	ItemMetadata(ItemType itemType, String prefix, String name, String type, String sourceType, String sourceMethod,
-			String description, Object defaultValue, ItemDeprecation deprecation) {
+			ItemDescription description, Object defaultValue, ItemDeprecation deprecation) {
 		this.itemType = itemType;
 		this.name = buildName(prefix, name);
 		this.type = type;
 		this.sourceType = sourceType;
 		this.sourceMethod = sourceMethod;
-		this.description = description;
+		this.description = (description != null) ? description : ItemDescription.NONE;
 		this.defaultValue = defaultValue;
 		this.deprecation = deprecation;
 	}
@@ -97,11 +97,11 @@ public final class ItemMetadata implements Comparable<ItemMetadata> {
 		this.type = type;
 	}
 
-	public String getDescription() {
+	public ItemDescription getDescription() {
 		return this.description;
 	}
 
-	public void setDescription(String description) {
+	public void setDescription(ItemDescription description) {
 		this.description = description;
 	}
 
@@ -212,7 +212,7 @@ public final class ItemMetadata implements Comparable<ItemMetadata> {
 	}
 
 	public static ItemMetadata newProperty(String prefix, String name, String type, String sourceType,
-			String sourceMethod, String description, Object defaultValue, ItemDeprecation deprecation) {
+			String sourceMethod, ItemDescription description, Object defaultValue, ItemDeprecation deprecation) {
 		return new ItemMetadata(ItemType.PROPERTY, prefix, name, type, sourceType, sourceMethod, description,
 				defaultValue, deprecation);
 	}

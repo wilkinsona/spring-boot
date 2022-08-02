@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
 import org.springframework.boot.configurationprocessor.fieldvalues.FieldValuesParser;
-import org.springframework.boot.configurationprocessor.fieldvalues.javac.JavaCompilerFieldValuesParser;
 import org.springframework.boot.configurationprocessor.metadata.ItemDeprecation;
 
 /**
@@ -106,7 +105,7 @@ class MetadataGenerationEnvironment {
 		this.typeUtils = new TypeUtils(environment);
 		this.elements = environment.getElementUtils();
 		this.messager = environment.getMessager();
-		this.fieldValuesParser = resolveFieldValuesParser(environment);
+		this.fieldValuesParser = FieldValuesParser.forEnvironment(environment);
 		this.configurationPropertiesAnnotation = configurationPropertiesAnnotation;
 		this.nestedConfigurationPropertyAnnotation = nestedConfigurationPropertyAnnotation;
 		this.deprecatedConfigurationPropertyAnnotation = deprecatedConfigurationPropertyAnnotation;
@@ -115,15 +114,6 @@ class MetadataGenerationEnvironment {
 		this.endpointAnnotations = endpointAnnotations;
 		this.readOperationAnnotation = readOperationAnnotation;
 		this.nameAnnotation = nameAnnotation;
-	}
-
-	private static FieldValuesParser resolveFieldValuesParser(ProcessingEnvironment env) {
-		try {
-			return new JavaCompilerFieldValuesParser(env);
-		}
-		catch (Throwable ex) {
-			return FieldValuesParser.NONE;
-		}
 	}
 
 	TypeUtils getTypeUtils() {

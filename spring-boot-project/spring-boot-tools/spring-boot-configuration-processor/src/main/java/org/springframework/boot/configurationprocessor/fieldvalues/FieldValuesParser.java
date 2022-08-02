@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,17 @@ package org.springframework.boot.configurationprocessor.fieldvalues;
 import java.util.Collections;
 import java.util.Map;
 
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 
-import org.springframework.boot.configurationprocessor.fieldvalues.javac.JavaCompilerFieldValuesParser;
+import org.springframework.boot.configurationprocessor.ast.TreesFieldValuesParser;
 
 /**
  * Parser which can be used to obtain the field values from an {@link TypeElement}.
  *
  * @author Phillip Webb
  * @since 1.1.2
- * @see JavaCompilerFieldValuesParser
+ * @see TreesFieldValuesParser
  */
 @FunctionalInterface
 public interface FieldValuesParser {
@@ -45,5 +46,20 @@ public interface FieldValuesParser {
 	 * @throws Exception if the values cannot be extracted
 	 */
 	Map<String, Object> getFieldValues(TypeElement element) throws Exception;
+
+	/**
+	 * Creates a new {@link FieldValuesParser} for the given {@code environment}.
+	 * @param environment the processing environment
+	 * @return the parser for the environment
+	 * @since 2.6.11
+	 */
+	static FieldValuesParser forEnvironment(ProcessingEnvironment environment) {
+		try {
+			return new TreesFieldValuesParser(environment);
+		}
+		catch (Exception ex) {
+			return NONE;
+		}
+	}
 
 }

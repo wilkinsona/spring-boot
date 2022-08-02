@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationprocessor.fieldvalues.javac;
+package org.springframework.boot.configurationprocessor.ast;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
@@ -24,16 +24,16 @@ import org.springframework.boot.configurationprocessor.fieldvalues.AbstractField
 import org.springframework.boot.configurationprocessor.fieldvalues.FieldValuesParser;
 
 /**
- * Tests for {@link JavaCompilerFieldValuesParser}.
+ * Tests for {@link TreesFieldValuesParser}.
  *
  * @author Phillip Webb
  */
-class JavaCompilerFieldValuesProcessorTests extends AbstractFieldValuesProcessorTests {
+class TreesFieldValuesProcessorTests extends AbstractFieldValuesProcessorTests {
 
 	@Override
 	protected FieldValuesParser createProcessor(ProcessingEnvironment env) {
 		try {
-			return new JavaCompilerFieldValuesParser(env);
+			return new TreesFieldValuesParser(env);
 		}
 		catch (Throwable ex) {
 			throw new TestAbortedException();

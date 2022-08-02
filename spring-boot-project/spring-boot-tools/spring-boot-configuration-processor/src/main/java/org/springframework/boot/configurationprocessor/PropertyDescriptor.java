@@ -25,6 +25,7 @@ import javax.lang.model.type.TypeMirror;
 
 import org.springframework.boot.configurationprocessor.metadata.ConfigurationMetadata;
 import org.springframework.boot.configurationprocessor.metadata.ItemDeprecation;
+import org.springframework.boot.configurationprocessor.metadata.ItemDescription;
 import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
 
 /**
@@ -135,7 +136,7 @@ abstract class PropertyDescriptor<S extends Element> {
 	private ItemMetadata resolveItemMetadataProperty(String prefix, MetadataGenerationEnvironment environment) {
 		String dataType = resolveType(environment);
 		String ownerType = environment.getTypeUtils().getQualifiedName(getOwnerElement());
-		String description = resolveDescription(environment);
+		ItemDescription description = resolveDescription(environment);
 		Object defaultValue = resolveDefaultValue(environment);
 		ItemDeprecation deprecation = resolveItemDeprecation(environment);
 		return ItemMetadata.newProperty(prefix, getName(), dataType, ownerType, null, description, defaultValue,
@@ -155,8 +156,9 @@ abstract class PropertyDescriptor<S extends Element> {
 		return environment.getTypeUtils().getType(getOwnerElement(), getType());
 	}
 
-	private String resolveDescription(MetadataGenerationEnvironment environment) {
-		return environment.getTypeUtils().getJavaDoc(getField());
+	private ItemDescription resolveDescription(MetadataGenerationEnvironment environment) {
+		String javadoc = environment.getTypeUtils().getJavadoc(getField());
+		return (javadoc != null) ? ItemDescription.of(javadoc) : ItemDescription.UNAVAILABLE;
 	}
 
 	private boolean isCyclePresent(Element returnType, Element element) {

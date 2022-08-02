@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationprocessor.fieldvalues.javac;
+package org.springframework.boot.configurationprocessor.ast;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

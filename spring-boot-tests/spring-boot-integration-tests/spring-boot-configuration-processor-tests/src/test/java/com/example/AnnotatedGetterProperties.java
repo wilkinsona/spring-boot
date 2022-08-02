@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sample;
+package com.example;
 
 import javax.validation.Valid;
 
@@ -27,7 +27,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 1.5.10
  */
 @ConfigurationProperties("annotated")
-public class AnnotatedSample {
+public class AnnotatedGetterProperties {
 
 	/**
 	 * A valid name.

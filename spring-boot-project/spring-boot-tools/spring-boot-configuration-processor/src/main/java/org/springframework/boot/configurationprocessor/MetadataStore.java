@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class MetadataStore {
 
 	public ConfigurationMetadata readMetadata() {
 		try {
-			return readMetadata(getMetadataResource().openInputStream());
+			return readMetadata(getMetadataStream());
 		}
 		catch (IOException ex) {
 			return null;
@@ -90,6 +90,20 @@ public class MetadataStore {
 		finally {
 			in.close();
 		}
+	}
+
+	private InputStream getMetadataStream() throws IOException {
+		FileObject metadata = getMetadataResource();
+		File metadataFile = new File(metadata.toUri());
+		if (metadataFile.exists()) {
+			return new FileInputStream(metadataFile);
+		}
+		String previousMetadataLocation = this.environment.getOptions()
+				.get(ConfigurationMetadataAnnotationProcessor.PREVIOUS_METADATA_LOCATION_OPTION);
+		if (previousMetadataLocation != null) {
+			metadataFile = new File(previousMetadataLocation, "spring-configuration-metadata.json");
+		}
+		return new FileInputStream(metadataFile);
 	}
 
 	private FileObject getMetadataResource() throws IOException {

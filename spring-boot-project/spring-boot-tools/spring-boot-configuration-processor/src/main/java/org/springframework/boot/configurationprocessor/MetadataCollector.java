@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.springframework.boot.configurationprocessor;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -47,7 +48,7 @@ public class MetadataCollector {
 
 	private final TypeUtils typeUtils;
 
-	private final Set<String> processedSourceTypes = new HashSet<>();
+	private final Map<String, ElementOrigin> processedSourceTypes = new HashMap<>();
 
 	/**
 	 * Creates a new {@code MetadataProcessor} instance.
@@ -68,12 +69,17 @@ public class MetadataCollector {
 
 	private void markAsProcessed(Element element) {
 		if (element instanceof TypeElement) {
-			this.processedSourceTypes.add(this.typeUtils.getQualifiedName(element));
+			this.processedSourceTypes.put(this.typeUtils.getQualifiedName(element),
+					this.typeUtils.getElementOrigin(element));
 		}
 	}
 
 	public void add(ItemMetadata metadata) {
 		this.metadataItems.add(metadata);
+	}
+
+	public ConfigurationMetadata getPreviousMetadata() {
+		return this.previousMetadata;
 	}
 
 	public boolean hasSimilarGroup(ItemMetadata metadata) {
@@ -100,6 +106,9 @@ public class MetadataCollector {
 				if (shouldBeMerged(item)) {
 					metadata.addIfMissing(item);
 				}
+				else if (ElementOrigin.CLASS.equals(this.processedSourceTypes.get(item.getSourceType()))) {
+					metadata.updateDescription(item);
+				}
 			}
 		}
 		return metadata;
@@ -115,7 +124,7 @@ public class MetadataCollector {
 	}
 
 	private boolean processedInCurrentBuild(String sourceType) {
-		return this.processedSourceTypes.contains(sourceType);
+		return this.processedSourceTypes.containsKey(sourceType);
 	}
 
 }

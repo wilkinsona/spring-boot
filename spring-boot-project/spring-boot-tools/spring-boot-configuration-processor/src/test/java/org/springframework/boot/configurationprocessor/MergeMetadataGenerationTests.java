@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.springframework.boot.configurationprocessor.json.JSONArray;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.boot.configurationprocessor.metadata.ConfigurationMetadata;
 import org.springframework.boot.configurationprocessor.metadata.ItemDeprecation;
+import org.springframework.boot.configurationprocessor.metadata.ItemDescription;
 import org.springframework.boot.configurationprocessor.metadata.ItemHint;
 import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
 import org.springframework.boot.configurationprocessor.metadata.Metadata;
@@ -94,19 +95,19 @@ class MergeMetadataGenerationTests extends AbstractMetadataGenerationTests {
 		assertThat(matchingProperty).isNotNull();
 		assertThat(matchingProperty.getDefaultValue()).isEqualTo(true);
 		assertThat(matchingProperty.getSourceType()).isEqualTo(SimpleProperties.class.getName());
-		assertThat(matchingProperty.getDescription()).isEqualTo("A simple flag.");
+		assertThat(matchingProperty.getDescription().getContent()).isEqualTo("A simple flag.");
 		ItemMetadata nonMatchingProperty = items.stream()
 				.filter((item) -> item.getType().equals(String.class.getName())).findFirst().orElse(null);
 		assertThat(nonMatchingProperty).isNotNull();
 		assertThat(nonMatchingProperty.getDefaultValue()).isEqualTo("hello");
 		assertThat(nonMatchingProperty.getSourceType()).isEqualTo(SimpleConflictingProperties.class.getName());
-		assertThat(nonMatchingProperty.getDescription()).isNull();
+		assertThat(nonMatchingProperty.getDescription().getContent()).isNull();
 	}
 
 	@Test
 	void mergeExistingPropertyDescription() throws Exception {
-		ItemMetadata property = ItemMetadata.newProperty("simple", "comparator", null, null, null, "A nice comparator.",
-				null, null);
+		ItemMetadata property = ItemMetadata.newProperty("simple", "comparator", null, null, null,
+				ItemDescription.of("A nice comparator."), null, null);
 		writeAdditionalMetadata(property);
 		ConfigurationMetadata metadata = compile(SimpleProperties.class);
 		assertThat(metadata).has(Metadata.withProperty("simple.comparator", "java.util.Comparator<?>")

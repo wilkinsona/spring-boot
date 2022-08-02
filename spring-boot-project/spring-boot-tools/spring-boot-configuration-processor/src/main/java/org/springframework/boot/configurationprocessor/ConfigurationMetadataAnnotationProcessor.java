@@ -47,6 +47,7 @@ import javax.tools.Diagnostic.Kind;
 
 import org.springframework.boot.configurationprocessor.metadata.ConfigurationMetadata;
 import org.springframework.boot.configurationprocessor.metadata.InvalidConfigurationMetadataException;
+import org.springframework.boot.configurationprocessor.metadata.ItemDescription;
 import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
 
 /**
@@ -70,6 +71,8 @@ import org.springframework.boot.configurationprocessor.metadata.ItemMetadata;
 public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor {
 
 	static final String ADDITIONAL_METADATA_LOCATIONS_OPTION = "org.springframework.boot.configurationprocessor.additionalMetadataLocations";
+
+	static final String PREVIOUS_METADATA_LOCATION_OPTION = "org.springframework.boot.configurationprocessor.previousMetadataLocation";
 
 	static final String CONFIGURATION_PROPERTIES_ANNOTATION = "org.springframework.boot.context.properties.ConfigurationProperties";
 
@@ -97,8 +100,8 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 
 	static final String NAME_ANNOTATION = "org.springframework.boot.context.properties.bind.Name";
 
-	private static final Set<String> SUPPORTED_OPTIONS = Collections
-			.unmodifiableSet(Collections.singleton(ADDITIONAL_METADATA_LOCATIONS_OPTION));
+	private static final Set<String> SUPPORTED_OPTIONS = Collections.unmodifiableSet(
+			new HashSet<>(Arrays.asList(ADDITIONAL_METADATA_LOCATIONS_OPTION, PREVIOUS_METADATA_LOCATION_OPTION)));
 
 	private MetadataStore metadataStore;
 
@@ -284,11 +287,12 @@ public class ConfigurationMetadataAnnotationProcessor extends AbstractProcessor 
 		String type = this.metadataEnv.getTypeUtils().getQualifiedName(element);
 		this.metadataCollector.add(ItemMetadata.newGroup(endpointKey, type, type, null));
 		this.metadataCollector.add(ItemMetadata.newProperty(endpointKey, "enabled", Boolean.class.getName(), type, null,
-				String.format("Whether to enable the %s endpoint.", endpointId),
+				ItemDescription.of(String.format("Whether to enable the %s endpoint.", endpointId)),
 				(enabledByDefault != null) ? enabledByDefault : true, null));
 		if (hasMainReadOperation(element)) {
-			this.metadataCollector.add(ItemMetadata.newProperty(endpointKey, "cache.time-to-live",
-					Duration.class.getName(), type, null, "Maximum time that a response can be cached.", "0ms", null));
+			this.metadataCollector
+					.add(ItemMetadata.newProperty(endpointKey, "cache.time-to-live", Duration.class.getName(), type,
+							null, ItemDescription.of("Maximum time that a response can be cached."), "0ms", null));
 		}
 	}
 

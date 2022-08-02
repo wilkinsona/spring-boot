@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ class JsonMarshallerTests {
 	void marshallAndUnmarshal() throws Exception {
 		ConfigurationMetadata metadata = new ConfigurationMetadata();
 		metadata.add(ItemMetadata.newProperty("a", "b", StringBuffer.class.getName(), InputStream.class.getName(),
-				"sourceMethod", "desc", "x", new ItemDeprecation("Deprecation comment", "b.c.d")));
+				"sourceMethod", ItemDescription.of("desc"), "x", new ItemDeprecation("Deprecation comment", "b.c.d")));
 		metadata.add(ItemMetadata.newProperty("b.c.d", null, null, null, null, null, null, null));
 		metadata.add(ItemMetadata.newProperty("c", null, null, null, null, null, 123, null));
 		metadata.add(ItemMetadata.newProperty("d", null, null, null, null, null, true, null));

@@ -5,13 +5,25 @@ plugins {
 
 description = "Spring Boot Configuration Processor Tests"
 
-dependencies {
-	annotationProcessor(project(":spring-boot-project:spring-boot-tools:spring-boot-configuration-processor"))
+configurations {
+	mavenRepository
+}
 
-	implementation(enforcedPlatform(project(":spring-boot-project:spring-boot-dependencies")))
-	implementation(project(":spring-boot-project:spring-boot"))
-	implementation("jakarta.validation:jakarta.validation-api")
+dependencies {
+	mavenRepository project(path: ":spring-boot-project:spring-boot-tools:spring-boot-gradle-plugin", configuration: "mavenRepository")
+	mavenRepository project(path: ":spring-boot-project:spring-boot-tools:spring-boot-configuration-processor", configuration: "mavenRepository")
+	mavenRepository project(path: ":spring-boot-project:spring-boot-starters:spring-boot-starter-validation", configuration: "mavenRepository")
 
 	testImplementation(project(":spring-boot-project:spring-boot-starters:spring-boot-starter-test"))
+	testImplementation(project(":spring-boot-project:spring-boot-starters:spring-boot-starter-validation"))
 	testImplementation(project(":spring-boot-project:spring-boot-tools:spring-boot-configuration-metadata"))
+	testImplementation(project(":spring-boot-project:spring-boot-tools:spring-boot-gradle-test-support"))
+	testImplementation(gradleTestKit())
+	testImplementation("org.assertj:assertj-core")
+	testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+task syncMavenRepository(type: Sync) {
+	from configurations.mavenRepository
+	into "${buildDir}/maven-repository"
 }

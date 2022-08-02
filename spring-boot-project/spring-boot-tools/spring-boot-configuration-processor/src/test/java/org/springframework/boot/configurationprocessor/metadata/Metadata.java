@@ -152,7 +152,8 @@ public final class Metadata {
 			if (this.defaultValue == null && itemMetadata.getDefaultValue() != null) {
 				return false;
 			}
-			if (this.description != null && !this.description.equals(itemMetadata.getDescription())) {
+			if (this.description != null && !this.description.equals(
+					(itemMetadata.getDescription() != null) ? itemMetadata.getDescription().getContent() : null)) {
 				return false;
 			}
 			if (this.deprecation == null && itemMetadata.getDeprecation() != null) {
