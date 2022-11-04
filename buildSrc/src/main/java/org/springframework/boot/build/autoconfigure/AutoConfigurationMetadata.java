@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,23 @@ import java.io.Reader;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileCollection;
+import org.gradle.api.file.RegularFile;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.Provider;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.language.jvm.tasks.ProcessResources;
 
 import org.springframework.asm.ClassReader;
 import org.springframework.asm.Opcodes;
@@ -48,46 +57,64 @@ import org.springframework.util.StringUtils;
  */
 public class AutoConfigurationMetadata extends DefaultTask {
 
-	private SourceSet sourceSet;
+	private final DirectoryProperty resourcesDirectory;
 
-	private File outputFile;
+	private final String moduleName;
+
+	private final RegularFileProperty outputFile;
+
+	private FileCollection classesDirectories;
 
 	public AutoConfigurationMetadata() {
-		getInputs()
-				.file((Callable<File>) () -> new File(this.sourceSet.getOutput().getResourcesDir(),
-						"META-INF/spring.factories"))
-				.withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("spring.factories");
-		dependsOn((Callable<String>) () -> this.sourceSet.getProcessResourcesTaskName());
+		this.resourcesDirectory = getProject().getObjects().directoryProperty();
+		this.outputFile = getProject().getObjects().fileProperty();
+		this.moduleName = getProject().getName();
 		getProject().getConfigurations()
 				.maybeCreate(AutoConfigurationPlugin.AUTO_CONFIGURATION_METADATA_CONFIGURATION_NAME);
 	}
 
+	@Internal
+	public DirectoryProperty getResourcesDirectory() {
+		return this.resourcesDirectory;
+	}
+
+	@InputFile
+	@PathSensitive(PathSensitivity.RELATIVE)
+	Provider<RegularFile> getSpringFactories() {
+		return this.resourcesDirectory.map((resources) -> resources.file("META-INF/spring.factories"));
+	}
+
+	@InputFiles
+	@PathSensitive(PathSensitivity.RELATIVE)
+	FileCollection getClassesDirectories() {
+		return this.classesDirectories;
+	}
+
 	public void setSourceSet(SourceSet sourceSet) {
-		this.sourceSet = sourceSet;
+		this.resourcesDirectory.fileProvider(
+				getProject().getTasks().named(sourceSet.getProcessResourcesTaskName(), ProcessResources.class)
+						.map(ProcessResources::getDestinationDir));
+		this.classesDirectories = sourceSet.getOutput().getClassesDirs();
 	}
 
 	@OutputFile
-	public File getOutputFile() {
+	public RegularFileProperty getOutputFile() {
 		return this.outputFile;
-	}
-
-	public void setOutputFile(File outputFile) {
-		this.outputFile = outputFile;
 	}
 
 	@TaskAction
 	void documentAutoConfiguration() throws IOException {
 		Properties autoConfiguration = readAutoConfiguration();
-		getOutputFile().getParentFile().mkdirs();
-		try (FileWriter writer = new FileWriter(getOutputFile())) {
+		File outputFile = this.outputFile.get().getAsFile();
+		outputFile.getParentFile().mkdirs();
+		try (FileWriter writer = new FileWriter(outputFile)) {
 			autoConfiguration.store(writer, null);
 		}
 	}
 
 	private Properties readAutoConfiguration() throws IOException {
 		Properties autoConfiguration = CollectionFactory.createSortedProperties(true);
-		Properties springFactories = readSpringFactories(
-				new File(this.sourceSet.getOutput().getResourcesDir(), "META-INF/spring.factories"));
+		Properties springFactories = readSpringFactories(this.getSpringFactories().get().getAsFile());
 		String enableAutoConfiguration = springFactories
 				.getProperty("org.springframework.boot.autoconfigure.EnableAutoConfiguration");
 		Set<String> classNames = StringUtils.commaDelimitedListToSet(enableAutoConfiguration);
@@ -105,13 +132,13 @@ public class AutoConfigurationMetadata extends DefaultTask {
 			}
 		}
 		autoConfiguration.setProperty("autoConfigurationClassNames", String.join(",", publicClassNames));
-		autoConfiguration.setProperty("module", getProject().getName());
+		autoConfiguration.setProperty("module", this.moduleName);
 		return autoConfiguration;
 	}
 
 	private File findClassFile(String className) {
 		String classFileName = className.replace(".", "/") + ".class";
-		for (File classesDir : this.sourceSet.getOutput().getClassesDirs()) {
+		for (File classesDir : this.classesDirectories) {
 			File classFile = new File(classesDir, classFileName);
 			if (classFile.isFile()) {
 				return classFile;

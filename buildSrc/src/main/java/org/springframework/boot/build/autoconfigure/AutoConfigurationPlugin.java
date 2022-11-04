@@ -18,7 +18,6 @@ package org.springframework.boot.build.autoconfigure;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.concurrent.Callable;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -39,7 +38,8 @@ import org.springframework.boot.build.context.properties.ConfigurationProperties
  * <li>Applying the {@link ConfigurationPropertiesPlugin}.
  * <li>Adding a dependency on the auto-configuration annotation processor.
  * <li>Defining a task that produces metadata describing the auto-configuration. The
- * metadata is made available as an artifact in the
+ * metadata is made available as an artifact in the {@code autoConfigurationMetadata}
+ * configuration
  * </ul>
  *
  * @author Andy Wilkinson
@@ -66,13 +66,11 @@ public class AutoConfigurationPlugin implements Plugin<Project> {
 					.add(project.getDependencies().project(Collections.singletonMap("path",
 							":spring-boot-project:spring-boot-tools:spring-boot-configuration-processor")));
 			project.getTasks().create("autoConfigurationMetadata", AutoConfigurationMetadata.class, (task) -> {
-				SourceSet main = project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets()
-						.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
-				task.setSourceSet(main);
-				task.dependsOn(main.getClassesTaskName());
-				task.setOutputFile(new File(project.getBuildDir(), "auto-configuration-metadata.properties"));
+				task.setSourceSet(project.getExtensions().getByType(JavaPluginExtension.class).getSourceSets()
+						.getByName(SourceSet.MAIN_SOURCE_SET_NAME));
+				task.getOutputFile().set(new File(project.getBuildDir(), "auto-configuration-metadata.properties"));
 				project.getArtifacts().add(AutoConfigurationPlugin.AUTO_CONFIGURATION_METADATA_CONFIGURATION_NAME,
-						project.provider((Callable<File>) task::getOutputFile), (artifact) -> artifact.builtBy(task));
+						task.getOutputFile(), (artifact) -> artifact.builtBy(task));
 			});
 		});
 	}

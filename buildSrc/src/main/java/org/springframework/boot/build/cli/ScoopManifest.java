@@ -28,10 +28,12 @@ import org.gradle.api.tasks.TaskAction;
  */
 public class ScoopManifest extends AbstractPackageManagerDefinitionTask {
 
+	private final String version = getProject().getVersion().toString();
+
 	@TaskAction
 	void createManifest() {
-		String version = getProject().getVersion().toString();
-		createDescriptor(Collections.singletonMap("scoopVersion", version.substring(0, version.lastIndexOf('.'))));
+		createDescriptor(
+				Collections.singletonMap("scoopVersion", this.version.substring(0, this.version.lastIndexOf('.'))));
 	}
 
 }

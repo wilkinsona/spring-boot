@@ -59,9 +59,13 @@ import org.springframework.util.StringUtils;
  */
 public class UpgradeBom extends DefaultTask {
 
-	private Set<String> repositoryUrls;
-
 	private final BomExtension bom;
+
+	private final Path buildFile;
+
+	private final Path gradleProperties;
+
+	private final Set<String> repositoryUrls;
 
 	private String milestone;
 
@@ -77,6 +81,8 @@ public class UpgradeBom extends DefaultTask {
 				this.repositoryUrls.add(repositoryUrl);
 			}
 		});
+		this.buildFile = getProject().getBuildFile().toPath();
+		this.gradleProperties = new File(getProject().getRootProject().getProjectDir(), "gradle.properties").toPath();
 	}
 
 	@Option(option = "milestone", description = "Milestone to which dependency upgrade issues should be assigned")
@@ -118,9 +124,8 @@ public class UpgradeBom extends DefaultTask {
 		List<Upgrade> upgrades = new InteractiveUpgradeResolver(new MavenMetadataVersionResolver(this.repositoryUrls),
 				this.bom.getUpgrade().getPolicy(), getServices().get(UserInputHandler.class))
 						.resolveUpgrades(matchingLibraries(this.libraries), this.bom.getLibraries());
-		Path buildFile = getProject().getBuildFile().toPath();
-		Path gradleProperties = new File(getProject().getRootProject().getProjectDir(), "gradle.properties").toPath();
-		UpgradeApplicator upgradeApplicator = new UpgradeApplicator(buildFile, gradleProperties);
+
+		UpgradeApplicator upgradeApplicator = new UpgradeApplicator(this.buildFile, this.gradleProperties);
 		for (Upgrade upgrade : upgrades) {
 			String title = "Upgrade to " + upgrade.getLibrary().getName() + " " + upgrade.getVersion();
 			Issue existingUpgradeIssue = findExistingUpgradeIssue(existingUpgradeIssues, upgrade);

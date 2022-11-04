@@ -33,6 +33,8 @@ import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin;
 
+import org.springframework.util.FileSystemUtils;
+
 /**
  * A plugin to make a project's {@code deployment} publication available as a Maven
  * repository. The repository can be consumed by depending upon the project using the
@@ -103,7 +105,7 @@ public class MavenRepositoryPlugin implements Plugin<Project> {
 
 		@Override
 		public void execute(Task task) {
-			task.getProject().delete(this.location);
+			FileSystemUtils.deleteRecursively(this.location);
 		}
 
 	}
