@@ -24,8 +24,8 @@ import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 
 import jakarta.servlet.ServletContainerInitializer;
+import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 import org.springframework.util.ClassUtils;
 
@@ -98,7 +98,8 @@ class JasperInitializer extends AbstractLifeCycle {
 
 	private void setExtendedListenerTypes(boolean extended) {
 		try {
-			this.context.getServletContext().setExtendedListenerTypes(extended);
+			// TODO What's the Jetty 12 replacement for this?
+			// this.context.getServletContext().setExtendedListenerTypes(extended);
 		}
 		catch (NoSuchMethodError ex) {
 			// Not available on Jetty 8
