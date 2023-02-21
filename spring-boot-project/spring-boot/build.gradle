@@ -55,6 +55,7 @@ dependencies {
 	optional("org.assertj:assertj-core")
 	optional("org.apache.groovy:groovy")
 	optional("org.apache.groovy:groovy-xml")
+	optional("org.codehaus.janino:janino:3.1.9")
 	optional("org.eclipse.jetty:jetty-servlets")
 	optional("org.eclipse.jetty:jetty-util")
 	optional("org.eclipse.jetty:jetty-webapp") {

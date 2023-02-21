@@ -44,6 +44,7 @@ import ch.qos.logback.core.joran.util.beans.BeanDescription;
 import ch.qos.logback.core.model.ComponentModel;
 import ch.qos.logback.core.model.Model;
 import ch.qos.logback.core.model.ModelUtil;
+import ch.qos.logback.core.model.conditional.IfModel;
 import ch.qos.logback.core.model.processor.DefaultProcessor;
 import ch.qos.logback.core.model.processor.ModelInterpretationContext;
 import ch.qos.logback.core.spi.ContextAware;
@@ -97,6 +98,10 @@ class SpringBootJoranConfigurator extends JoranConfigurator {
 				(handlerContext, handlerMic) -> new SpringProfileModelHandler(this.context,
 						this.initializationContext.getEnvironment()));
 		super.addModelHandlerAssociations(defaultProcessor);
+		if (NativeDetector.inNativeImage() || isAotProcessingInProgress()) {
+			defaultProcessor.addHandler(IfModel.class,
+					(handlerContext, handlerMic) -> new AotIfModelHandler(this.context));
+		}
 	}
 
 	@Override
@@ -147,6 +152,12 @@ class SpringBootJoranConfigurator extends JoranConfigurator {
 				BeanFactoryInitializationCode beanFactoryInitializationCode) {
 			this.modelWriter.writeTo(generationContext);
 			this.patternRules.save(generationContext);
+			AotIfModelHandler.compiledConditions().forEach((source, condition) -> {
+				generationContext.getGeneratedFiles().addClassFile(condition.className().replace(".", "/") + ".class",
+						new ByteArrayResource(condition.bytecode()));
+				generationContext.getRuntimeHints().reflection().registerType(TypeReference.of(condition.className()),
+						MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS);
+			});
 		}
 
 	}
