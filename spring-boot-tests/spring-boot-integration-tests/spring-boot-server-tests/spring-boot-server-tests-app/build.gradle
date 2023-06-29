@@ -24,6 +24,7 @@ repositories {
 			excludeGroup "org.springframework.boot"
 		}
 	}
+	maven { url "https://oss.sonatype.org/content/repositories/jetty-snapshots/" }
 }
 
 configurations {

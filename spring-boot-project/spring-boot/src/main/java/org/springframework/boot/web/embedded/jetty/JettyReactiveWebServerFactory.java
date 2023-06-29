@@ -184,7 +184,7 @@ public class JettyReactiveWebServerFactory extends AbstractReactiveWebServerFact
 		server.setStopTimeout(0);
 		ServletHolder servletHolder = new ServletHolder(servlet);
 		servletHolder.setAsyncSupported(true);
-		ServletContextHandler contextHandler = new ServletContextHandler(server, "/", false, false);
+		ServletContextHandler contextHandler = new ServletContextHandler("/", false, false);
 		contextHandler.addServlet(servletHolder, "/");
 		server.setHandler(addHandlerWrappers(contextHandler));
 		JettyReactiveWebServerFactory.logger.info("Server initialized with port: " + port);
