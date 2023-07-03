@@ -10,6 +10,7 @@ plugins {
 apply plugin: "io.spring.dependency-management"
 
 repositories {
+    mavenLocal()
 	maven { url "file:${rootDir}/../test-repository"}
 	mavenCentral()
 	maven { 
@@ -33,12 +34,12 @@ configurations {
 	jetty {
 		extendsFrom(app)
 	}
-	tomcat {
-		extendsFrom(app)
-	}
-	undertow {
-		extendsFrom(app)
-	}
+//	tomcat {
+//		extendsFrom(app)
+//	}
+//	undertow {
+//		extendsFrom(app)
+//	}
 }
 
 tasks.register("resourcesJar", Jar) { jar -> 
@@ -67,8 +68,8 @@ dependencies {
 	app(files(sourceSets.main.output))
 	app("org.springframework:spring-web")
 	jetty("org.springframework.boot:spring-boot-starter-jetty")
-	tomcat("org.springframework.boot:spring-boot-starter-tomcat")
-	undertow("org.springframework.boot:spring-boot-starter-undertow")
+//	tomcat("org.springframework.boot:spring-boot-starter-tomcat")
+//	undertow("org.springframework.boot:spring-boot-starter-undertow")
 }
 
 def boolean isWindows() {

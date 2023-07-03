@@ -47,11 +47,11 @@ task buildApps(type: GradleBuild) {
 	startParameter.buildCacheEnabled = false
 	tasks = [
 		"jettyBootJar",
-		"jettyBootWar",
-		"tomcatBootJar",
+		"jettyBootWar"
+		/* "tomcatBootJar",
 		"tomcatBootWar",
 		"undertowBootJar",
-		"undertowBootWar"
+		"undertowBootWar"*/
 	]
 }
 

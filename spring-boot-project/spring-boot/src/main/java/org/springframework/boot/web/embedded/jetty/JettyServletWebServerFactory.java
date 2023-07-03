@@ -209,7 +209,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 	private AbstractConnector createConnector(InetSocketAddress address, Server server) {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
 		httpConfiguration.setSendServerVersion(false);
-		httpConfiguration.setIdleTimeout(30000);
+		httpConfiguration.setIdleTimeout(3000000);
 		List<ConnectionFactory> connectionFactories = new ArrayList<>();
 		connectionFactories.add(new HttpConnectionFactory(httpConfiguration));
 		if (getHttp2() != null && getHttp2().isEnabled()) {
@@ -336,13 +336,13 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		if ("file".equals(url.getProtocol())) {
 			File file = new File(url.toURI());
 			if (file.isFile()) {
-				return resourceFactory.newResource("jar:" + url + "!/META-INF/resources");
+				return resourceFactory.newResource("jar:" + url + "!/META-INF/resources/");
 			}
 			if (file.isDirectory()) {
-				return resourceFactory.newResource(url).resolve("META-INF/resources");
+				return resourceFactory.newResource(url).resolve("META-INF/resources/");
 			}
 		}
-		return urlResourceFactory.newResource(new URL(url + "META-INF/resources"));
+		return urlResourceFactory.newResource(new URL(url + "META-INF/resources/"));
 	}
 
 	/**
