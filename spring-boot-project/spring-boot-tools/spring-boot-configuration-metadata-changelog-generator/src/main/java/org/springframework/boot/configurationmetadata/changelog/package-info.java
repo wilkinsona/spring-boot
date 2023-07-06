@@ -14,21 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.autoconfigure.groovy.template;
-
-import org.springframework.aot.hint.RuntimeHintsRegistrar;
-import org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAvailabilityProvider.GroovyTemplateAvailabilityProperties;
-import org.springframework.boot.context.properties.bind.BindableRuntimeHintsRegistrar;
-
 /**
- * {@link RuntimeHintsRegistrar} for Groovy Template support.
- *
- * @author Moritz Halbritter
+ * Spring Boot configuration metadata changelog generator.
  */
-class GroovyTemplateRuntimeHints extends BindableRuntimeHintsRegistrar {
-
-	GroovyTemplateRuntimeHints() {
-		super(GroovyTemplateAvailabilityProperties.class);
-	}
-
-}
+package org.springframework.boot.configurationmetadata.changelog;

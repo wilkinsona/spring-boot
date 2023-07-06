@@ -24,6 +24,7 @@ repositories {
 			excludeGroup "org.springframework.boot"
 		}
 	}
+	maven { url "https://oss.sonatype.org/content/repositories/jetty-snapshots/" }
 }
 
 configurations {
@@ -54,7 +55,7 @@ tasks.register("resourcesJar", Jar) { jar ->
 			rename (".*", 'nested-reserved-!#\\$%&()*+,:=?@[]-meta-inf-resource.txt')
 		}
 	}
-	classifier = 'resources'
+	archiveClassifier = 'resources'
 }
 
 dependencies {
@@ -80,7 +81,7 @@ def boolean isWindows() {
 		task.dependsOn resourcesJar
 		task.mainClass = "com.example.ResourceHandlingApplication"
 		task.classpath = configurations.getByName(webServer)
-		task.classifier = webServer
+		task.archiveClassifier = webServer
 		task.targetJavaVersion = project.getTargetCompatibility()
 	}
 	tasks.register("${webServer}BootJar", BootJar, configurer)

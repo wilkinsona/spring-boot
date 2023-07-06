@@ -92,6 +92,7 @@ abstract class AbstractApplicationLauncher implements BeforeEachCallback {
 				+ this.application.getContainer() + "." + this.application.getPackaging());
 		List<String> arguments = new ArrayList<>();
 		arguments.add(System.getProperty("java.home") + "/bin/java");
+		// arguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000");
 		arguments.addAll(getArguments(archive, serverPortFile));
 		arguments.add("--server.servlet.register-default-servlet=true");
 		ProcessBuilder processBuilder = new ProcessBuilder(StringUtils.toStringArray(arguments));

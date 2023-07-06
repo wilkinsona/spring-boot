@@ -541,6 +541,11 @@ class JettyServletWebServerFactoryTests extends AbstractServletWebServerFactoryT
 		assertThat(connectionLimit.getMaxConnections()).isOne();
 	}
 
+	@Override
+	protected String startedLogMessage() {
+		return ((JettyWebServer) this.webServer).getStartedLogMessage();
+	}
+
 	private WebAppContext findWebAppContext(JettyWebServer webServer) {
 		return findWebAppContext(webServer.getServer().getHandler());
 	}

@@ -316,7 +316,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 			Resource rootResource = (docBase.isDirectory()
 					? resourceFactory.newResource(docBase.getCanonicalFile().toURI())
 					: resourceFactory.newJarFileResource(docBase.toURI()));
-			resources.add((root != null) ? new LoaderHidingResource(rootResource) : rootResource);
+			resources.add((root != null) ? new LoaderHidingResource(rootResource, rootResource) : rootResource);
 			URLResourceFactory urlResourceFactory = new URLResourceFactory();
 			for (URL resourceJarUrl : getUrlsOfJarsWithMetaInfResources()) {
 				Resource resource = createResource(resourceJarUrl, resourceFactory, urlResourceFactory);
@@ -342,7 +342,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 				return resourceFactory.newResource(url).resolve("META-INF/resources/");
 			}
 		}
-		return urlResourceFactory.newResource(new URL(url + "META-INF/resources/"));
+		return urlResourceFactory.newResource(url + "META-INF/resources/");
 	}
 
 	/**
@@ -581,9 +581,12 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 
 		private static final String LOADER_RESOURCE_PATH_PREFIX = "/org/springframework/boot/";
 
+		private final Resource base;
+
 		private final Resource delegate;
 
-		private LoaderHidingResource(Resource delegate) {
+		private LoaderHidingResource(Resource base, Resource delegate) {
+			this.base = base;
 			this.delegate = delegate;
 		}
 
@@ -678,7 +681,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		}
 
 		private boolean nonLoaderResource(Resource resource) {
-			Path prefix = resource.getPath().resolve(LOADER_RESOURCE_PATH_PREFIX);
+			Path prefix = this.base.getPath().resolve(Path.of("org", "springframework", "boot"));
 			return !resource.getPath().startsWith(prefix);
 		}
 
@@ -688,7 +691,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 				return null;
 			}
 			Resource resolved = this.delegate.resolve(subUriPath);
-			return (resolved != null) ? new LoaderHidingResource(resolved) : null;
+			return (resolved != null) ? new LoaderHidingResource(this.base, resolved) : null;
 		}
 
 		@Override
