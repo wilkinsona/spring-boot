@@ -18,7 +18,6 @@ package org.springframework.boot.web.embedded.jetty;
 
 import org.eclipse.jetty.ee10.servlet.ServletHandler;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
-import org.slf4j.LoggerFactory;
 
 /**
  * Jetty {@link WebAppContext} used by {@link JettyWebServer} to support deferred
@@ -41,7 +40,6 @@ class JettyEmbeddedWebAppContext extends WebAppContext {
 
 		@Override
 		public void initialize() throws Exception {
-			LoggerFactory.getLogger(JettyEmbeddedWebAppContext.class).info("This is here");
 		}
 
 		void deferredInitialize() throws Exception {

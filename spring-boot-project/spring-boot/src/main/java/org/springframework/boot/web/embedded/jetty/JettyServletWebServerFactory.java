@@ -209,7 +209,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 	private AbstractConnector createConnector(InetSocketAddress address, Server server) {
 		HttpConfiguration httpConfiguration = new HttpConfiguration();
 		httpConfiguration.setSendServerVersion(false);
-		httpConfiguration.setIdleTimeout(3000000);
+		httpConfiguration.setIdleTimeout(30000);
 		List<ConnectionFactory> connectionFactories = new ArrayList<>();
 		connectionFactories.add(new HttpConnectionFactory(httpConfiguration));
 		if (getHttp2() != null && getHttp2().isEnabled()) {
