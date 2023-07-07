@@ -72,8 +72,7 @@ public class ServletContextInitializerConfiguration extends AbstractConfiguratio
 
 	private void setExtendedListenerTypes(WebAppContext context, boolean extended) {
 		try {
-			// TODO extended listener types with Jetty 12
-			// context.getServletContext().setExtendedListenerTypes(extended);
+			context.getContext().setExtendedListenerTypes(extended);
 		}
 		catch (NoSuchMethodError ex) {
 			// Not available on Jetty 8

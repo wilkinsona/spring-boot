@@ -69,9 +69,7 @@ final class JettyHandlerWrappers {
 			if (!headers.contains(SERVER_HEADER)) {
 				headers.add(SERVER_HEADER, this.value);
 			}
-			callback.succeeded();
-			return true;
-
+			return super.handle(request, response, callback);
 		}
 
 	}

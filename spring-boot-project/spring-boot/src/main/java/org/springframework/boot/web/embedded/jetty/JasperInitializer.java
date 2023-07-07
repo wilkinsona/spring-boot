@@ -98,8 +98,7 @@ class JasperInitializer extends AbstractLifeCycle {
 
 	private void setExtendedListenerTypes(boolean extended) {
 		try {
-			// TODO What's the Jetty 12 replacement for this?
-			// this.context.getServletContext().setExtendedListenerTypes(extended);
+			this.context.getContext().setExtendedListenerTypes(extended);
 		}
 		catch (NoSuchMethodError ex) {
 			// Not available on Jetty 8

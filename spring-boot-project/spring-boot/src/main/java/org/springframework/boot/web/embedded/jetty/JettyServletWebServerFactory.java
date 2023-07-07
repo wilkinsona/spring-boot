@@ -311,7 +311,7 @@ public class JettyServletWebServerFactory extends AbstractServletWebServerFactor
 		File root = getValidDocumentRoot();
 		File docBase = (root != null) ? root : createTempDir("jetty-docbase");
 		try {
-			ResourceFactory resourceFactory = ResourceFactory.of(handler);
+			ResourceFactory resourceFactory = handler.getResourceFactory();
 			List<Resource> resources = new ArrayList<>();
 			Resource rootResource = (docBase.isDirectory()
 					? resourceFactory.newResource(docBase.getCanonicalFile().toURI())

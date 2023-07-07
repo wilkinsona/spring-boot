@@ -6,7 +6,7 @@ plugins {
 description = "Spring Boot Jetty SSL smoke test"
 
 configurations.all {
-	resolutionStrategy.force("jakarta.servlet:jakarta.servlet-api:5.0.0")
+	resolutionStrategy.force("jakarta.servlet:jakarta.servlet-api:6.0.0")
 }
 
 dependencies {
