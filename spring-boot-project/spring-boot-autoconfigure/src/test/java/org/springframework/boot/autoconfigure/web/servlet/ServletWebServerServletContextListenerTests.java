@@ -45,12 +45,12 @@ import static org.mockito.Mockito.mock;
  *
  * @author Andy Wilkinson
  */
-@DirtiesUrlFactories
 class ServletWebServerServletContextListenerTests {
 
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("testConfiguration")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void registeredServletContextListenerBeanIsCalled(String serverName, Class<?> configuration) {
 		AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext(
 				ServletListenerRegistrationBeanConfiguration.class, configuration);
@@ -64,6 +64,7 @@ class ServletWebServerServletContextListenerTests {
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("testConfiguration")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void servletContextListenerBeanIsCalled(String serverName, Class<?> configuration) {
 		AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext(
 				ServletContextListenerBeanConfiguration.class, configuration);

@@ -66,7 +66,6 @@ import static org.mockito.Mockito.mock;
  * @author Toshiaki Maki
  * @author Yanming Zhou
  */
-@DirtiesUrlFactories
 class MultipartAutoConfigurationTests {
 
 	private AnnotationConfigServletWebServerApplicationContext context;
@@ -92,6 +91,7 @@ class MultipartAutoConfigurationTests {
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("webServerWithNoMultipartConfigurationArguments")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void webServerWithNoMultipartConfiguration(String server, Class<?> configuration) {
 		this.context = new AnnotationConfigServletWebServerApplicationContext(configuration, BaseConfiguration.class);
 		assertThat(this.context.getBeansOfType(StandardServletMultipartResolver.class)).hasSize(1);
@@ -110,6 +110,7 @@ class MultipartAutoConfigurationTests {
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("webServerWithAutomatedMultipartConfigurationArguments")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void webServerWithAutomatedMultipartConfiguration(String server, Class<?> configuration) {
 		this.context = new AnnotationConfigServletWebServerApplicationContext(configuration, BaseConfiguration.class);
 		this.context.getBean(MultipartConfigElement.class);

@@ -42,7 +42,6 @@ import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationPropertySource;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
-import org.springframework.boot.testsupport.web.servlet.DirtiesUrlFactories;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.embedded.jetty.JettyWebServer;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
@@ -67,7 +66,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Chris Bono
  * @author Parviz Rozikov
  */
-@DirtiesUrlFactories
 class ServerPropertiesTests {
 
 	private final ServerProperties properties = new ServerProperties();

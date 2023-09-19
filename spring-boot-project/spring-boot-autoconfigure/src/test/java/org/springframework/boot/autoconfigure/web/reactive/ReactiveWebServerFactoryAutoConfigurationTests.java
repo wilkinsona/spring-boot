@@ -30,7 +30,6 @@ import org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration;
 import org.springframework.boot.ssl.NoSuchSslBundleException;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
-import org.springframework.boot.testsupport.web.servlet.DirtiesUrlFactories;
 import org.springframework.boot.web.embedded.jetty.JettyReactiveWebServerFactory;
 import org.springframework.boot.web.embedded.jetty.JettyServerCustomizer;
 import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
@@ -67,7 +66,6 @@ import static org.mockito.Mockito.mock;
  * @author Madhura Bhave
  * @author Scott Frederick
  */
-@DirtiesUrlFactories
 class ReactiveWebServerFactoryAutoConfigurationTests {
 
 	private final ReactiveWebApplicationContextRunner contextRunner = new ReactiveWebApplicationContextRunner(

@@ -63,12 +63,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Andy Wilkinson
  */
-@DirtiesUrlFactories
 class WebSocketServletAutoConfigurationTests {
 
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("testConfiguration")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void serverContainerIsAvailableFromTheServletContext(String server, Class<?>... configuration) {
 		try (AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext(
 				configuration)) {
@@ -81,6 +81,7 @@ class WebSocketServletAutoConfigurationTests {
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("testConfiguration")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void webSocketUpgradeDoesNotPreventAFilterFromRejectingTheRequest(String server, Class<?>... configuration)
 			throws DeploymentException {
 		try (AnnotationConfigServletWebServerApplicationContext context = new AnnotationConfigServletWebServerApplicationContext(

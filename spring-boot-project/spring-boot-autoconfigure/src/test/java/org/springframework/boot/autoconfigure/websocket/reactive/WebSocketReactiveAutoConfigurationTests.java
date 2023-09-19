@@ -49,12 +49,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Andy Wilkinson
  */
-@DirtiesUrlFactories
 class WebSocketReactiveAutoConfigurationTests {
 
 	@ParameterizedTest(name = "{0}")
 	@MethodSource("testConfiguration")
 	@ForkedClassPath
+	@DirtiesUrlFactories
 	void serverContainerIsAvailableFromTheServletContext(String server,
 			Function<AnnotationConfigReactiveWebServerApplicationContext, ServletContext> servletContextAccessor,
 			Class<?>... configuration) {
