@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,17 +34,16 @@ record Difference(DifferenceType type, ConfigurationMetadataProperty oldProperty
 
 	static Difference compute(ConfigurationMetadataProperty oldProperty, ConfigurationMetadataProperty newProperty) {
 		if (newProperty == null) {
-			if (!(oldProperty.isDeprecated() && oldProperty.getDeprecation().getLevel() == Level.ERROR)) {
-				return new Difference(DifferenceType.DELETED, oldProperty, null);
+			Level oldLevel = (oldProperty.getDeprecation() != null) ? oldProperty.getDeprecation().getLevel() : null;
+			return (oldLevel != Level.ERROR) ? new Difference(DifferenceType.DELETED, oldProperty, null) : null;
+		}
+		if (newProperty.isDeprecated()) {
+			Level newLevel = newProperty.getDeprecation().getLevel();
+			Level oldLevel = (oldProperty.getDeprecation() != null) ? oldProperty.getDeprecation().getLevel() : null;
+			if (newLevel != oldLevel) {
+				return new Difference((newLevel == Level.ERROR) ? DifferenceType.DELETED : DifferenceType.DEPRECATED,
+						oldProperty, newProperty);
 			}
-			return null;
-		}
-		if (newProperty.isDeprecated() && !oldProperty.isDeprecated()) {
-			return new Difference(DifferenceType.DEPRECATED, oldProperty, newProperty);
-		}
-		if (oldProperty.isDeprecated() && oldProperty.getDeprecation().getLevel() == Level.WARNING
-				&& newProperty.isDeprecated() && newProperty.getDeprecation().getLevel() == Level.ERROR) {
-			return new Difference(DifferenceType.DELETED, oldProperty, newProperty);
 		}
 		return null;
 	}

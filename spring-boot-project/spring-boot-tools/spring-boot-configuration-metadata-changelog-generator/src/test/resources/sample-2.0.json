@@ -18,7 +18,7 @@
       "description": "Test deprecate.",
       "defaultValue": "wrong",
       "deprecation": {
-        "level": "error"
+        "level": "warning"
       }
     },
     {
@@ -30,6 +30,16 @@
         "level": "error",
         "replacement": "test.add",
         "reason": "it was just bad"
+      }
+    },
+    {
+      "name": "test.deprecate.straight-to-error",
+      "type": "java.lang.String",
+      "description": "Test deprecate straight to error.",
+      "defaultValue": "delete",
+      "deprecation": {
+        "level": "error",
+        "reason": "removed from third-party code"
       }
     }
   ]
