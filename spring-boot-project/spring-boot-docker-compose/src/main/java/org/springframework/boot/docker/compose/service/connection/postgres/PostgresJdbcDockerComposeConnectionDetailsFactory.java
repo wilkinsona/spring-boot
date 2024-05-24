@@ -20,7 +20,10 @@ import org.springframework.boot.autoconfigure.jdbc.JdbcConnectionDetails;
 import org.springframework.boot.docker.compose.core.RunningService;
 import org.springframework.boot.docker.compose.service.connection.DockerComposeConnectionDetailsFactory;
 import org.springframework.boot.docker.compose.service.connection.DockerComposeConnectionSource;
+import org.springframework.boot.docker.compose.service.connection.jdbc.JdbcCredentials;
 import org.springframework.boot.docker.compose.service.connection.jdbc.JdbcUrlBuilder;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 
 /**
  * {@link DockerComposeConnectionDetailsFactory} to create {@link JdbcConnectionDetails}
@@ -49,28 +52,39 @@ class PostgresJdbcDockerComposeConnectionDetailsFactory
 	 * {@link JdbcConnectionDetails} backed by a {@code postgres} {@link RunningService}.
 	 */
 	static class PostgresJdbcDockerComposeConnectionDetails extends DockerComposeConnectionDetails
-			implements JdbcConnectionDetails {
+			implements JdbcConnectionDetails, EnvironmentAware {
 
 		private static final JdbcUrlBuilder jdbcUrlBuilder = new JdbcUrlBuilder("postgresql", 5432);
 
-		private final PostgresEnvironment environment;
+		private final PostgresEnvironment postgresEnvironment;
 
 		private final String jdbcUrl;
 
+		private final JdbcCredentials credentials;
+
 		PostgresJdbcDockerComposeConnectionDetails(RunningService service) {
 			super(service);
-			this.environment = new PostgresEnvironment(service.env());
-			this.jdbcUrl = jdbcUrlBuilder.build(service, this.environment.getDatabase());
+			this.postgresEnvironment = new PostgresEnvironment(service.env());
+			JdbcCredentials serviceCredentials = JdbcCredentials.from(service);
+			this.credentials = serviceCredentials != null ? serviceCredentials : this.postgresEnvironment;
+			this.jdbcUrl = jdbcUrlBuilder.build(service, this.postgresEnvironment.getDatabase());
+		}
+
+		@Override
+		public void setEnvironment(Environment environment) {
+			if (this.credentials instanceof EnvironmentAware environmentAwareCredentials) {
+				environmentAwareCredentials.setEnvironment(environment);
+			}
 		}
 
 		@Override
 		public String getUsername() {
-			return this.environment.getUsername();
+			return this.credentials.getUsername();
 		}
 
 		@Override
 		public String getPassword() {
-			return this.environment.getPassword();
+			return this.credentials.getPassword();
 		}
 
 		@Override

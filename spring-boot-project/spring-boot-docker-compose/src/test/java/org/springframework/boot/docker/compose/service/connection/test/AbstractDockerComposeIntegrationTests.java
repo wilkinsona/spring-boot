@@ -21,6 +21,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -70,12 +71,17 @@ public abstract class AbstractDockerComposeIntegrationTests {
 	}
 
 	protected final <T extends ConnectionDetails> T run(Class<T> type) {
+		return run(type, Collections.emptyMap());
+	}
+
+	protected final <T extends ConnectionDetails> T run(Class<T> type, Map<String, Object> additionalProperties) {
 		SpringApplication application = new SpringApplication(Config.class);
 		Map<String, Object> properties = new LinkedHashMap<>();
 		properties.put("spring.docker.compose.skip.in-tests", "false");
 		properties.put("spring.docker.compose.file",
 				transformedComposeFile(ThrowingSupplier.of(this.composeResource::getFile).get(), this.dockerImageName));
 		properties.put("spring.docker.compose.stop.command", "down");
+		properties.putAll(additionalProperties);
 		application.setDefaultProperties(properties);
 		return application.run().getBean(type);
 	}

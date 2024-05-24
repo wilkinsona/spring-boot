@@ -18,6 +18,7 @@ package org.springframework.boot.docker.compose.service.connection.postgres;
 
 import java.util.Map;
 
+import org.springframework.boot.docker.compose.service.connection.jdbc.JdbcCredentials;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -29,7 +30,7 @@ import org.springframework.util.StringUtils;
  * @author Phillip Webb
  * @author Scott Frederick
  */
-class PostgresEnvironment {
+class PostgresEnvironment implements JdbcCredentials {
 
 	private final String username;
 
@@ -49,11 +50,13 @@ class PostgresEnvironment {
 		return password;
 	}
 
-	String getUsername() {
+	@Override
+	public String getUsername() {
 		return this.username;
 	}
 
-	String getPassword() {
+	@Override
+	public String getPassword() {
 		return this.password;
 	}
 
