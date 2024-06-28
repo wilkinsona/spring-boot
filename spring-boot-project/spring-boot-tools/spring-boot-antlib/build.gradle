@@ -26,8 +26,8 @@ dependencies {
 }
 
 task syncIntegrationTestSources(type: Sync) {
-	destinationDir file("${buildDir}/it")
 	from file("src/it")
+	into layout.buildDirectory.dir("it")
 	filter(springRepositoryTransformers.ant())
 }
 
@@ -40,7 +40,7 @@ processResources {
 
 task integrationTest {
 	dependsOn syncIntegrationTestSources, jar
-	def resultsDir = file("${buildDir}/test-results/integrationTest")
+	def resultsDir = layout.buildDirectory.dir("test-results/integrationTest").get().asFile
 	inputs.dir(file("src/it")).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName("source")
 	inputs.files(sourceSets.main.runtimeClasspath).withNormalizer(ClasspathNormalizer).withPropertyName("classpath")
 	outputs.dirs resultsDir
@@ -62,9 +62,9 @@ task integrationTest {
 					ant.propertyref(name: "ivy.class.path")
 				}
 				plainlistener()
-				file("${buildDir}/test-results/integrationTest").mkdirs()
+				resultsDir.mkdirs()
 				xmllistener(toDir: resultsDir)
-				fileset(dir: "${buildDir}/it", includes: "**/build.xml")
+				fileset(dir: layout.buildDirectory.dir("it").get().asFile, includes: "**/build.xml")
 			}
 		}
 	}

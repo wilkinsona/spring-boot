@@ -39,7 +39,7 @@ dependencies {
 }
 
 task syncTestRepository(type: Sync) {
-	destinationDir = file("${buildDir}/test-repository")
+	destinationDir = layout.buildDirectory.dir("test-repository").get().asFile
 	from configurations.testRepository
 	rename {
 		it.replaceAll("-[0-9]+\\.[0-9]+-[0-9]+\\.", "-SNAPSHOT.")

@@ -150,7 +150,11 @@ class AsciidoctorConventions {
 	private Sync createSyncDocumentationSourceTask(Project project, AbstractAsciidoctorTask asciidoctorTask) {
 		Sync syncDocumentationSource = project.getTasks()
 			.create("syncDocumentationSourceFor" + StringUtils.capitalize(asciidoctorTask.getName()), Sync.class);
-		File syncedSource = new File(project.getBuildDir(), "docs/src/" + asciidoctorTask.getName());
+		File syncedSource = project.getLayout()
+			.getBuildDirectory()
+			.dir("docs/src/" + asciidoctorTask.getName())
+			.get()
+			.getAsFile();
 		syncDocumentationSource.setDestinationDir(syncedSource);
 		syncDocumentationSource.from("src/docs/");
 		asciidoctorTask.dependsOn(syncDocumentationSource);

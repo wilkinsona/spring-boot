@@ -48,8 +48,10 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.api.file.RegularFile;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaPlatformPlugin;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.publish.maven.tasks.GenerateMavenPom;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskExecutionException;
@@ -130,7 +132,11 @@ public class BomExtension {
 			.all((task) -> {
 				Sync syncBom = this.project.getTasks().create("syncBom", Sync.class);
 				syncBom.dependsOn(task);
-				File generatedBomDir = new File(this.project.getBuildDir(), "generated/bom");
+				File generatedBomDir = this.project.getLayout()
+					.getBuildDirectory()
+					.dir("generated/bom")
+					.get()
+					.getAsFile();
 				syncBom.setDestinationDir(generatedBomDir);
 				syncBom.from(((GenerateMavenPom) task).getDestination(), (pom) -> pom.rename((name) -> "pom.xml"));
 				try {
@@ -139,7 +145,12 @@ public class BomExtension {
 								getClass().getClassLoader().getResourceAsStream("effective-bom-settings.xml"),
 								StandardCharsets.UTF_8))
 						.replace("localRepositoryPath",
-								new File(this.project.getBuildDir(), "local-m2-repository").getAbsolutePath());
+								this.project.getLayout()
+									.getBuildDirectory()
+									.dir("local-m2-repository")
+									.get()
+									.getAsFile()
+									.getAbsolutePath());
 					syncBom.from(this.project.getResources().getText().fromString(settingsXmlContent),
 							(settingsXml) -> settingsXml.rename((name) -> "settings.xml"));
 				}
@@ -149,10 +160,12 @@ public class BomExtension {
 				MavenExec generateEffectiveBom = this.project.getTasks()
 					.create("generateEffectiveBom", MavenExec.class);
 				generateEffectiveBom.getProjectDir().set(generatedBomDir);
-				File effectiveBom = new File(this.project.getBuildDir(),
-						"generated/effective-bom/" + this.project.getName() + "-effective-bom.xml");
+				Provider<RegularFile> effectiveBom = this.project.getLayout()
+					.getBuildDirectory()
+					.dir("generated/effective-bom")
+					.map((dir) -> dir.file(this.project.getName() + "-effective-bom.xml"));
 				generateEffectiveBom.args("--settings", "settings.xml", "help:effective-pom",
-						"-Doutput=" + effectiveBom);
+						"-Doutput=" + effectiveBom.get().getAsFile().getAbsolutePath());
 				generateEffectiveBom.dependsOn(syncBom);
 				generateEffectiveBom.getOutputs().file(effectiveBom);
 				generateEffectiveBom.doLast(new StripUnrepeatableOutputAction(effectiveBom));
@@ -524,16 +537,17 @@ public class BomExtension {
 
 	private static final class StripUnrepeatableOutputAction implements Action<Task> {
 
-		private final File effectiveBom;
+		private final Provider<RegularFile> effectiveBom;
 
-		private StripUnrepeatableOutputAction(File xmlFile) {
+		private StripUnrepeatableOutputAction(Provider<RegularFile> xmlFile) {
 			this.effectiveBom = xmlFile;
 		}
 
 		@Override
 		public void execute(Task task) {
 			try {
-				Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(this.effectiveBom);
+				File bomFile = this.effectiveBom.get().getAsFile();
+				Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(bomFile);
 				XPath xpath = XPathFactory.newInstance().newXPath();
 				NodeList comments = (NodeList) xpath.evaluate("//comment()", document, XPathConstants.NODESET);
 				for (int i = 0; i < comments.getLength(); i++) {
@@ -548,7 +562,7 @@ public class BomExtension {
 				reporting.getParentNode().removeChild(reporting);
 				TransformerFactory.newInstance()
 					.newTransformer()
-					.transform(new DOMSource(document), new StreamResult(this.effectiveBom));
+					.transform(new DOMSource(document), new StreamResult(bomFile));
 			}
 			catch (Exception ex) {
 				throw new TaskExecutionException(task, ex);

@@ -16,7 +16,6 @@
 
 package org.springframework.boot.build.starters;
 
-import java.io.File;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -56,8 +55,8 @@ public class StarterPlugin implements Plugin<Project> {
 		ConfigurationContainer configurations = project.getConfigurations();
 		Configuration runtimeClasspath = configurations.getByName(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME);
 		starterMetadata.setDependencies(runtimeClasspath);
-		File destination = new File(project.getBuildDir(), "starter-metadata.properties");
-		starterMetadata.getDestination().set(destination);
+		starterMetadata.getDestination()
+			.set(project.getLayout().getBuildDirectory().file("starter-metadata.properties"));
 		configurations.create("starterMetadata");
 		project.getArtifacts()
 			.add("starterMetadata", project.provider(starterMetadata::getDestination),
