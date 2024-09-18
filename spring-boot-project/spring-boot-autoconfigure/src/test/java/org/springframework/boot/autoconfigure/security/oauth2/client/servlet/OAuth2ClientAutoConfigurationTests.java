@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,16 +23,17 @@ import jakarta.servlet.Filter;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.assertj.AssertableWebApplicationContext;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.config.BeanIds;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -46,6 +47,7 @@ import org.springframework.security.oauth2.client.web.OAuth2LoginAuthenticationF
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.filter.CompositeFilter;
@@ -53,19 +55,109 @@ import org.springframework.web.filter.CompositeFilter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link OAuth2WebSecurityConfiguration}.
+ * Tests for {@link OAuth2ClientAutoConfiguration}.
  *
  * @author Madhura Bhave
  */
-class OAuth2WebSecurityConfigurationTests {
+class OAuth2ClientAutoConfigurationTests {
 
-	private final WebApplicationContextRunner contextRunner = new WebApplicationContextRunner();
+	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+		.withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class, SecurityAutoConfiguration.class));
+
+	private static final String REGISTRATION_PREFIX = "spring.security.oauth2.client.registration";
+
+	@Test
+	void autoConfigurationShouldBackOffForReactiveWebEnvironments() {
+		new ReactiveWebApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
+			.run((context) -> assertThat(context).doesNotHaveBean(OAuth2ClientAutoConfiguration.class));
+	}
+
+	@Test
+	void clientRegistrationRepositoryBeanShouldNotBeCreatedWhenPropertiesAbsent() {
+		this.contextRunner.run((context) -> assertThat(context).doesNotHaveBean(ClientRegistrationRepository.class));
+	}
+
+	@Test
+	void clientRegistrationRepositoryBeanShouldBeCreatedWhenPropertiesPresent() {
+		this.contextRunner
+			.withPropertyValues(REGISTRATION_PREFIX + ".foo.client-id=abcd",
+					REGISTRATION_PREFIX + ".foo.client-secret=secret", REGISTRATION_PREFIX + ".foo.provider=github")
+			.run((context) -> {
+				ClientRegistrationRepository repository = context.getBean(ClientRegistrationRepository.class);
+				ClientRegistration registration = repository.findByRegistrationId("foo");
+				assertThat(registration).isNotNull();
+				assertThat(registration.getClientSecret()).isEqualTo("secret");
+			});
+	}
+
+	@Test
+	void authorizedClientServiceAndRepositoryBeansAreConditionalOnClientRegistrationRepository() {
+		this.contextRunner.run((context) -> {
+			assertThat(context).doesNotHaveBean(OAuth2AuthorizedClientService.class);
+			assertThat(context).doesNotHaveBean(OAuth2AuthorizedClientRepository.class);
+		});
+	}
+
+	@Test
+	void configurationRegistersAuthorizedClientServiceAndRepositoryBeans() {
+		this.contextRunner.withUserConfiguration(OAuth2AuthorizedClientRepositoryConfiguration.class).run((context) -> {
+			assertThat(context).hasSingleBean(InMemoryOAuth2AuthorizedClientService.class);
+			assertThat(context).hasSingleBean(AuthenticatedPrincipalOAuth2AuthorizedClientRepository.class);
+		});
+	}
+
+	@Test
+	void authorizedClientServiceBeanIsConditionalOnMissingBean() {
+		this.contextRunner.withUserConfiguration(OAuth2AuthorizedClientRepositoryConfiguration.class).run((context) -> {
+			assertThat(context).hasSingleBean(OAuth2AuthorizedClientService.class);
+			assertThat(context).hasBean("testAuthorizedClientService");
+		});
+	}
+
+	@Test
+	void authorizedClientRepositoryBeanIsConditionalOnAuthorizedClientService() {
+		this.contextRunner
+			.run((context) -> assertThat(context).doesNotHaveBean(OAuth2AuthorizedClientRepository.class));
+	}
+
+	@Test
+	void configurationRegistersAuthorizedClientRepositoryBean() {
+		this.contextRunner.withUserConfiguration(OAuth2AuthorizedClientServiceConfiguration.class)
+			.run((context) -> assertThat(context)
+				.hasSingleBean(AuthenticatedPrincipalOAuth2AuthorizedClientRepository.class));
+	}
+
+	@Test
+	void authorizedClientRepositoryBeanIsConditionalOnMissingBean() {
+		this.contextRunner.withUserConfiguration(OAuth2AuthorizedClientRepositoryConfiguration.class).run((context) -> {
+			assertThat(context).hasSingleBean(OAuth2AuthorizedClientRepository.class);
+			assertThat(context).hasBean("testAuthorizedClientRepository");
+		});
+	}
+
+	@Test
+	void securityWebFilterChainBeanConditionalOnWebApplication() {
+		this.contextRunner.withUserConfiguration(OAuth2AuthorizedClientRepositoryConfiguration.class)
+			.run((context) -> assertThat(context).doesNotHaveBean(SecurityWebFilterChain.class));
+	}
+
+	@Test
+	void configurationRegistersSecurityFilterChainBean() {
+		new WebApplicationContextRunner().withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
+			.withUserConfiguration(OAuth2AuthorizedClientServiceConfiguration.class,
+					EnableWebSecurityConfiguration.class)
+			.run((context) -> {
+				assertThat(hasFilter(context, OAuth2LoginAuthenticationFilter.class)).isTrue();
+				assertThat(hasFilter(context, OAuth2AuthorizationCodeGrantFilter.class)).isTrue();
+			});
+	}
 
 	@Test
 	void securityConfigurerConfiguresOAuth2Login() {
-		this.contextRunner
-			.withUserConfiguration(ClientRegistrationRepositoryConfiguration.class,
-					OAuth2WebSecurityConfiguration.class)
+		new WebApplicationContextRunner().withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
+			.withUserConfiguration(OAuth2AuthorizedClientServiceConfiguration.class,
+					EnableWebSecurityConfiguration.class)
 			.run((context) -> {
 				ClientRegistrationRepository expected = context.getBean(ClientRegistrationRepository.class);
 				ClientRegistrationRepository actual = (ClientRegistrationRepository) ReflectionTestUtils.getField(
@@ -80,9 +172,9 @@ class OAuth2WebSecurityConfigurationTests {
 
 	@Test
 	void securityConfigurerConfiguresAuthorizationCode() {
-		this.contextRunner
-			.withUserConfiguration(ClientRegistrationRepositoryConfiguration.class,
-					OAuth2WebSecurityConfiguration.class)
+		new WebApplicationContextRunner().withConfiguration(AutoConfigurations.of(OAuth2ClientAutoConfiguration.class))
+			.withUserConfiguration(OAuth2AuthorizedClientServiceConfiguration.class,
+					EnableWebSecurityConfiguration.class)
 			.run((context) -> {
 				ClientRegistrationRepository expected = context.getBean(ClientRegistrationRepository.class);
 				ClientRegistrationRepository actual = (ClientRegistrationRepository) ReflectionTestUtils.getField(
@@ -96,35 +188,29 @@ class OAuth2WebSecurityConfigurationTests {
 	}
 
 	@Test
-	void securityConfigurerBacksOffWhenClientRegistrationBeanAbsent() {
-		this.contextRunner.withUserConfiguration(TestConfig.class, OAuth2WebSecurityConfiguration.class)
-			.run((context) -> {
-				assertThat(getSecurityFilters(context, OAuth2LoginAuthenticationFilter.class)).isEmpty();
-				assertThat(getSecurityFilters(context, OAuth2AuthorizationCodeGrantFilter.class)).isEmpty();
-			});
+	void autoConfigurationConditionalOnClassEnableWebSecurity() {
+		assertWhenClassNotPresent(EnableWebSecurity.class);
 	}
 
 	@Test
-	void securityFilterChainConfigBacksOffWhenOtherSecurityFilterChainBeanPresent() {
-		this.contextRunner.withConfiguration(AutoConfigurations.of(WebMvcAutoConfiguration.class))
-			.withUserConfiguration(TestSecurityFilterChainConfiguration.class, OAuth2WebSecurityConfiguration.class)
-			.run((context) -> {
-				assertThat(getSecurityFilters(context, OAuth2LoginAuthenticationFilter.class)).isEmpty();
-				assertThat(getSecurityFilters(context, OAuth2AuthorizationCodeGrantFilter.class)).isEmpty();
-				assertThat(context).getBean(OAuth2AuthorizedClientService.class).isNotNull();
-			});
+	void autoConfigurationConditionalOnClassClientRegistration() {
+		assertWhenClassNotPresent(ClientRegistration.class);
 	}
 
-	@Test
-	void securityFilterChainConfigConditionalOnSecurityFilterChainClass() {
-		this.contextRunner
-			.withUserConfiguration(ClientRegistrationRepositoryConfiguration.class,
-					OAuth2WebSecurityConfiguration.class)
-			.withClassLoader(new FilteredClassLoader(SecurityFilterChain.class))
-			.run((context) -> {
-				assertThat(getSecurityFilters(context, OAuth2LoginAuthenticationFilter.class)).isEmpty();
-				assertThat(getSecurityFilters(context, OAuth2AuthorizationCodeGrantFilter.class)).isEmpty();
-			});
+	private void assertWhenClassNotPresent(Class<?> classToFilter) {
+		FilteredClassLoader classLoader = new FilteredClassLoader(classToFilter);
+		this.contextRunner.withClassLoader(classLoader)
+			.withPropertyValues(REGISTRATION_PREFIX + ".foo.client-id=abcd",
+					REGISTRATION_PREFIX + ".foo.client-secret=secret", REGISTRATION_PREFIX + ".foo.provider=github")
+			.run((context) -> assertThat(context).doesNotHaveBean(ReactiveOAuth2ClientAutoConfiguration.class));
+	}
+
+	private boolean hasFilter(AssertableWebApplicationContext context, Class<? extends Filter> filter) {
+		FilterChainProxy filterChainProxy = (FilterChainProxy) context.getBean(BeanIds.SPRING_SECURITY_FILTER_CHAIN);
+		return filterChainProxy.getFilterChains()
+			.stream()
+			.flatMap((chain) -> chain.getFilters().stream())
+			.anyMatch(filter::isInstance);
 	}
 
 	private List<Filter> getSecurityFilters(AssertableWebApplicationContext context, Class<? extends Filter> filter) {
@@ -171,19 +257,7 @@ class OAuth2WebSecurityConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@EnableWebSecurity
-	static class TestConfig {
-
-		@Bean
-		TomcatServletWebServerFactory tomcat() {
-			return new TomcatServletWebServerFactory(0);
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@Import(TestConfig.class)
-	static class ClientRegistrationRepositoryConfiguration {
+	static class ClientRepositoryConfiguration {
 
 		@Bean
 		ClientRegistrationRepository clientRegistrationRepository() {
@@ -213,21 +287,7 @@ class OAuth2WebSecurityConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@Import(ClientRegistrationRepositoryConfiguration.class)
-	static class TestSecurityFilterChainConfiguration {
-
-		@Bean
-		SecurityFilterChain testSecurityFilterChain(HttpSecurity http) throws Exception {
-			return http.securityMatcher("/**")
-				.authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
-				.build();
-
-		}
-
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@Import(ClientRegistrationRepositoryConfiguration.class)
+	@Import(ClientRepositoryConfiguration.class)
 	static class OAuth2AuthorizedClientServiceConfiguration {
 
 		@Bean
@@ -239,7 +299,7 @@ class OAuth2WebSecurityConfigurationTests {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@Import(ClientRegistrationRepositoryConfiguration.class)
+	@Import(OAuth2AuthorizedClientServiceConfiguration.class)
 	static class OAuth2AuthorizedClientRepositoryConfiguration {
 
 		@Bean
@@ -247,6 +307,12 @@ class OAuth2WebSecurityConfigurationTests {
 				OAuth2AuthorizedClientService authorizedClientService) {
 			return new AuthenticatedPrincipalOAuth2AuthorizedClientRepository(authorizedClientService);
 		}
+
+	}
+
+	@EnableWebSecurity
+	@Configuration(proxyBeanMethods = false)
+	static class EnableWebSecurityConfiguration {
 
 	}
 
