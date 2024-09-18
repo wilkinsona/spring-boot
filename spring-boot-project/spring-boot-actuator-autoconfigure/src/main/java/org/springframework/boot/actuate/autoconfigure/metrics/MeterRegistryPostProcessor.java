@@ -16,6 +16,7 @@
 
 package org.springframework.boot.actuate.autoconfigure.metrics;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,6 +56,8 @@ class MeterRegistryPostProcessor implements BeanPostProcessor, SmartInitializing
 	private volatile boolean deferBinding = true;
 
 	private final Set<MeterRegistry> deferredBindings = new LinkedHashSet<>();
+
+	private final Set<MeterRegistry> boundRegistries = new HashSet<>();
 
 	MeterRegistryPostProcessor(ApplicationContext applicationContext,
 			ObjectProvider<MetricsProperties> metricsProperties, ObjectProvider<MeterRegistryCustomizer<?>> customizers,
@@ -146,7 +149,17 @@ class MeterRegistryPostProcessor implements BeanPostProcessor, SmartInitializing
 				}
 			}
 		}
-		this.binders.orderedStream().forEach((binder) -> binder.bindTo(meterRegistry));
+		if (shouldBind(meterRegistry)) {
+			this.binders.orderedStream().forEach((binder) -> binder.bindTo(meterRegistry));
+		}
+	}
+
+	private boolean shouldBind(MeterRegistry meterRegistry) {
+		boolean shouldBind = this.boundRegistries.add(meterRegistry);
+		if (shouldBind && meterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
+			compositeMeterRegistry.getRegistries().forEach(this::shouldBind);
+		}
+		return shouldBind;
 	}
 
 }

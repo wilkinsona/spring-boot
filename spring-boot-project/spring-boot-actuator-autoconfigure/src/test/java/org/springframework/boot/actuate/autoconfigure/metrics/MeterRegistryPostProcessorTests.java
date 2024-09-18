@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,6 +195,24 @@ class MeterRegistryPostProcessorTests {
 		then(this.mockBinder).should().bindTo(this.mockRegistry);
 	}
 
+	@Test
+	void compositeNestedWithinCompositeIsOnlyBoundOnce() {
+		this.binders.add(this.mockBinder);
+		MeterRegistryPostProcessor processor = new MeterRegistryPostProcessor(false,
+				createObjectProvider(this.properties), createObjectProvider(this.customizers),
+				createObjectProvider(this.filters), createObjectProvider(this.binders));
+		CompositeMeterRegistry root = new CompositeMeterRegistry();
+		CompositeMeterRegistry nested = new CompositeMeterRegistry();
+		nested.add(this.mockRegistry);
+		root.add(nested);
+		processor.postProcessAfterInitialization(root, "meterRegistry");
+		processor.postProcessAfterInitialization(nested, "nestedMeterRegistry");
+		then(this.mockBinder).shouldHaveNoInteractions();
+		processor.afterSingletonsInstantiated();
+		then(this.mockBinder).should().bindTo(root);
+		then(this.mockBinder).shouldHaveNoMoreInteractions();
+	}
+
 	private void postProcessAndInitialize(MeterRegistryPostProcessor processor, MeterRegistry registry) {
 		processor.postProcessAfterInitialization(registry, "meterRegistry");
 		processor.afterSingletonsInstantiated();
@@ -203,7 +221,7 @@ class MeterRegistryPostProcessorTests {
 	@SuppressWarnings("unchecked")
 	private <T> ObjectProvider<T> createObjectProvider(List<T> objects) {
 		ObjectProvider<T> objectProvider = mock(ObjectProvider.class);
-		given(objectProvider.orderedStream()).willReturn(objects.stream());
+		given(objectProvider.orderedStream()).willAnswer((invocation) -> objects.stream());
 		return objectProvider;
 	}
 
