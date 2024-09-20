@@ -182,7 +182,7 @@ class JavaConventions {
 		TestRetryConfiguration testRetry = test.getExtensions()
 			.getByType(DevelocityTestConfiguration.class)
 			.getTestRetry();
-		testRetry.getFailOnPassedAfterRetry().set(false);
+		testRetry.getFailOnPassedAfterRetry().set(true);
 		testRetry.getMaxRetries().set(isCi() ? 3 : 0);
 	}
 

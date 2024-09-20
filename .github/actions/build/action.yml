@@ -46,7 +46,47 @@ runs:
       id: build
       if: ${{ inputs.publish == 'false' }}
       shell: bash
-      run: ./gradlew build
+      run: |
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
+        ./gradlew --no-build-cache spring-boot-project:spring-boot-actuator-autoconfigure:test --tests ZipkinWebClientSenderTests
+        rm -r spring-boot-project/spring-boot-actuator-autoconfigure/build/test-results
     - name: Publish
       id: publish
       if: ${{ inputs.publish == 'true' }}

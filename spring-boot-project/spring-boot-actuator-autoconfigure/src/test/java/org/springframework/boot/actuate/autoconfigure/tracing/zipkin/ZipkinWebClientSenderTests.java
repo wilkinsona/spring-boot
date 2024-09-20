@@ -199,6 +199,19 @@ class ZipkinWebClientSenderTests extends ZipkinHttpSenderTests {
 			getResponseQueue().clear();
 		}
 
+		@Override
+		public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+			System.out.println("Dispatching " + request);
+			MockResponse response = super.dispatch(request);
+			System.out.println("Responding with " + response);
+			return response;
+		}
+
+		@Override
+		public MockResponse peek() {
+			return super.peek();
+		}
+
 	}
 
 }
