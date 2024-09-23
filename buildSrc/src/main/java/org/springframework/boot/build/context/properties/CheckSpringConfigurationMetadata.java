@@ -17,6 +17,7 @@
 package org.springframework.boot.build.context.properties;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,9 +26,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -40,6 +41,8 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceTask;
 import org.gradle.api.tasks.TaskAction;
+
+import org.springframework.core.CollectionFactory;
 
 /**
  * {@link SourceTask} that checks {@code spring-configuration-metadata.json} files.
@@ -57,6 +60,9 @@ public abstract class CheckSpringConfigurationMetadata extends DefaultTask {
 	@OutputFile
 	public abstract RegularFileProperty getReportLocation();
 
+	@OutputFile
+	public abstract RegularFileProperty getDefaultValuesLocation();
+
 	@InputFile
 	@PathSensitive(PathSensitivity.RELATIVE)
 	public abstract RegularFileProperty getMetadataLocation();
@@ -66,7 +72,20 @@ public abstract class CheckSpringConfigurationMetadata extends DefaultTask {
 
 	@TaskAction
 	void check() throws JsonParseException, IOException {
-		Report report = createReport();
+		File file = getMetadataLocation().get().getAsFile();
+		List<Map<String, Object>> properties = readProperties(file);
+		writeReport(file, properties);
+		writeDefaultValues(properties);
+	}
+
+	private List<Map<String, Object>> readProperties(File file) throws JsonParseException, IOException {
+		ObjectMapper objectMapper = new ObjectMapper();
+		Map<String, Object> json = objectMapper.readValue(file, Map.class);
+		return (List<Map<String, Object>>) json.get("properties");
+	}
+
+	private void writeReport(File file, List<Map<String, Object>> properties) throws JsonParseException, IOException {
+		Report report = createReport(file, properties);
 		File reportFile = getReportLocation().get().getAsFile();
 		Files.write(reportFile.toPath(), report, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		if (report.hasProblems()) {
@@ -76,12 +95,8 @@ public abstract class CheckSpringConfigurationMetadata extends DefaultTask {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Report createReport() throws IOException, JsonParseException, JsonMappingException {
-		ObjectMapper objectMapper = new ObjectMapper();
-		File file = getMetadataLocation().get().getAsFile();
+	private Report createReport(File file, List<Map<String, Object>> properties) {
 		Report report = new Report(this.projectRoot.relativize(file.toPath()));
-		Map<String, Object> json = objectMapper.readValue(file, Map.class);
-		List<Map<String, Object>> properties = (List<Map<String, Object>>) json.get("properties");
 		for (Map<String, Object> property : properties) {
 			String name = (String) property.get("name");
 			if (!isDeprecated(property) && !isDescribed(property) && !isExcluded(name)) {
@@ -112,6 +127,20 @@ public abstract class CheckSpringConfigurationMetadata extends DefaultTask {
 
 	private boolean isDescribed(Map<String, Object> property) {
 		return property.get("description") != null;
+	}
+
+	private void writeDefaultValues(List<Map<String, Object>> properties) throws IOException {
+		Properties defaultValues = new Properties();
+		for (Map<String, Object> property : properties) {
+			String name = (String) property.get("name");
+			Object defaultValue = property.get("defaultValue");
+			if (defaultValue != null) {
+				defaultValues.setProperty(name, defaultValue.toString());
+			}
+		}
+		try (FileWriter writer = new FileWriter(getDefaultValuesLocation().getAsFile().get())) {
+			CollectionFactory.createSortedProperties(defaultValues, true).store(writer, "");
+		}
 	}
 
 	private static final class Report implements Iterable<String> {

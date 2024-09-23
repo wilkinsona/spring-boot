@@ -78,8 +78,8 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 			configureConfigurationPropertiesAnnotationProcessor(project);
 			disableIncrementalCompilation(project);
 			configureAdditionalMetadataLocationsCompilerArgument(project);
-			registerCheckAdditionalMetadataTask(project);
-			registerCheckMetadataTask(project);
+			TaskProvider<CheckSpringConfigurationMetadata> checkMetadataTask = registerCheckMetadataTask(project);
+			registerCheckAdditionalMetadataTask(project, checkMetadataTask);
 			addMetadataArtifact(project);
 		});
 	}
@@ -141,7 +141,8 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 						.collect(Collectors.toSet())));
 	}
 
-	private void registerCheckAdditionalMetadataTask(Project project) {
+	private void registerCheckAdditionalMetadataTask(Project project,
+			TaskProvider<CheckSpringConfigurationMetadata> checkMetadataTask) {
 		TaskProvider<CheckAdditionalSpringConfigurationMetadata> checkConfigurationMetadata = project.getTasks()
 			.register(CHECK_ADDITIONAL_SPRING_CONFIGURATION_METADATA_TASK_NAME,
 					CheckAdditionalSpringConfigurationMetadata.class);
@@ -152,17 +153,20 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 				.getByName(SourceSet.MAIN_SOURCE_SET_NAME);
 			check.setSource(mainSourceSet.getResources());
 			check.include("META-INF/additional-spring-configuration-metadata.json");
+			check.include("META-INF/spring-configuration-metadata.json");
 			check.getReportLocation()
 				.set(project.getLayout()
 					.getBuildDirectory()
-					.file("reports/additional-spring-configuration-metadata/check.txt"));
+					.file("reports/" + CHECK_ADDITIONAL_SPRING_CONFIGURATION_METADATA_TASK_NAME + "/check.txt"));
+			check.getDefaultValuesLocation()
+				.set(checkMetadataTask.flatMap(CheckSpringConfigurationMetadata::getDefaultValuesLocation));
 		});
 		project.getTasks()
 			.named(LifecycleBasePlugin.CHECK_TASK_NAME)
 			.configure((check) -> check.dependsOn(checkConfigurationMetadata));
 	}
 
-	private void registerCheckMetadataTask(Project project) {
+	private TaskProvider<CheckSpringConfigurationMetadata> registerCheckMetadataTask(Project project) {
 		TaskProvider<CheckSpringConfigurationMetadata> checkConfigurationMetadata = project.getTasks()
 			.register(CHECK_SPRING_CONFIGURATION_METADATA_TASK_NAME, CheckSpringConfigurationMetadata.class);
 		checkConfigurationMetadata.configure((check) -> {
@@ -176,11 +180,18 @@ public class ConfigurationPropertiesPlugin implements Plugin<Project> {
 					.file("META-INF/spring-configuration-metadata.json"));
 			check.getMetadataLocation().set(metadataLocation);
 			check.getReportLocation()
-				.set(project.getLayout().getBuildDirectory().file("reports/spring-configuration-metadata/check.txt"));
+				.set(project.getLayout()
+					.getBuildDirectory()
+					.file("reports/" + CHECK_SPRING_CONFIGURATION_METADATA_TASK_NAME + "/check.txt"));
+			check.getDefaultValuesLocation()
+				.set(project.getLayout()
+					.getBuildDirectory()
+					.file("reports/" + CHECK_SPRING_CONFIGURATION_METADATA_TASK_NAME + "/default-values.properties"));
 		});
 		project.getTasks()
 			.named(LifecycleBasePlugin.CHECK_TASK_NAME)
 			.configure((check) -> check.dependsOn(checkConfigurationMetadata));
+		return checkConfigurationMetadata;
 	}
 
 }

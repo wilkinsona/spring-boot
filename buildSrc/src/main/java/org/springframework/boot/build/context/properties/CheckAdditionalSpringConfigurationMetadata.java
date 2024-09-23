@@ -17,6 +17,8 @@
 package org.springframework.boot.build.context.properties;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -34,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
@@ -53,6 +57,10 @@ public abstract class CheckAdditionalSpringConfigurationMetadata extends SourceT
 	public CheckAdditionalSpringConfigurationMetadata() {
 		this.projectDir = getProject().getProjectDir();
 	}
+
+	@InputFile
+	@PathSensitive(PathSensitivity.RELATIVE)
+	public abstract RegularFileProperty getDefaultValuesLocation();
 
 	@OutputFile
 	public abstract RegularFileProperty getReportLocation();
@@ -79,14 +87,22 @@ public abstract class CheckAdditionalSpringConfigurationMetadata extends SourceT
 	private Report createReport() throws IOException, JsonParseException, JsonMappingException {
 		ObjectMapper objectMapper = new ObjectMapper();
 		Report report = new Report();
+		Properties defaultValues = loadDefaultValues();
 		for (File file : getSource().getFiles()) {
 			Analysis analysis = report.analysis(this.projectDir.toPath().relativize(file.toPath()));
 			Map<String, Object> json = objectMapper.readValue(file, Map.class);
 			check("groups", json, analysis);
 			check("properties", json, analysis);
+			checkDefaultValues((List<Map<String, Object>>) json.get("properties"), defaultValues, analysis);
 			check("hints", json, analysis);
 		}
 		return report;
+	}
+
+	private Properties loadDefaultValues() throws IOException, FileNotFoundException {
+		Properties defaultValues = new Properties();
+		defaultValues.load(new FileReader(getDefaultValuesLocation().getAsFile().get()));
+		return defaultValues;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -108,6 +124,15 @@ public abstract class CheckAdditionalSpringConfigurationMetadata extends SourceT
 		List<String> copy = new ArrayList<>(original);
 		Collections.sort(copy);
 		return copy;
+	}
+
+	private void checkDefaultValues(List<Map<String, Object>> properties, Properties defaultValues, Analysis analysis) {
+		for (Map<String, Object> property : properties) {
+			String propertyName = (String) property.get("name");
+			if (property.get("defaultValue") != null && defaultValues.getProperty(propertyName) != null) {
+				analysis.problems.add("Unnecessary default value for property " + propertyName);
+			}
+		}
 	}
 
 	private static final class Report implements Iterable<String> {
