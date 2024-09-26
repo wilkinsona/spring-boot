@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.EndpointsSupplier;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.Operation;
+import org.springframework.boot.actuate.endpoint.OperationFilter;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvokerAdvisor;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
@@ -72,7 +73,9 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 
 	private final ApplicationContext applicationContext;
 
-	private final Collection<EndpointFilter<E>> filters;
+	private final Collection<EndpointFilter<E>> endpointFilters;
+
+	private final Collection<OperationFilter<O>> operationFilters;
 
 	private final DiscoveredOperationsFactory<O> operationsFactory;
 
@@ -85,22 +88,47 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 	 * @param applicationContext the source application context
 	 * @param parameterValueMapper the parameter value mapper
 	 * @param invokerAdvisors invoker advisors to apply
-	 * @param filters filters to apply
+	 * @param endpointFilters endpoint filters to apply
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #EndpointDiscoverer(ApplicationContext, ParameterValueMapper, Collection, Collection, Collection)}
+	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
+	public EndpointDiscoverer(ApplicationContext applicationContext, ParameterValueMapper parameterValueMapper,
+			Collection<OperationInvokerAdvisor> invokerAdvisors, Collection<EndpointFilter<E>> endpointFilters) {
+		this(applicationContext, parameterValueMapper, invokerAdvisors, endpointFilters, Collections.emptyList());
+	}
+
+	/**
+	 * Create a new {@link EndpointDiscoverer} instance.
+	 * @param applicationContext the source application context
+	 * @param parameterValueMapper the parameter value mapper
+	 * @param invokerAdvisors invoker advisors to apply
+	 * @param endpointFilters endpoint filters to apply
+	 * @param operationFilters operation filters to apply
+	 * @since 3.4.0
 	 */
 	public EndpointDiscoverer(ApplicationContext applicationContext, ParameterValueMapper parameterValueMapper,
-			Collection<OperationInvokerAdvisor> invokerAdvisors, Collection<EndpointFilter<E>> filters) {
+			Collection<OperationInvokerAdvisor> invokerAdvisors, Collection<EndpointFilter<E>> endpointFilters,
+			Collection<OperationFilter<O>> operationFilters) {
 		Assert.notNull(applicationContext, "ApplicationContext must not be null");
 		Assert.notNull(parameterValueMapper, "ParameterValueMapper must not be null");
 		Assert.notNull(invokerAdvisors, "InvokerAdvisors must not be null");
-		Assert.notNull(filters, "Filters must not be null");
+		Assert.notNull(endpointFilters, "EndpointFilters must not be null");
+		Assert.notNull(operationFilters, "OperationFilters must not be null");
 		this.applicationContext = applicationContext;
-		this.filters = Collections.unmodifiableCollection(filters);
+		this.endpointFilters = Collections.unmodifiableCollection(endpointFilters);
+		this.operationFilters = Collections.unmodifiableCollection(operationFilters);
 		this.operationsFactory = getOperationsFactory(parameterValueMapper, invokerAdvisors);
 	}
 
 	private DiscoveredOperationsFactory<O> getOperationsFactory(ParameterValueMapper parameterValueMapper,
 			Collection<OperationInvokerAdvisor> invokerAdvisors) {
 		return new DiscoveredOperationsFactory<>(parameterValueMapper, invokerAdvisors) {
+
+			@Override
+			Collection<O> createOperations(EndpointId id, Object target) {
+				return super.createOperations(id, target);
+			}
 
 			@Override
 			protected O createOperation(EndpointId endpointId, DiscoveredOperationMethod operationMethod,
@@ -210,12 +238,14 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 		Set<OperationKey> replacedLast = new HashSet<>();
 		Collection<O> operations = this.operationsFactory.createOperations(id, target);
 		for (O operation : operations) {
-			OperationKey key = createOperationKey(operation);
-			O last = getLast(indexed.get(key));
-			if (replaceLast && replacedLast.add(key) && last != null) {
-				indexed.get(key).remove(last);
+			if (!isOperationFiltered(operation, id)) {
+				OperationKey key = createOperationKey(operation);
+				O last = getLast(indexed.get(key));
+				if (replaceLast && replacedLast.add(key) && last != null) {
+					indexed.get(key).remove(last);
+				}
+				indexed.add(key, operation);
 			}
-			indexed.add(key, operation);
 		}
 	}
 
@@ -270,7 +300,7 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 	}
 
 	private boolean isEndpointFiltered(EndpointBean endpointBean) {
-		for (EndpointFilter<E> filter : this.filters) {
+		for (EndpointFilter<E> filter : this.endpointFilters) {
 			if (!isFilterMatch(filter, endpointBean)) {
 				return true;
 			}
@@ -304,6 +334,23 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 		return LambdaSafe.callback(EndpointFilter.class, filter, endpoint)
 			.withLogger(EndpointDiscoverer.class)
 			.invokeAnd((f) -> f.match(endpoint))
+			.get();
+	}
+
+	private boolean isOperationFiltered(Operation operation, EndpointId endpointId) {
+		for (OperationFilter<O> filter : this.operationFilters) {
+			if (!isFilterMatch(filter, operation, endpointId)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@SuppressWarnings("unchecked")
+	private boolean isFilterMatch(OperationFilter<O> filter, Operation operation, EndpointId endpointId) {
+		return LambdaSafe.callback(OperationFilter.class, filter, operation)
+			.withLogger(EndpointDiscoverer.class)
+			.invokeAnd((f) -> f.match(operation, endpointId))
 			.get();
 	}
 

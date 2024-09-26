@@ -60,7 +60,8 @@ public class ServletEndpointDiscoverer extends EndpointDiscoverer<ExposableServl
 	 */
 	public ServletEndpointDiscoverer(ApplicationContext applicationContext, List<PathMapper> endpointPathMappers,
 			Collection<EndpointFilter<ExposableServletEndpoint>> filters) {
-		super(applicationContext, ParameterValueMapper.NONE, Collections.emptyList(), filters);
+		// TODO operation filtering for servlet endpoints?
+		super(applicationContext, ParameterValueMapper.NONE, Collections.emptyList(), filters, Collections.emptyList());
 		this.endpointPathMappers = endpointPathMappers;
 	}
 

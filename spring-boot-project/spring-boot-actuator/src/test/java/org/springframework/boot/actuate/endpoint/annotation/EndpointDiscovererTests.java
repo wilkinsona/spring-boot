@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import org.springframework.boot.actuate.endpoint.EndpointFilter;
 import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.Operation;
+import org.springframework.boot.actuate.endpoint.OperationFilter;
+import org.springframework.boot.actuate.endpoint.OperationType;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvokerAdvisor;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
@@ -251,16 +253,30 @@ class EndpointDiscovererTests {
 	}
 
 	@Test
-	void getEndpointsShouldApplyFilters() {
+	void getEndpointsShouldApplyEndpointFilters() {
 		load(SpecializedEndpointsConfiguration.class, (context) -> {
 			EndpointFilter<SpecializedExposableEndpoint> filter = (endpoint) -> {
 				EndpointId id = endpoint.getEndpointId();
 				return !id.equals(EndpointId.of("specialized")) && !id.equals(EndpointId.of("specialized-superclass"));
 			};
 			SpecializedEndpointDiscoverer discoverer = new SpecializedEndpointDiscoverer(context,
-					Collections.singleton(filter));
+					Collections.singleton(filter), Collections.emptyList());
 			Map<EndpointId, SpecializedExposableEndpoint> endpoints = mapEndpoints(discoverer.getEndpoints());
 			assertThat(endpoints).containsOnlyKeys(EndpointId.of("test"));
+		});
+	}
+
+	@Test
+	void getEndpointsShouldApplyOperationFilters() {
+		load(SpecializedEndpointsConfiguration.class, (context) -> {
+			OperationFilter<SpecializedOperation> operationFilter = (operation,
+					endpointId) -> operation.getType() == OperationType.READ;
+			SpecializedEndpointDiscoverer discoverer = new SpecializedEndpointDiscoverer(context,
+					Collections.emptyList(), List.of(operationFilter));
+			Map<EndpointId, SpecializedExposableEndpoint> endpoints = mapEndpoints(discoverer.getEndpoints());
+			assertThat(endpoints.values())
+				.allSatisfy((endpoint) -> assertThat(endpoint.getOperations()).extracting(SpecializedOperation::getType)
+					.containsOnly(OperationType.READ));
 		});
 	}
 
@@ -536,7 +552,7 @@ class EndpointDiscovererTests {
 		TestEndpointDiscoverer(ApplicationContext applicationContext, ParameterValueMapper parameterValueMapper,
 				Collection<OperationInvokerAdvisor> invokerAdvisors,
 				Collection<EndpointFilter<TestExposableEndpoint>> filters) {
-			super(applicationContext, parameterValueMapper, invokerAdvisors, filters);
+			super(applicationContext, parameterValueMapper, invokerAdvisors, filters, Collections.emptyList());
 		}
 
 		@Override
@@ -563,12 +579,14 @@ class EndpointDiscovererTests {
 			extends EndpointDiscoverer<SpecializedExposableEndpoint, SpecializedOperation> {
 
 		SpecializedEndpointDiscoverer(ApplicationContext applicationContext) {
-			this(applicationContext, Collections.emptyList());
+			this(applicationContext, Collections.emptyList(), Collections.emptyList());
 		}
 
 		SpecializedEndpointDiscoverer(ApplicationContext applicationContext,
-				Collection<EndpointFilter<SpecializedExposableEndpoint>> filters) {
-			super(applicationContext, new ConversionServiceParameterValueMapper(), Collections.emptyList(), filters);
+				Collection<EndpointFilter<SpecializedExposableEndpoint>> filters,
+				Collection<OperationFilter<SpecializedOperation>> operationFilters) {
+			super(applicationContext, new ConversionServiceParameterValueMapper(), Collections.emptyList(), filters,
+					operationFilters);
 		}
 
 		@Override

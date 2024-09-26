@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.boot.actuate.autoconfigure.endpoint.access.EndpointAccess;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
@@ -35,8 +36,6 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "management.endpoints.web")
 public class WebEndpointProperties {
 
-	private final Exposure exposure = new Exposure();
-
 	/**
 	 * Base path for Web endpoints. Relative to the servlet context path
 	 * (server.servlet.context-path) or WebFlux base path (spring.webflux.base-path) when
@@ -47,15 +46,18 @@ public class WebEndpointProperties {
 	private String basePath = "/actuator";
 
 	/**
+	 * Access that is allowed to web endpoints.
+	 */
+	private EndpointAccess access = EndpointAccess.READ_WRITE;
+
+	/**
 	 * Mapping between endpoint IDs and the path that should expose them.
 	 */
 	private final Map<String, String> pathMapping = new LinkedHashMap<>();
 
 	private final Discovery discovery = new Discovery();
 
-	public Exposure getExposure() {
-		return this.exposure;
-	}
+	private final Exposure exposure = new Exposure();
 
 	public String getBasePath() {
 		return this.basePath;
@@ -64,6 +66,18 @@ public class WebEndpointProperties {
 	public void setBasePath(String basePath) {
 		Assert.isTrue(basePath.isEmpty() || basePath.startsWith("/"), "Base path must start with '/' or be empty");
 		this.basePath = cleanBasePath(basePath);
+	}
+
+	public EndpointAccess getAccess() {
+		return this.access;
+	}
+
+	public void setAccess(EndpointAccess access) {
+		this.access = access;
+	}
+
+	public Exposure getExposure() {
+		return this.exposure;
 	}
 
 	private String cleanBasePath(String basePath) {
