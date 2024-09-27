@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.Link;
 import org.springframework.boot.actuate.endpoint.web.WebOperation;
 import org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping;
+import org.springframework.boot.actuate.endpoint.web.servlet.ServletSecurityContext;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,7 +75,7 @@ class CloudFoundryWebEndpointServletHandlerMapping extends AbstractWebMvcEndpoin
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			CorsConfiguration corsConfiguration, CloudFoundrySecurityInterceptor securityInterceptor,
 			Collection<ExposableEndpoint<?>> allEndpoints) {
-		super(endpointMapping, endpoints, endpointMediaTypes, corsConfiguration, true);
+		super(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, corsConfiguration, true);
 		this.securityInterceptor = securityInterceptor;
 		this.linksResolver = new EndpointLinksResolver(allEndpoints);
 		this.allEndpoints = allEndpoints;
@@ -112,7 +113,7 @@ class CloudFoundryWebEndpointServletHandlerMapping extends AbstractWebMvcEndpoin
 				return Collections.singletonMap("_links", filteredLinks);
 			}
 			Map<String, Link> links = CloudFoundryWebEndpointServletHandlerMapping.this.linksResolver
-				.resolveLinks(request.getRequestURL().toString());
+				.resolveLinks(request.getRequestURL().toString(), new ServletSecurityContext(request));
 			filteredLinks = links.entrySet()
 				.stream()
 				.filter((e) -> e.getKey().equals("self") || accessLevel.isAccessAllowed(e.getKey()))

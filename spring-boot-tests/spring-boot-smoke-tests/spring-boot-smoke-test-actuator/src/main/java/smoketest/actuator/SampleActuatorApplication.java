@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@
 
 package smoketest.actuator;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.health.CompositeHealthContributor;
@@ -46,6 +53,11 @@ public class SampleActuatorApplication {
 		return CompositeHealthContributor.fromMap(map);
 	}
 
+	@Bean
+	public TestServletEndpoint testServletEndpoint() {
+		return new TestServletEndpoint();
+	}
+
 	private HealthContributor createNestedHealthContributor(String name) {
 		Map<String, HealthContributor> map = new LinkedHashMap<>();
 		map.put("a", createHealthIndicator(name + "-a"));
@@ -62,6 +74,26 @@ public class SampleActuatorApplication {
 		SpringApplication application = new SpringApplication(SampleActuatorApplication.class);
 		application.setApplicationStartup(new BufferingApplicationStartup(1024));
 		application.run(args);
+	}
+
+	@SuppressWarnings({ "deprecation", "removal" })
+	@org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpoint(id = "servlet")
+	static class TestServletEndpoint
+			implements Supplier<org.springframework.boot.actuate.endpoint.web.EndpointServlet> {
+
+		@Override
+		public org.springframework.boot.actuate.endpoint.web.EndpointServlet get() {
+			return new org.springframework.boot.actuate.endpoint.web.EndpointServlet(ExampleServlet.class);
+		}
+
+	}
+
+	static class ExampleServlet extends HttpServlet {
+
+		@Override
+		protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		}
+
 	}
 
 }

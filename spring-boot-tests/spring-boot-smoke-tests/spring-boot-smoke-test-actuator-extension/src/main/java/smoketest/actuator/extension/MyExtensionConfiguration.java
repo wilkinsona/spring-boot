@@ -26,6 +26,7 @@ import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointPr
 import org.springframework.boot.actuate.endpoint.EndpointFilter;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvokerAdvisor;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
@@ -41,9 +42,10 @@ public class MyExtensionConfiguration {
 
 	@Bean
 	public MyExtensionWebMvcEndpointHandlerMapping myWebMvcEndpointHandlerMapping(
-			WebEndpointsSupplier webEndpointsSupplier, EndpointMediaTypes endpointMediaTypes,
-			ObjectProvider<CorsEndpointProperties> corsPropertiesProvider, WebEndpointProperties webEndpointProperties,
-			Environment environment, ApplicationContext applicationContext, ParameterValueMapper parameterMapper) {
+			WebEndpointsSupplier webEndpointsSupplier, ObjectProvider<EndpointAccessFilter> accessFilters,
+			EndpointMediaTypes endpointMediaTypes, ObjectProvider<CorsEndpointProperties> corsPropertiesProvider,
+			WebEndpointProperties webEndpointProperties, Environment environment, ApplicationContext applicationContext,
+			ParameterValueMapper parameterMapper) {
 		CorsEndpointProperties corsProperties = corsPropertiesProvider.getIfAvailable();
 		CorsConfiguration corsConfiguration = (corsProperties != null) ? corsProperties.toCorsConfiguration() : null;
 		List<OperationInvokerAdvisor> invokerAdvisors = Collections.emptyList();
@@ -52,7 +54,8 @@ public class MyExtensionConfiguration {
 		WebEndpointDiscoverer discoverer = new WebEndpointDiscoverer(applicationContext, parameterMapper,
 				endpointMediaTypes, null, null, invokerAdvisors, filters, Collections.emptyList());
 		Collection<ExposableWebEndpoint> endpoints = discoverer.getEndpoints();
-		return new MyExtensionWebMvcEndpointHandlerMapping(endpoints, endpointMediaTypes, corsConfiguration);
+		return new MyExtensionWebMvcEndpointHandlerMapping(endpoints, accessFilters.orderedStream().toList(),
+				endpointMediaTypes, corsConfiguration);
 	}
 
 }

@@ -18,9 +18,9 @@ package org.springframework.boot.actuate.endpoint.web.reactive;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +35,7 @@ import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.aot.hint.annotation.Reflective;
 import org.springframework.aot.hint.annotation.ReflectiveRuntimeHintsRegistrar;
+import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.InvalidEndpointRequestException;
 import org.springframework.boot.actuate.endpoint.InvocationContext;
 import org.springframework.boot.actuate.endpoint.OperationArgumentResolver;
@@ -42,6 +43,8 @@ import org.springframework.boot.actuate.endpoint.OperationType;
 import org.springframework.boot.actuate.endpoint.ProducibleOperationArgumentResolver;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessDeniedException;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
@@ -56,8 +59,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authorization.AuthorityAuthorizationManager;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.ClassUtils;
@@ -93,6 +94,8 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 
 	private final Collection<ExposableWebEndpoint> endpoints;
 
+	private final Collection<EndpointAccessFilter> accessFilters;
+
 	private final EndpointMediaTypes endpointMediaTypes;
 
 	private final CorsConfiguration corsConfiguration;
@@ -113,12 +116,36 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 	 * @param endpointMediaTypes media types consumed and produced by the endpoints
 	 * @param corsConfiguration the CORS configuration for the endpoints
 	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #AbstractWebFluxEndpointHandlerMapping(EndpointMapping, Collection, Collection, EndpointMediaTypes, CorsConfiguration, boolean)}
 	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public AbstractWebFluxEndpointHandlerMapping(EndpointMapping endpointMapping,
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			CorsConfiguration corsConfiguration, boolean shouldRegisterLinksMapping) {
+		this(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, corsConfiguration,
+				shouldRegisterLinksMapping);
+	}
+
+	/**
+	 * Creates a new {@code AbstractWebFluxEndpointHandlerMapping} that provides mappings
+	 * for the operations of the given {@code webEndpoints}.
+	 * @param endpointMapping the base mapping for all endpoints
+	 * @param endpoints the web endpoints
+	 * @param accessFilters filters that restrict access to the endpoints and their
+	 * operations
+	 * @param endpointMediaTypes media types consumed and produced by the endpoints
+	 * @param corsConfiguration the CORS configuration for the endpoints
+	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 * @since 3.4.0
+	 */
+	public AbstractWebFluxEndpointHandlerMapping(EndpointMapping endpointMapping,
+			Collection<ExposableWebEndpoint> endpoints, Collection<EndpointAccessFilter> accessFilters,
+			EndpointMediaTypes endpointMediaTypes, CorsConfiguration corsConfiguration,
+			boolean shouldRegisterLinksMapping) {
 		this.endpointMapping = endpointMapping;
 		this.endpoints = endpoints;
+		this.accessFilters = accessFilters;
 		this.endpointMediaTypes = endpointMediaTypes;
 		this.corsConfiguration = corsConfiguration;
 		this.shouldRegisterLinksMapping = shouldRegisterLinksMapping;
@@ -147,7 +174,7 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 		RequestMappingInfo requestMappingInfo = createRequestMappingInfo(operation);
 		if (operation.getType() == OperationType.WRITE) {
 			ReactiveWebOperation reactiveWebOperation = wrapReactiveWebOperation(endpoint, operation,
-					new ReactiveWebOperationAdapter(operation));
+					new ReactiveWebOperationAdapter(endpoint.getEndpointId(), operation, this.accessFilters));
 			registerMapping(requestMappingInfo, new WriteOperationHandler((reactiveWebOperation)),
 					this.handleWriteMethod);
 		}
@@ -159,7 +186,7 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 	protected void registerReadMapping(RequestMappingInfo requestMappingInfo, ExposableWebEndpoint endpoint,
 			WebOperation operation) {
 		ReactiveWebOperation reactiveWebOperation = wrapReactiveWebOperation(endpoint, operation,
-				new ReactiveWebOperationAdapter(operation));
+				new ReactiveWebOperationAdapter(endpoint.getEndpointId(), operation, this.accessFilters));
 		registerMapping(requestMappingInfo, new ReadOperationHandler((reactiveWebOperation)), this.handleReadMethod);
 	}
 
@@ -309,14 +336,21 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 
 		private static final String PATH_SEPARATOR = AntPathMatcher.DEFAULT_PATH_SEPARATOR;
 
+		private final EndpointId endpointId;
+
 		private final WebOperation operation;
 
 		private final OperationInvoker invoker;
 
+		private final Collection<EndpointAccessFilter> accessFilters;
+
 		private final Supplier<Mono<? extends SecurityContext>> securityContextSupplier;
 
-		private ReactiveWebOperationAdapter(WebOperation operation) {
+		private ReactiveWebOperationAdapter(EndpointId endpointId, WebOperation operation,
+				Collection<EndpointAccessFilter> accessFilters) {
+			this.endpointId = endpointId;
 			this.operation = operation;
+			this.accessFilters = accessFilters;
 			this.invoker = getInvoker(operation);
 			this.securityContextSupplier = getSecurityContextSupplier();
 		}
@@ -354,12 +388,27 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 				.of(WebServerNamespace.class, () -> WebServerNamespace
 					.from(WebServerApplicationContext.getServerNamespace(exchange.getApplicationContext())));
 			return this.securityContextSupplier.get()
+				.flatMap(this::checkAccess)
 				.map((securityContext) -> new InvocationContext(securityContext, arguments,
 						serverNamespaceArgumentResolver,
 						new ProducibleOperationArgumentResolver(
 								() -> exchange.getRequest().getHeaders().get("Accept"))))
 				.flatMap((invocationContext) -> handleResult((Publisher<?>) this.invoker.invoke(invocationContext),
 						exchange.getRequest().getMethod()));
+		}
+
+		private Mono<SecurityContext> checkAccess(SecurityContext securityContext) {
+			return permitAccess(securityContext) ? Mono.just(securityContext)
+					: Mono.error(new EndpointAccessDeniedException());
+		}
+
+		private boolean permitAccess(SecurityContext securityContext) {
+			for (EndpointAccessFilter accessFilter : this.accessFilters) {
+				if (!accessFilter.allow(securityContext, this.endpointId, this.operation)) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		private Map<String, Object> getArguments(ServerWebExchange exchange, Map<String, String> body) {
@@ -497,35 +546,6 @@ public abstract class AbstractWebFluxEndpointHandlerMapping extends RequestMappi
 		public HandlerMethod createWithResolvedBean() {
 			HandlerMethod handlerMethod = super.createWithResolvedBean();
 			return new WebFluxEndpointHandlerMethod(handlerMethod.getBean(), handlerMethod.getMethod());
-		}
-
-	}
-
-	private static final class ReactiveSecurityContext implements SecurityContext {
-
-		private static final String ROLE_PREFIX = "ROLE_";
-
-		private final Authentication authentication;
-
-		ReactiveSecurityContext(Authentication authentication) {
-			this.authentication = authentication;
-		}
-
-		private Authentication getAuthentication() {
-			return this.authentication;
-		}
-
-		@Override
-		public Principal getPrincipal() {
-			return this.authentication;
-		}
-
-		@Override
-		public boolean isUserInRole(String role) {
-			String authority = (!role.startsWith(ROLE_PREFIX)) ? ROLE_PREFIX + role : role;
-			return AuthorityAuthorizationManager.hasAuthority(authority)
-				.check(this::getAuthentication, null)
-				.isGranted();
 		}
 
 	}

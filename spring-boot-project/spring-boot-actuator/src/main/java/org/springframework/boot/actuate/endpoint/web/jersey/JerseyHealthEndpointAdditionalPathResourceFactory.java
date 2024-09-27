@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 
 import org.glassfish.jersey.server.model.Resource;
 
+import org.springframework.boot.actuate.endpoint.EndpointId;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebOperation;
@@ -55,14 +57,19 @@ public final class JerseyHealthEndpointAdditionalPathResourceFactory {
 	}
 
 	public Collection<Resource> createEndpointResources(EndpointMapping endpointMapping,
-			Collection<ExposableWebEndpoint> endpoints) {
-		return endpoints.stream()
-			.flatMap((endpoint) -> endpoint.getOperations().stream())
-			.flatMap((operation) -> createResources(endpointMapping, operation))
-			.toList();
+			Collection<ExposableWebEndpoint> endpoints, Collection<EndpointAccessFilter> accessFilters) {
+		List<Resource> resources = new ArrayList<>();
+		for (ExposableWebEndpoint endpoint : endpoints) {
+			for (WebOperation operation : endpoint.getOperations()) {
+				resources.addAll(
+						createResources(endpointMapping, endpoint.getEndpointId(), operation, accessFilters).toList());
+			}
+		}
+		return resources;
 	}
 
-	private Stream<Resource> createResources(EndpointMapping endpointMapping, WebOperation operation) {
+	private Stream<Resource> createResources(EndpointMapping endpointMapping, EndpointId endpointId,
+			WebOperation operation, Collection<EndpointAccessFilter> accessFilters) {
 		WebOperationRequestPredicate requestPredicate = operation.getRequestPredicate();
 		String matchAllRemainingPathSegmentsVariable = requestPredicate.getMatchAllRemainingPathSegmentsVariable();
 		if (matchAllRemainingPathSegmentsVariable != null) {
@@ -70,8 +77,8 @@ public final class JerseyHealthEndpointAdditionalPathResourceFactory {
 			for (HealthEndpointGroup group : this.groups) {
 				AdditionalHealthEndpointPath additionalPath = group.getAdditionalPath();
 				if (additionalPath != null) {
-					resources.add(this.delegate.getResource(endpointMapping, operation, requestPredicate,
-							additionalPath.getValue(), this.serverNamespace,
+					resources.add(this.delegate.getResource(endpointMapping, endpointId, operation, accessFilters,
+							requestPredicate, additionalPath.getValue(), this.serverNamespace,
 							(data, pathSegmentsVariable) -> data.getUriInfo().getPath()));
 				}
 			}

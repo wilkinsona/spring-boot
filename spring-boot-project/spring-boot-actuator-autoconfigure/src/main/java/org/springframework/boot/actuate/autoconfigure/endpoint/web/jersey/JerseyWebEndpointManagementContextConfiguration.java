@@ -30,6 +30,7 @@ import jakarta.ws.rs.ext.ContextResolver;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties;
@@ -42,6 +43,7 @@ import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.jackson.EndpointObjectMapper;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -84,13 +86,13 @@ class JerseyWebEndpointManagementContextConfiguration {
 	@Bean
 	@SuppressWarnings("removal")
 	JerseyWebEndpointsResourcesRegistrar jerseyWebEndpointsResourcesRegistrar(Environment environment,
-			WebEndpointsSupplier webEndpointsSupplier,
+			WebEndpointsSupplier webEndpointsSupplier, ObjectProvider<EndpointAccessFilter> accessFilters,
 			org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier,
 			EndpointMediaTypes endpointMediaTypes, WebEndpointProperties webEndpointProperties) {
 		String basePath = webEndpointProperties.getBasePath();
 		boolean shouldRegisterLinks = shouldRegisterLinksMapping(webEndpointProperties, environment, basePath);
-		return new JerseyWebEndpointsResourcesRegistrar(webEndpointsSupplier, servletEndpointsSupplier,
-				endpointMediaTypes, basePath, shouldRegisterLinks);
+		return new JerseyWebEndpointsResourcesRegistrar(webEndpointsSupplier, accessFilters.orderedStream().toList(),
+				servletEndpointsSupplier, endpointMediaTypes, basePath, shouldRegisterLinks);
 	}
 
 	@Bean
@@ -98,14 +100,15 @@ class JerseyWebEndpointManagementContextConfiguration {
 	@ConditionalOnBean(HealthEndpoint.class)
 	@ConditionalOnAvailableEndpoint(endpoint = HealthEndpoint.class, exposure = EndpointExposure.WEB)
 	JerseyAdditionalHealthEndpointPathsManagementResourcesRegistrar jerseyDifferentPortAdditionalHealthEndpointPathsResourcesRegistrar(
-			WebEndpointsSupplier webEndpointsSupplier, HealthEndpointGroups healthEndpointGroups) {
+			WebEndpointsSupplier webEndpointsSupplier, ObjectProvider<EndpointAccessFilter> accessFilters,
+			HealthEndpointGroups healthEndpointGroups) {
 		Collection<ExposableWebEndpoint> webEndpoints = webEndpointsSupplier.getEndpoints();
 		ExposableWebEndpoint healthEndpoint = webEndpoints.stream()
 			.filter((endpoint) -> endpoint.getEndpointId().equals(HEALTH_ENDPOINT_ID))
 			.findFirst()
 			.orElse(null);
 		return new JerseyAdditionalHealthEndpointPathsManagementResourcesRegistrar(healthEndpoint,
-				healthEndpointGroups);
+				accessFilters.orderedStream().toList(), healthEndpointGroups);
 	}
 
 	@Bean
@@ -129,6 +132,8 @@ class JerseyWebEndpointManagementContextConfiguration {
 
 		private final WebEndpointsSupplier webEndpointsSupplier;
 
+		private final Collection<EndpointAccessFilter> accessFilters;
+
 		private final org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier;
 
 		private final EndpointMediaTypes mediaTypes;
@@ -138,9 +143,11 @@ class JerseyWebEndpointManagementContextConfiguration {
 		private final boolean shouldRegisterLinks;
 
 		JerseyWebEndpointsResourcesRegistrar(WebEndpointsSupplier webEndpointsSupplier,
+				Collection<EndpointAccessFilter> accessFilters,
 				org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier,
 				EndpointMediaTypes endpointMediaTypes, String basePath, boolean shouldRegisterLinks) {
 			this.webEndpointsSupplier = webEndpointsSupplier;
+			this.accessFilters = accessFilters;
 			this.servletEndpointsSupplier = servletEndpointsSupplier;
 			this.mediaTypes = endpointMediaTypes;
 			this.basePath = basePath;
@@ -159,7 +166,8 @@ class JerseyWebEndpointManagementContextConfiguration {
 			EndpointLinksResolver linksResolver = getLinksResolver(webEndpoints, servletEndpoints);
 			EndpointMapping mapping = new EndpointMapping(this.basePath);
 			Collection<Resource> endpointResources = new JerseyEndpointResourceFactory().createEndpointResources(
-					mapping, webEndpoints, this.mediaTypes, linksResolver, this.shouldRegisterLinks);
+					mapping, webEndpoints, this.accessFilters, this.mediaTypes, linksResolver,
+					this.shouldRegisterLinks);
 			register(endpointResources, config);
 		}
 
@@ -168,7 +176,7 @@ class JerseyWebEndpointManagementContextConfiguration {
 			List<ExposableEndpoint<?>> endpoints = new ArrayList<>(webEndpoints.size() + servletEndpoints.size());
 			endpoints.addAll(webEndpoints);
 			endpoints.addAll(servletEndpoints);
-			return new EndpointLinksResolver(endpoints, this.basePath);
+			return new EndpointLinksResolver(endpoints, this.accessFilters, this.basePath);
 		}
 
 		private void register(Collection<Resource> resources, ResourceConfig config) {
@@ -182,11 +190,14 @@ class JerseyWebEndpointManagementContextConfiguration {
 
 		private final ExposableWebEndpoint healthEndpoint;
 
+		private final Collection<EndpointAccessFilter> accessFilters;
+
 		private final HealthEndpointGroups groups;
 
 		JerseyAdditionalHealthEndpointPathsManagementResourcesRegistrar(ExposableWebEndpoint healthEndpoint,
-				HealthEndpointGroups groups) {
+				Collection<EndpointAccessFilter> accessFilters, HealthEndpointGroups groups) {
 			this.healthEndpoint = healthEndpoint;
+			this.accessFilters = accessFilters;
 			this.groups = groups;
 		}
 
@@ -202,7 +213,7 @@ class JerseyWebEndpointManagementContextConfiguration {
 			JerseyHealthEndpointAdditionalPathResourceFactory resourceFactory = new JerseyHealthEndpointAdditionalPathResourceFactory(
 					WebServerNamespace.MANAGEMENT, this.groups);
 			Collection<Resource> endpointResources = resourceFactory
-				.createEndpointResources(mapping, Collections.singletonList(this.healthEndpoint))
+				.createEndpointResources(mapping, Collections.singletonList(this.healthEndpoint), this.accessFilters)
 				.stream()
 				.filter(Objects::nonNull)
 				.toList();

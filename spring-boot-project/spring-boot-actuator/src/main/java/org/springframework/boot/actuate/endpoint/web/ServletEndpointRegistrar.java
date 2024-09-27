@@ -16,15 +16,29 @@
 
 package org.springframework.boot.actuate.endpoint.web;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRegistration.Dynamic;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.actuate.endpoint.EndpointId;
+import org.springframework.boot.actuate.endpoint.SecurityContext;
+import org.springframework.boot.actuate.endpoint.web.servlet.ServletSecurityContext;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -47,10 +61,19 @@ public class ServletEndpointRegistrar implements ServletContextInitializer {
 
 	private final Collection<ExposableServletEndpoint> servletEndpoints;
 
+	private final Collection<EndpointAccessFilter> accessFilters;
+
 	public ServletEndpointRegistrar(String basePath, Collection<ExposableServletEndpoint> servletEndpoints) {
+		this(basePath, servletEndpoints, Collections.emptyList());
+	}
+
+	public ServletEndpointRegistrar(String basePath, Collection<ExposableServletEndpoint> servletEndpoints,
+			Collection<EndpointAccessFilter> accessFilters) {
 		Assert.notNull(servletEndpoints, "ServletEndpoints must not be null");
+		Assert.notNull(servletEndpoints, "AccessFilters must not be null");
 		this.basePath = cleanBasePath(basePath);
 		this.servletEndpoints = servletEndpoints;
+		this.accessFilters = accessFilters;
 	}
 
 	private static String cleanBasePath(String basePath) {
@@ -75,6 +98,43 @@ public class ServletEndpointRegistrar implements ServletContextInitializer {
 		registration.setInitParameters(endpointServlet.getInitParameters());
 		registration.setLoadOnStartup(endpointServlet.getLoadOnStartup());
 		logger.info("Registered '" + path + "' to " + name);
+		servletContext
+			.addFilter(name + "-access-filter", new AccessFilter(this.accessFilters, endpoint.getEndpointId()))
+			.addMappingForServletNames(EnumSet.allOf(DispatcherType.class), false, name);
+	}
+
+	private static final class AccessFilter implements Filter {
+
+		private final Collection<EndpointAccessFilter> accessFilters;
+
+		private final EndpointId endpointId;
+
+		private AccessFilter(Collection<EndpointAccessFilter> accessFilters, EndpointId endpointId) {
+			this.accessFilters = accessFilters;
+			this.endpointId = endpointId;
+		}
+
+		@Override
+		public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+				throws IOException, ServletException {
+			if (request instanceof HttpServletRequest httpRequest && permitAccess(httpRequest)) {
+				chain.doFilter(httpRequest, response);
+			}
+			else if (response instanceof HttpServletResponse httpResponse) {
+				httpResponse.sendError(HttpStatus.UNAUTHORIZED.value());
+			}
+		}
+
+		private boolean permitAccess(HttpServletRequest request) {
+			SecurityContext securityContext = new ServletSecurityContext(request);
+			for (EndpointAccessFilter accessFilter : this.accessFilters) {
+				if (!accessFilter.allow(securityContext, this.endpointId, null)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 	}
 
 }

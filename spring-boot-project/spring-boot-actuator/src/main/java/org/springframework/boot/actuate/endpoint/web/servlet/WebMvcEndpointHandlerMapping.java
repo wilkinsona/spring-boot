@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.aot.hint.annotation.Reflective;
 import org.springframework.aot.hint.annotation.ReflectiveRuntimeHintsRegistrar;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -62,11 +63,34 @@ public class WebMvcEndpointHandlerMapping extends AbstractWebMvcEndpointHandlerM
 	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
 	 * @param linksResolver resolver for determining links to available endpoints
 	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #WebMvcEndpointHandlerMapping(EndpointMapping, Collection, Collection, EndpointMediaTypes, CorsConfiguration, EndpointLinksResolver, boolean)}
 	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public WebMvcEndpointHandlerMapping(EndpointMapping endpointMapping, Collection<ExposableWebEndpoint> endpoints,
 			EndpointMediaTypes endpointMediaTypes, CorsConfiguration corsConfiguration,
 			EndpointLinksResolver linksResolver, boolean shouldRegisterLinksMapping) {
-		super(endpointMapping, endpoints, endpointMediaTypes, corsConfiguration, shouldRegisterLinksMapping);
+		this(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, corsConfiguration, linksResolver,
+				shouldRegisterLinksMapping);
+	}
+
+	/**
+	 * Creates a new {@code WebMvcEndpointHandlerMapping} instance that provides mappings
+	 * for the given endpoints.
+	 * @param endpointMapping the base mapping for all endpoints
+	 * @param endpoints the web endpoints
+	 * @param accessFilters filters that restrict access to endpoint operations
+	 * @param endpointMediaTypes media types consumed and produced by the endpoints
+	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
+	 * @param linksResolver resolver for determining links to available endpoints
+	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 */
+	public WebMvcEndpointHandlerMapping(EndpointMapping endpointMapping, Collection<ExposableWebEndpoint> endpoints,
+			Collection<EndpointAccessFilter> accessFilters, EndpointMediaTypes endpointMediaTypes,
+			CorsConfiguration corsConfiguration, EndpointLinksResolver linksResolver,
+			boolean shouldRegisterLinksMapping) {
+		super(endpointMapping, endpoints, accessFilters, endpointMediaTypes, corsConfiguration,
+				shouldRegisterLinksMapping);
 		this.linksResolver = linksResolver;
 		setOrder(-100);
 	}
@@ -86,7 +110,7 @@ public class WebMvcEndpointHandlerMapping extends AbstractWebMvcEndpointHandlerM
 		@Reflective
 		public Map<String, Map<String, Link>> links(HttpServletRequest request, HttpServletResponse response) {
 			Map<String, Link> links = WebMvcEndpointHandlerMapping.this.linksResolver
-				.resolveLinks(request.getRequestURL().toString());
+				.resolveLinks(request.getRequestURL().toString(), new ServletSecurityContext(request));
 			return OperationResponseBody.of(Collections.singletonMap("_links", links));
 		}
 

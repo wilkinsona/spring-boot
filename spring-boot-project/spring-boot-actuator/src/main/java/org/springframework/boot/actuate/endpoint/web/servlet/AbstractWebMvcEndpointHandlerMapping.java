@@ -18,7 +18,6 @@ package org.springframework.boot.actuate.endpoint.web.servlet;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,12 +36,15 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.aot.hint.annotation.Reflective;
 import org.springframework.aot.hint.annotation.ReflectiveRuntimeHintsRegistrar;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.InvalidEndpointRequestException;
 import org.springframework.boot.actuate.endpoint.InvocationContext;
 import org.springframework.boot.actuate.endpoint.OperationArgumentResolver;
 import org.springframework.boot.actuate.endpoint.ProducibleOperationArgumentResolver;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvoker;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessDeniedException;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
@@ -105,6 +107,8 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 
 	private RequestMappingInfo.BuilderConfiguration builderConfig = new RequestMappingInfo.BuilderConfiguration();
 
+	private final Collection<EndpointAccessFilter> accessFilters;
+
 	/**
 	 * Creates a new {@code WebEndpointHandlerMapping} that provides mappings for the
 	 * operations of the given {@code webEndpoints}.
@@ -116,7 +120,7 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 	public AbstractWebMvcEndpointHandlerMapping(EndpointMapping endpointMapping,
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			boolean shouldRegisterLinksMapping) {
-		this(endpointMapping, endpoints, endpointMediaTypes, null, shouldRegisterLinksMapping);
+		this(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, null, shouldRegisterLinksMapping);
 	}
 
 	/**
@@ -127,12 +131,34 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 	 * @param endpointMediaTypes media types consumed and produced by the endpoints
 	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
 	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #AbstractWebMvcEndpointHandlerMapping(EndpointMapping, Collection, Collection, EndpointMediaTypes, CorsConfiguration, boolean)}
 	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public AbstractWebMvcEndpointHandlerMapping(EndpointMapping endpointMapping,
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			CorsConfiguration corsConfiguration, boolean shouldRegisterLinksMapping) {
+		this(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, corsConfiguration,
+				shouldRegisterLinksMapping);
+	}
+
+	/**
+	 * Creates a new {@code AbstractWebMvcEndpointHandlerMapping} that provides mappings
+	 * for the operations of the given endpoints.
+	 * @param endpointMapping the base mapping for all endpoints
+	 * @param endpoints the web endpoints
+	 * @param accessFilters filters that restrict access to endpoint operations
+	 * @param endpointMediaTypes media types consumed and produced by the endpoints
+	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
+	 * @param shouldRegisterLinksMapping whether the links endpoint should be registered
+	 */
+	public AbstractWebMvcEndpointHandlerMapping(EndpointMapping endpointMapping,
+			Collection<ExposableWebEndpoint> endpoints, Collection<EndpointAccessFilter> accessFilters,
+			EndpointMediaTypes endpointMediaTypes, CorsConfiguration corsConfiguration,
+			boolean shouldRegisterLinksMapping) {
 		this.endpointMapping = endpointMapping;
 		this.endpoints = endpoints;
+		this.accessFilters = accessFilters;
 		this.endpointMediaTypes = endpointMediaTypes;
 		this.corsConfiguration = corsConfiguration;
 		this.shouldRegisterLinksMapping = shouldRegisterLinksMapping;
@@ -177,7 +203,7 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 	protected void registerMapping(ExposableWebEndpoint endpoint, WebOperationRequestPredicate predicate,
 			WebOperation operation, String path) {
 		ServletWebOperation servletWebOperation = wrapServletWebOperation(endpoint, operation,
-				new ServletWebOperationAdapter(operation));
+				new ServletWebOperationAdapter(endpoint.getEndpointId(), operation, this.accessFilters));
 		registerMapping(createRequestMappingInfo(predicate, path), new OperationHandler(servletWebOperation),
 				this.handleMethod);
 	}
@@ -301,10 +327,17 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 			BODY_CONVERTERS = Collections.unmodifiableList(converters);
 		}
 
+		private final EndpointId endpointId;
+
 		private final WebOperation operation;
 
-		ServletWebOperationAdapter(WebOperation operation) {
+		private final Collection<EndpointAccessFilter> accessFilters;
+
+		ServletWebOperationAdapter(EndpointId endpointId, WebOperation operation,
+				Collection<EndpointAccessFilter> accessFilters) {
+			this.endpointId = endpointId;
 			this.operation = operation;
+			this.accessFilters = accessFilters;
 		}
 
 		@Override
@@ -313,6 +346,9 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 			Map<String, Object> arguments = getArguments(request, body);
 			try {
 				ServletSecurityContext securityContext = new ServletSecurityContext(request);
+				if (!permitAccess(securityContext)) {
+					throw new EndpointAccessDeniedException();
+				}
 				ProducibleOperationArgumentResolver producibleOperationArgumentResolver = new ProducibleOperationArgumentResolver(
 						() -> headers.get("Accept"));
 				OperationArgumentResolver serverNamespaceArgumentResolver = OperationArgumentResolver
@@ -329,6 +365,15 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 			catch (InvalidEndpointRequestException ex) {
 				throw new InvalidEndpointBadRequestException(ex);
 			}
+		}
+
+		private boolean permitAccess(SecurityContext securityContext) {
+			for (EndpointAccessFilter filter : this.accessFilters) {
+				if (!filter.allow(securityContext, this.endpointId, this.operation)) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		@Override
@@ -470,26 +515,6 @@ public abstract class AbstractWebMvcEndpointHandlerMapping extends RequestMappin
 
 		InvalidEndpointBadRequestException(InvalidEndpointRequestException cause) {
 			super(HttpStatus.BAD_REQUEST, cause.getReason(), cause);
-		}
-
-	}
-
-	private static final class ServletSecurityContext implements SecurityContext {
-
-		private final HttpServletRequest request;
-
-		private ServletSecurityContext(HttpServletRequest request) {
-			this.request = request;
-		}
-
-		@Override
-		public Principal getPrincipal() {
-			return this.request.getUserPrincipal();
-		}
-
-		@Override
-		public boolean isUserInRole(String role) {
-			return this.request.isUserInRole(role);
 		}
 
 	}

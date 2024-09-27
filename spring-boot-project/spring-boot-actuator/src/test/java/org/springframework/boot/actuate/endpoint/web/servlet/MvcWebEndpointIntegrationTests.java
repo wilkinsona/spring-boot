@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.springframework.boot.actuate.endpoint.web.servlet;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -149,7 +150,7 @@ class MvcWebEndpointIntegrationTests
 			corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST"));
 			String endpointPath = environment.getProperty("endpointPath");
 			return new WebMvcEndpointHandlerMapping(new EndpointMapping(endpointPath),
-					endpointDiscoverer.getEndpoints(), endpointMediaTypes, corsConfiguration,
+					endpointDiscoverer.getEndpoints(), Collections.emptyList(), endpointMediaTypes, corsConfiguration,
 					new EndpointLinksResolver(endpointDiscoverer.getEndpoints()), StringUtils.hasText(endpointPath));
 		}
 
@@ -174,8 +175,8 @@ class MvcWebEndpointIntegrationTests
 			corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST"));
 			String endpointPath = environment.getProperty("endpointPath");
 			WebMvcEndpointHandlerMapping handlerMapping = new WebMvcEndpointHandlerMapping(
-					new EndpointMapping(endpointPath), endpointDiscoverer.getEndpoints(), endpointMediaTypes,
-					corsConfiguration, new EndpointLinksResolver(endpointDiscoverer.getEndpoints()),
+					new EndpointMapping(endpointPath), endpointDiscoverer.getEndpoints(), Collections.emptyList(),
+					endpointMediaTypes, corsConfiguration, new EndpointLinksResolver(endpointDiscoverer.getEndpoints()),
 					StringUtils.hasText(endpointPath));
 			return handlerMapping;
 		}

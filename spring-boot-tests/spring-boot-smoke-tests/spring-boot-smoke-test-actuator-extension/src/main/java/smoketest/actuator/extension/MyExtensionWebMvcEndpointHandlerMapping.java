@@ -24,12 +24,14 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.Link;
 import org.springframework.boot.actuate.endpoint.web.servlet.AbstractWebMvcEndpointHandlerMapping;
+import org.springframework.boot.actuate.endpoint.web.servlet.ServletSecurityContext;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -40,9 +42,10 @@ class MyExtensionWebMvcEndpointHandlerMapping extends AbstractWebMvcEndpointHand
 	private final EndpointLinksResolver linksResolver;
 
 	MyExtensionWebMvcEndpointHandlerMapping(Collection<ExposableWebEndpoint> endpoints,
-			EndpointMediaTypes endpointMediaTypes, CorsConfiguration corsConfiguration) {
-		super(new EndpointMapping(PATH), endpoints, endpointMediaTypes, corsConfiguration, true);
-		this.linksResolver = new EndpointLinksResolver(endpoints, PATH);
+			Collection<EndpointAccessFilter> accessFilters, EndpointMediaTypes endpointMediaTypes,
+			CorsConfiguration corsConfiguration) {
+		super(new EndpointMapping(PATH), endpoints, accessFilters, endpointMediaTypes, corsConfiguration, true);
+		this.linksResolver = new EndpointLinksResolver(endpoints, accessFilters, PATH);
 		setOrder(-100);
 	}
 
@@ -63,7 +66,7 @@ class MyExtensionWebMvcEndpointHandlerMapping extends AbstractWebMvcEndpointHand
 		@ResponseBody
 		public Map<String, Map<String, Link>> links(HttpServletRequest request, HttpServletResponse response) {
 			return Collections.singletonMap("_links", MyExtensionWebMvcEndpointHandlerMapping.this.linksResolver
-				.resolveLinks(request.getRequestURL().toString()));
+				.resolveLinks(request.getRequestURL().toString(), new ServletSecurityContext(request)));
 		}
 
 		@Override

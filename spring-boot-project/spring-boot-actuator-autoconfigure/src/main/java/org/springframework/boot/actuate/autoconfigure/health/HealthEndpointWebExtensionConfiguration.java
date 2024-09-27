@@ -28,6 +28,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
@@ -103,9 +104,11 @@ class HealthEndpointWebExtensionConfiguration {
 
 		@Bean
 		JerseyAdditionalHealthEndpointPathsResourcesRegistrar jerseyAdditionalHealthEndpointPathsResourcesRegistrar(
-				WebEndpointsSupplier webEndpointsSupplier, HealthEndpointGroups healthEndpointGroups) {
+				WebEndpointsSupplier webEndpointsSupplier, ObjectProvider<EndpointAccessFilter> accessFilters,
+				HealthEndpointGroups healthEndpointGroups) {
 			ExposableWebEndpoint health = getHealthEndpoint(webEndpointsSupplier);
-			return new JerseyAdditionalHealthEndpointPathsResourcesRegistrar(health, healthEndpointGroups);
+			return new JerseyAdditionalHealthEndpointPathsResourcesRegistrar(health,
+					accessFilters.orderedStream().toList(), healthEndpointGroups);
 		}
 
 		@Configuration(proxyBeanMethods = false)
@@ -141,11 +144,14 @@ class HealthEndpointWebExtensionConfiguration {
 
 		private final ExposableWebEndpoint endpoint;
 
+		private final Collection<EndpointAccessFilter> accessFilters;
+
 		private final HealthEndpointGroups groups;
 
 		JerseyAdditionalHealthEndpointPathsResourcesRegistrar(ExposableWebEndpoint endpoint,
-				HealthEndpointGroups groups) {
+				Collection<EndpointAccessFilter> accessFilters, HealthEndpointGroups groups) {
 			this.endpoint = endpoint;
+			this.accessFilters = accessFilters;
 			this.groups = groups;
 		}
 
@@ -160,7 +166,8 @@ class HealthEndpointWebExtensionConfiguration {
 					WebServerNamespace.SERVER, this.groups);
 			Collection<Resource> endpointResources = resourceFactory
 				.createEndpointResources(mapping,
-						(this.endpoint != null) ? Collections.singletonList(this.endpoint) : Collections.emptyList())
+						(this.endpoint != null) ? Collections.singletonList(this.endpoint) : Collections.emptyList(),
+						this.accessFilters)
 				.stream()
 				.filter(Objects::nonNull)
 				.toList();

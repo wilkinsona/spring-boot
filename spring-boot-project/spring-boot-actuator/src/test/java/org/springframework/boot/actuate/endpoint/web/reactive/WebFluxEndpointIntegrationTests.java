@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -132,14 +134,16 @@ class WebFluxEndpointIntegrationTests
 
 		@Bean
 		WebFluxEndpointHandlerMapping webEndpointHandlerMapping(Environment environment,
-				WebEndpointDiscoverer endpointDiscoverer, EndpointMediaTypes endpointMediaTypes) {
+				WebEndpointDiscoverer endpointDiscoverer, ObjectProvider<EndpointAccessFilter> accessFilters,
+				EndpointMediaTypes endpointMediaTypes) {
 			CorsConfiguration corsConfiguration = new CorsConfiguration();
 			corsConfiguration.setAllowedOrigins(Arrays.asList("https://example.com"));
 			corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST"));
 			String endpointPath = environment.getProperty("endpointPath");
 			return new WebFluxEndpointHandlerMapping(new EndpointMapping(endpointPath),
-					endpointDiscoverer.getEndpoints(), endpointMediaTypes, corsConfiguration,
-					new EndpointLinksResolver(endpointDiscoverer.getEndpoints()), StringUtils.hasText(endpointPath));
+					endpointDiscoverer.getEndpoints(), accessFilters.orderedStream().toList(), endpointMediaTypes,
+					corsConfiguration, new EndpointLinksResolver(endpointDiscoverer.getEndpoints()),
+					StringUtils.hasText(endpointPath));
 		}
 
 		@Bean

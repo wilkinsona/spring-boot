@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import org.springframework.boot.actuate.autoconfigure.cloudfoundry.SecurityRespo
 import org.springframework.boot.actuate.autoconfigure.cloudfoundry.reactive.CloudFoundryWebFluxEndpointHandlerMapping.CloudFoundryWebFluxEndpointHandlerMappingRuntimeHints;
 import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
+import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -71,7 +72,7 @@ class CloudFoundryWebFluxEndpointHandlerMapping extends AbstractWebFluxEndpointH
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			CorsConfiguration corsConfiguration, CloudFoundrySecurityInterceptor securityInterceptor,
 			Collection<ExposableEndpoint<?>> allEndpoints) {
-		super(endpointMapping, endpoints, endpointMediaTypes, corsConfiguration, true);
+		super(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes, corsConfiguration, true);
 		this.linksResolver = new EndpointLinksResolver(allEndpoints);
 		this.allEndpoints = allEndpoints;
 		this.securityInterceptor = securityInterceptor;
@@ -105,7 +106,7 @@ class CloudFoundryWebFluxEndpointHandlerMapping extends AbstractWebFluxEndpointH
 					}
 					AccessLevel accessLevel = exchange.getAttribute(AccessLevel.REQUEST_ATTRIBUTE);
 					Map<String, Link> links = CloudFoundryWebFluxEndpointHandlerMapping.this.linksResolver
-						.resolveLinks(request.getURI().toString());
+						.resolveLinks(request.getURI().toString(), SecurityContext.NONE);
 					return new ResponseEntity<>(
 							Collections.singletonMap("_links", getAccessibleLinks(accessLevel, links)), HttpStatus.OK);
 				});

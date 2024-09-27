@@ -61,6 +61,7 @@ public class ControllerEndpointDiscoverer extends EndpointDiscoverer<ExposableCo
 	public ControllerEndpointDiscoverer(ApplicationContext applicationContext, List<PathMapper> endpointPathMappers,
 			Collection<EndpointFilter<ExposableControllerEndpoint>> filters) {
 		// TODO operation filtering for controller endpoints?
+		// TODO operation access filtering for controller endpoints?
 		super(applicationContext, ParameterValueMapper.NONE, Collections.emptyList(), filters, Collections.emptyList());
 		this.endpointPathMappers = endpointPathMappers;
 	}

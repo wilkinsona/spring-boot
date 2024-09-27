@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
@@ -36,6 +37,7 @@ import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.jackson.EndpointObjectMapper;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -82,6 +84,7 @@ public class WebMvcEndpointManagementContextConfiguration {
 	@ConditionalOnMissingBean
 	@SuppressWarnings("removal")
 	public WebMvcEndpointHandlerMapping webEndpointServletHandlerMapping(WebEndpointsSupplier webEndpointsSupplier,
+			ObjectProvider<EndpointAccessFilter> accessFiltersProvider,
 			org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier,
 			org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointsSupplier controllerEndpointsSupplier,
 			EndpointMediaTypes endpointMediaTypes, CorsEndpointProperties corsProperties,
@@ -93,9 +96,10 @@ public class WebMvcEndpointManagementContextConfiguration {
 		allEndpoints.addAll(controllerEndpointsSupplier.getEndpoints());
 		String basePath = webEndpointProperties.getBasePath();
 		EndpointMapping endpointMapping = new EndpointMapping(basePath);
+		List<EndpointAccessFilter> accessFilters = accessFiltersProvider.orderedStream().toList();
 		boolean shouldRegisterLinksMapping = shouldRegisterLinksMapping(webEndpointProperties, environment, basePath);
-		return new WebMvcEndpointHandlerMapping(endpointMapping, webEndpoints, endpointMediaTypes,
-				corsProperties.toCorsConfiguration(), new EndpointLinksResolver(allEndpoints, basePath),
+		return new WebMvcEndpointHandlerMapping(endpointMapping, webEndpoints, accessFilters, endpointMediaTypes,
+				corsProperties.toCorsConfiguration(), new EndpointLinksResolver(allEndpoints, accessFilters, basePath),
 				shouldRegisterLinksMapping);
 	}
 
@@ -129,10 +133,11 @@ public class WebMvcEndpointManagementContextConfiguration {
 	@SuppressWarnings("removal")
 	public ControllerEndpointHandlerMapping controllerEndpointHandlerMapping(
 			org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointsSupplier controllerEndpointsSupplier,
-			CorsEndpointProperties corsProperties, WebEndpointProperties webEndpointProperties) {
+			ObjectProvider<EndpointAccessFilter> accessFilters, CorsEndpointProperties corsProperties,
+			WebEndpointProperties webEndpointProperties) {
 		EndpointMapping endpointMapping = new EndpointMapping(webEndpointProperties.getBasePath());
 		return new ControllerEndpointHandlerMapping(endpointMapping, controllerEndpointsSupplier.getEndpoints(),
-				corsProperties.toCorsConfiguration());
+				accessFilters.orderedStream().toList(), corsProperties.toCorsConfiguration());
 	}
 
 	@Bean

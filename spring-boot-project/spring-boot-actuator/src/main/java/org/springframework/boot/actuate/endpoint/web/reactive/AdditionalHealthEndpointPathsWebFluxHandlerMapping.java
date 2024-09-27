@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebOperation;
@@ -46,9 +47,16 @@ public class AdditionalHealthEndpointPathsWebFluxHandlerMapping extends Abstract
 
 	private final Set<HealthEndpointGroup> groups;
 
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public AdditionalHealthEndpointPathsWebFluxHandlerMapping(EndpointMapping endpointMapping,
 			ExposableWebEndpoint healthEndpoint, Set<HealthEndpointGroup> groups) {
-		super(endpointMapping, asList(healthEndpoint), null, null, false);
+		this(endpointMapping, healthEndpoint, Collections.emptyList(), groups);
+	}
+
+	public AdditionalHealthEndpointPathsWebFluxHandlerMapping(EndpointMapping endpointMapping,
+			ExposableWebEndpoint healthEndpoint, Collection<EndpointAccessFilter> accessFilters,
+			Set<HealthEndpointGroup> groups) {
+		super(endpointMapping, asList(healthEndpoint), accessFilters, null, null, false);
 		this.endpointMapping = endpointMapping;
 		this.groups = groups;
 		this.healthEndpoint = healthEndpoint;

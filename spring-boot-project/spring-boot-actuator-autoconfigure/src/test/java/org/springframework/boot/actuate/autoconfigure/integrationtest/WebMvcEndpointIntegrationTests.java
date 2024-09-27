@@ -28,6 +28,7 @@ import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfi
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.web.servlet.ServletManagementContextAutoConfiguration;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.servlet.WebMvcEndpointHandlerMapping;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -123,6 +124,19 @@ class WebMvcEndpointIntegrationTests {
 			.extractingPath("_links")
 			.asMap()
 			.containsKeys("beans", "servlet", "restcontroller", "controller");
+	}
+
+	@Test
+	void linksToRestrictedOperationsAreNotProvided() {
+		this.context = new AnnotationConfigServletWebApplicationContext();
+		this.context.register(DefaultConfiguration.class, EndpointAccessConfiguration.class);
+		TestPropertyValues.of("management.endpoints.web.exposure.include=*").applyTo(this.context);
+		MockMvcTester mvc = doCreateMockMvcTester();
+		assertThat(mvc.get().uri("/actuator").accept("*/*")).hasStatusOk()
+			.bodyJson()
+			.extractingPath("_links")
+			.asMap()
+			.containsOnlyKeys("self");
 	}
 
 	@Test
@@ -227,6 +241,19 @@ class WebMvcEndpointIntegrationTests {
 		@Bean
 		TestRestControllerEndpoint testRestControllerEndpoint() {
 			return new TestRestControllerEndpoint();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class EndpointAccessConfiguration {
+
+		@Bean
+		EndpointAccessFilter endpointOperationAccessFilter() {
+			return (securityContext, endpointId, operation) -> {
+				System.out.println(endpointId);
+				return endpointId.toLowerCaseString().length() < 5;
+			};
 		}
 
 	}

@@ -40,6 +40,7 @@ import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.jackson.EndpointObjectMapper;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -90,6 +91,7 @@ public class WebFluxEndpointManagementContextConfiguration {
 	@ConditionalOnMissingBean
 	@SuppressWarnings("removal")
 	public WebFluxEndpointHandlerMapping webEndpointReactiveHandlerMapping(WebEndpointsSupplier webEndpointsSupplier,
+			ObjectProvider<EndpointAccessFilter> accessFiltersProvider,
 			org.springframework.boot.actuate.endpoint.web.annotation.ControllerEndpointsSupplier controllerEndpointsSupplier,
 			EndpointMediaTypes endpointMediaTypes, CorsEndpointProperties corsProperties,
 			WebEndpointProperties webEndpointProperties, Environment environment) {
@@ -99,8 +101,9 @@ public class WebFluxEndpointManagementContextConfiguration {
 		List<ExposableEndpoint<?>> allEndpoints = new ArrayList<>();
 		allEndpoints.addAll(endpoints);
 		allEndpoints.addAll(controllerEndpointsSupplier.getEndpoints());
-		return new WebFluxEndpointHandlerMapping(endpointMapping, endpoints, endpointMediaTypes,
-				corsProperties.toCorsConfiguration(), new EndpointLinksResolver(allEndpoints, basePath),
+		List<EndpointAccessFilter> accessFilters = accessFiltersProvider.orderedStream().toList();
+		return new WebFluxEndpointHandlerMapping(endpointMapping, endpoints, accessFilters, endpointMediaTypes,
+				corsProperties.toCorsConfiguration(), new EndpointLinksResolver(allEndpoints, accessFilters, basePath),
 				shouldRegisterLinksMapping(webEndpointProperties, environment, basePath));
 	}
 
@@ -115,14 +118,15 @@ public class WebFluxEndpointManagementContextConfiguration {
 	@ConditionalOnAvailableEndpoint(endpoint = HealthEndpoint.class, exposure = EndpointExposure.WEB)
 	@ConditionalOnBean(HealthEndpoint.class)
 	public AdditionalHealthEndpointPathsWebFluxHandlerMapping managementHealthEndpointWebFluxHandlerMapping(
-			WebEndpointsSupplier webEndpointsSupplier, HealthEndpointGroups groups) {
+			WebEndpointsSupplier webEndpointsSupplier, ObjectProvider<EndpointAccessFilter> accessFilters,
+			HealthEndpointGroups groups) {
 		Collection<ExposableWebEndpoint> webEndpoints = webEndpointsSupplier.getEndpoints();
 		ExposableWebEndpoint healthEndpoint = webEndpoints.stream()
 			.filter((endpoint) -> endpoint.getEndpointId().equals(HealthEndpoint.ID))
 			.findFirst()
 			.orElse(null);
 		return new AdditionalHealthEndpointPathsWebFluxHandlerMapping(new EndpointMapping(""), healthEndpoint,
-				groups.getAllWithAdditionalPath(WebServerNamespace.MANAGEMENT));
+				accessFilters.orderedStream().toList(), groups.getAllWithAdditionalPath(WebServerNamespace.MANAGEMENT));
 	}
 
 	@Bean

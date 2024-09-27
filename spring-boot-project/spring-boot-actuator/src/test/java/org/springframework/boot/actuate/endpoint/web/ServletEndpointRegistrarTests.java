@@ -18,6 +18,8 @@ package org.springframework.boot.actuate.endpoint.web;
 
 import java.util.Collections;
 
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterRegistration;
 import jakarta.servlet.GenericServlet;
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletContext;
@@ -55,7 +57,10 @@ class ServletEndpointRegistrarTests {
 	private ServletContext servletContext;
 
 	@Mock
-	private Dynamic dynamic;
+	private FilterRegistration.Dynamic filterDynamic;
+
+	@Mock
+	private Dynamic servletDynamic;
 
 	@Test
 	void createWhenServletEndpointsIsNullShouldThrowException() {
@@ -84,42 +89,46 @@ class ServletEndpointRegistrarTests {
 	}
 
 	private void assertBasePath(String basePath, String expectedMapping) throws ServletException {
-		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.dynamic);
+		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.servletDynamic);
+		given(this.servletContext.addFilter(any(String.class), any(Filter.class))).willReturn(this.filterDynamic);
 		ExposableServletEndpoint endpoint = mockEndpoint(new EndpointServlet(TestServlet.class));
 		ServletEndpointRegistrar registrar = new ServletEndpointRegistrar(basePath, Collections.singleton(endpoint));
 		registrar.onStartup(this.servletContext);
 		then(this.servletContext).should()
 			.addServlet(eq("test-actuator-endpoint"),
 					(Servlet) assertArg((servlet) -> assertThat(servlet).isInstanceOf(TestServlet.class)));
-		then(this.dynamic).should().addMapping(expectedMapping);
+		then(this.servletDynamic).should().addMapping(expectedMapping);
 	}
 
 	@Test
 	void onStartupWhenHasInitParametersShouldRegisterInitParameters() throws Exception {
-		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.dynamic);
+		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.servletDynamic);
+		given(this.servletContext.addFilter(any(String.class), any(Filter.class))).willReturn(this.filterDynamic);
 		ExposableServletEndpoint endpoint = mockEndpoint(
 				new EndpointServlet(TestServlet.class).withInitParameter("a", "b"));
 		ServletEndpointRegistrar registrar = new ServletEndpointRegistrar("/actuator", Collections.singleton(endpoint));
 		registrar.onStartup(this.servletContext);
-		then(this.dynamic).should().setInitParameters(Collections.singletonMap("a", "b"));
+		then(this.servletDynamic).should().setInitParameters(Collections.singletonMap("a", "b"));
 	}
 
 	@Test
 	void onStartupWhenHasLoadOnStartupShouldRegisterLoadOnStartup() throws Exception {
-		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.dynamic);
+		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.servletDynamic);
+		given(this.servletContext.addFilter(any(String.class), any(Filter.class))).willReturn(this.filterDynamic);
 		ExposableServletEndpoint endpoint = mockEndpoint(new EndpointServlet(TestServlet.class).withLoadOnStartup(7));
 		ServletEndpointRegistrar registrar = new ServletEndpointRegistrar("/actuator", Collections.singleton(endpoint));
 		registrar.onStartup(this.servletContext);
-		then(this.dynamic).should().setLoadOnStartup(7);
+		then(this.servletDynamic).should().setLoadOnStartup(7);
 	}
 
 	@Test
 	void onStartupWhenHasNotLoadOnStartupShouldRegisterDefaultValue() throws Exception {
-		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.dynamic);
+		given(this.servletContext.addServlet(any(String.class), any(Servlet.class))).willReturn(this.servletDynamic);
+		given(this.servletContext.addFilter(any(String.class), any(Filter.class))).willReturn(this.filterDynamic);
 		ExposableServletEndpoint endpoint = mockEndpoint(new EndpointServlet(TestServlet.class));
 		ServletEndpointRegistrar registrar = new ServletEndpointRegistrar("/actuator", Collections.singleton(endpoint));
 		registrar.onStartup(this.servletContext);
-		then(this.dynamic).should().setLoadOnStartup(-1);
+		then(this.servletDynamic).should().setLoadOnStartup(-1);
 	}
 
 	private ExposableServletEndpoint mockEndpoint(EndpointServlet endpointServlet) {

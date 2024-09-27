@@ -18,8 +18,10 @@ package org.springframework.boot.actuate.autoconfigure.endpoint.web;
 
 import org.glassfish.jersey.server.ResourceConfig;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.IncludeExcludeEndpointFilter;
 import org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -62,10 +64,10 @@ public class ServletEndpointManagementContextConfiguration {
 		public org.springframework.boot.actuate.endpoint.web.ServletEndpointRegistrar servletEndpointRegistrar(
 				WebEndpointProperties properties,
 				org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier,
-				DispatcherServletPath dispatcherServletPath) {
+				ObjectProvider<EndpointAccessFilter> accessFilters, DispatcherServletPath dispatcherServletPath) {
 			return new org.springframework.boot.actuate.endpoint.web.ServletEndpointRegistrar(
 					dispatcherServletPath.getRelativePath(properties.getBasePath()),
-					servletEndpointsSupplier.getEndpoints());
+					servletEndpointsSupplier.getEndpoints(), accessFilters.orderedStream().toList());
 		}
 
 	}
@@ -80,10 +82,10 @@ public class ServletEndpointManagementContextConfiguration {
 		public org.springframework.boot.actuate.endpoint.web.ServletEndpointRegistrar servletEndpointRegistrar(
 				WebEndpointProperties properties,
 				org.springframework.boot.actuate.endpoint.web.annotation.ServletEndpointsSupplier servletEndpointsSupplier,
-				JerseyApplicationPath jerseyApplicationPath) {
+				ObjectProvider<EndpointAccessFilter> accessFilters, JerseyApplicationPath jerseyApplicationPath) {
 			return new org.springframework.boot.actuate.endpoint.web.ServletEndpointRegistrar(
 					jerseyApplicationPath.getRelativePath(properties.getBasePath()),
-					servletEndpointsSupplier.getEndpoints());
+					servletEndpointsSupplier.getEndpoints(), accessFilters.orderedStream().toList());
 		}
 
 	}

@@ -24,10 +24,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.boot.actuate.endpoint.EndpointId;
+import org.springframework.boot.actuate.endpoint.SecurityContext;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessDeniedException;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.annotation.ExposableControllerEndpoint;
 import org.springframework.util.Assert;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -52,19 +61,39 @@ public class ControllerEndpointHandlerMapping extends RequestMappingHandlerMappi
 
 	private final Map<Object, ExposableControllerEndpoint> handlers;
 
+	private final Collection<EndpointAccessFilter> accessFilters;
+
 	/**
 	 * Create a new {@link ControllerEndpointHandlerMapping} instance providing mappings
 	 * for the specified endpoints.
 	 * @param endpointMapping the base mapping for all endpoints
 	 * @param endpoints the web endpoints
 	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #ControllerEndpointHandlerMapping(EndpointMapping, Collection, Collection, CorsConfiguration)}
 	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public ControllerEndpointHandlerMapping(EndpointMapping endpointMapping,
 			Collection<ExposableControllerEndpoint> endpoints, CorsConfiguration corsConfiguration) {
+		this(endpointMapping, endpoints, Collections.emptyList(), corsConfiguration);
+	}
+
+	/**
+	 * Create a new {@link ControllerEndpointHandlerMapping} instance providing mappings
+	 * for the specified endpoints.
+	 * @param endpointMapping the base mapping for all endpoints
+	 * @param endpoints the web endpoints
+	 * @param accessFilters filters the control access to the endpoints
+	 * @param corsConfiguration the CORS configuration for the endpoints or {@code null}
+	 */
+	public ControllerEndpointHandlerMapping(EndpointMapping endpointMapping,
+			Collection<ExposableControllerEndpoint> endpoints, Collection<EndpointAccessFilter> accessFilters,
+			CorsConfiguration corsConfiguration) {
 		Assert.notNull(endpointMapping, "EndpointMapping must not be null");
 		Assert.notNull(endpoints, "Endpoints must not be null");
 		this.endpointMapping = endpointMapping;
 		this.handlers = getHandlers(endpoints);
+		this.accessFilters = accessFilters;
 		this.corsConfiguration = corsConfiguration;
 		setOrder(-100);
 	}
@@ -116,6 +145,49 @@ public class ControllerEndpointHandlerMapping extends RequestMappingHandlerMappi
 	@Override
 	protected void extendInterceptors(List<Object> interceptors) {
 		interceptors.add(new SkipPathExtensionContentNegotiation());
+		interceptors.add(new EndpointAccessHandlerInterceptor(this.handlers, this.accessFilters));
+	}
+
+	private static final class EndpointAccessHandlerInterceptor implements HandlerInterceptor {
+
+		private final Map<Object, ExposableControllerEndpoint> handlers;
+
+		private final Collection<EndpointAccessFilter> accessFilters;
+
+		private EndpointAccessHandlerInterceptor(Map<Object, ExposableControllerEndpoint> handlers,
+				Collection<EndpointAccessFilter> accessFilters) {
+			this.handlers = handlers;
+			this.accessFilters = accessFilters;
+		}
+
+		@Override
+		public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+				throws Exception {
+			if (accessAllowed(request, handler)) {
+				return true;
+			}
+			throw new EndpointAccessDeniedException();
+		}
+
+		private boolean accessAllowed(HttpServletRequest request, Object handler) {
+			if (handler instanceof HandlerMethod handlerMethod) {
+				ExposableControllerEndpoint endpoint = this.handlers.get(handlerMethod.getBean());
+				if (endpoint != null) {
+					return accessAllowed(new ServletSecurityContext(request), endpoint.getEndpointId());
+				}
+			}
+			return false;
+		}
+
+		private boolean accessAllowed(SecurityContext securityContext, EndpointId endpointId) {
+			for (EndpointAccessFilter accessFilter : this.accessFilters) {
+				if (!accessFilter.allow(securityContext, endpointId, null)) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 	}
 
 }

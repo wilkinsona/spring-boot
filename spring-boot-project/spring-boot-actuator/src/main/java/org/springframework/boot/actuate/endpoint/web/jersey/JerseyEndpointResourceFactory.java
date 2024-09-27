@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,12 +40,14 @@ import org.glassfish.jersey.server.model.Resource.Builder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.InvalidEndpointRequestException;
 import org.springframework.boot.actuate.endpoint.InvocationContext;
 import org.springframework.boot.actuate.endpoint.OperationArgumentResolver;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.ProducibleOperationArgumentResolver;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -79,15 +81,38 @@ public class JerseyEndpointResourceFactory {
 	 * @param linksResolver resolver for determining links to available endpoints
 	 * @param shouldRegisterLinks should register links
 	 * @return the resources for the operations
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #createEndpointResources(EndpointMapping, Collection, Collection, EndpointMediaTypes, EndpointLinksResolver, boolean)}
 	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public Collection<Resource> createEndpointResources(EndpointMapping endpointMapping,
 			Collection<ExposableWebEndpoint> endpoints, EndpointMediaTypes endpointMediaTypes,
 			EndpointLinksResolver linksResolver, boolean shouldRegisterLinks) {
+		return createEndpointResources(endpointMapping, endpoints, Collections.emptyList(), endpointMediaTypes,
+				linksResolver, shouldRegisterLinks);
+	}
+
+	/**
+	 * Creates {@link Resource Resources} for the operations of the given
+	 * {@code webEndpoints}.
+	 * @param endpointMapping the base mapping for all endpoints
+	 * @param endpoints the web endpoints
+	 * @param accessFilters filters to restrict access to the endpoints and their
+	 * operations
+	 * @param endpointMediaTypes media types consumed and produced by the endpoints
+	 * @param linksResolver resolver for determining links to available endpoints
+	 * @param shouldRegisterLinks should register links
+	 * @return the resources for the operations
+	 */
+	public Collection<Resource> createEndpointResources(EndpointMapping endpointMapping,
+			Collection<ExposableWebEndpoint> endpoints, Collection<EndpointAccessFilter> accessFilters,
+			EndpointMediaTypes endpointMediaTypes, EndpointLinksResolver linksResolver, boolean shouldRegisterLinks) {
 		List<Resource> resources = new ArrayList<>();
-		endpoints.stream()
-			.flatMap((endpoint) -> endpoint.getOperations().stream())
-			.map((operation) -> createResource(endpointMapping, operation))
-			.forEach(resources::add);
+		for (ExposableWebEndpoint endpoint : endpoints) {
+			for (WebOperation operation : endpoint.getOperations()) {
+				resources.add(createResource(endpointMapping, endpoint.getEndpointId(), operation, accessFilters));
+			}
+		}
 		if (shouldRegisterLinks) {
 			Resource resource = createEndpointLinksResource(endpointMapping.getPath(), endpointMediaTypes,
 					linksResolver);
@@ -96,7 +121,13 @@ public class JerseyEndpointResourceFactory {
 		return resources;
 	}
 
-	protected Resource createResource(EndpointMapping endpointMapping, WebOperation operation) {
+	@Deprecated(since = "3.4.0", forRemoval = true)
+	protected Resource createResource(EndpointMapping endpointMapping, EndpointId endpointId, WebOperation operation) {
+		return this.createResource(endpointMapping, endpointId, operation, Collections.emptyList());
+	}
+
+	protected Resource createResource(EndpointMapping endpointMapping, EndpointId endpointId, WebOperation operation,
+			Collection<EndpointAccessFilter> accessFilters) {
 		WebOperationRequestPredicate requestPredicate = operation.getRequestPredicate();
 		String path = requestPredicate.getPath();
 		String matchAllRemainingPathSegmentsVariable = requestPredicate.getMatchAllRemainingPathSegmentsVariable();
@@ -104,20 +135,28 @@ public class JerseyEndpointResourceFactory {
 			path = path.replace("{*" + matchAllRemainingPathSegmentsVariable + "}",
 					"{" + matchAllRemainingPathSegmentsVariable + ": .*}");
 		}
-		return getResource(endpointMapping, operation, requestPredicate, path, null, null);
+		return getResource(endpointMapping, endpointId, operation, accessFilters, requestPredicate, path, null, null);
 	}
 
-	protected Resource getResource(EndpointMapping endpointMapping, WebOperation operation,
+	@Deprecated(since = "3.4.0", forRemoval = true)
+	protected Resource getResource(EndpointMapping endpointMapping, EndpointId endpointId, WebOperation operation,
 			WebOperationRequestPredicate requestPredicate, String path, WebServerNamespace serverNamespace,
 			JerseyRemainingPathSegmentProvider remainingPathSegmentProvider) {
+		return this.getResource(endpointMapping, endpointId, operation, Collections.emptyList(), requestPredicate, path,
+				serverNamespace, remainingPathSegmentProvider);
+	}
+
+	protected Resource getResource(EndpointMapping endpointMapping, EndpointId endpointId, WebOperation operation,
+			Collection<EndpointAccessFilter> accessFilters, WebOperationRequestPredicate requestPredicate, String path,
+			WebServerNamespace serverNamespace, JerseyRemainingPathSegmentProvider remainingPathSegmentProvider) {
 		Builder resourceBuilder = Resource.builder()
 			.path(endpointMapping.getPath())
 			.path(endpointMapping.createSubPath(path));
 		resourceBuilder.addMethod(requestPredicate.getHttpMethod().name())
 			.consumes(StringUtils.toStringArray(requestPredicate.getConsumes()))
 			.produces(StringUtils.toStringArray(requestPredicate.getProduces()))
-			.handledBy(new OperationInflector(operation, !requestPredicate.getConsumes().isEmpty(), serverNamespace,
-					remainingPathSegmentProvider));
+			.handledBy(new OperationInflector(endpointId, operation, accessFilters,
+					!requestPredicate.getConsumes().isEmpty(), serverNamespace, remainingPathSegmentProvider));
 		return resourceBuilder.build();
 	}
 
@@ -149,7 +188,11 @@ public class JerseyEndpointResourceFactory {
 			BODY_CONVERTERS = Collections.unmodifiableList(converters);
 		}
 
+		private final EndpointId endpointId;
+
 		private final WebOperation operation;
+
+		private final Collection<EndpointAccessFilter> accessFilters;
 
 		private final boolean readBody;
 
@@ -157,9 +200,12 @@ public class JerseyEndpointResourceFactory {
 
 		private final JerseyRemainingPathSegmentProvider remainingPathSegmentProvider;
 
-		private OperationInflector(WebOperation operation, boolean readBody, WebServerNamespace serverNamespace,
+		private OperationInflector(EndpointId endpointId, WebOperation operation,
+				Collection<EndpointAccessFilter> accessFilters, boolean readBody, WebServerNamespace serverNamespace,
 				JerseyRemainingPathSegmentProvider remainingPathSegments) {
+			this.endpointId = endpointId;
 			this.operation = operation;
+			this.accessFilters = accessFilters;
 			this.readBody = readBody;
 			this.serverNamespace = serverNamespace;
 			this.remainingPathSegmentProvider = remainingPathSegments;
@@ -175,13 +221,16 @@ public class JerseyEndpointResourceFactory {
 			arguments.putAll(extractQueryParameters(data));
 			try {
 				JerseySecurityContext securityContext = new JerseySecurityContext(data.getSecurityContext());
-				OperationArgumentResolver serverNamespaceArgumentResolver = OperationArgumentResolver
-					.of(WebServerNamespace.class, () -> this.serverNamespace);
-				InvocationContext invocationContext = new InvocationContext(securityContext, arguments,
-						serverNamespaceArgumentResolver,
-						new ProducibleOperationArgumentResolver(() -> data.getHeaders().get("Accept")));
-				Object response = this.operation.invoke(invocationContext);
-				return convertToJaxRsResponse(response, data.getRequest().getMethod());
+				if (permitAccess(securityContext)) {
+					OperationArgumentResolver serverNamespaceArgumentResolver = OperationArgumentResolver
+						.of(WebServerNamespace.class, () -> this.serverNamespace);
+					InvocationContext invocationContext = new InvocationContext(securityContext, arguments,
+							serverNamespaceArgumentResolver,
+							new ProducibleOperationArgumentResolver(() -> data.getHeaders().get("Accept")));
+					Object response = this.operation.invoke(invocationContext);
+					return convertToJaxRsResponse(response, data.getRequest().getMethod());
+				}
+				return Response.status(Status.UNAUTHORIZED).build();
 			}
 			catch (InvalidEndpointRequestException ex) {
 				return Response.status(Status.BAD_REQUEST).build();
@@ -236,6 +285,15 @@ public class JerseyEndpointResourceFactory {
 				}
 			});
 			return result;
+		}
+
+		private boolean permitAccess(SecurityContext securityContext) {
+			for (EndpointAccessFilter filter : this.accessFilters) {
+				if (!filter.allow(securityContext, this.endpointId, this.operation)) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		private Response convertToJaxRsResponse(Object response, String httpMethod) {
@@ -314,7 +372,7 @@ public class JerseyEndpointResourceFactory {
 	}
 
 	/**
-	 * {@link Inflector} to for endpoint links.
+	 * {@link Inflector} for endpoint links.
 	 */
 	private static final class EndpointLinksInflector implements Inflector<ContainerRequestContext, Response> {
 
@@ -326,8 +384,8 @@ public class JerseyEndpointResourceFactory {
 
 		@Override
 		public Response apply(ContainerRequestContext request) {
-			Map<String, Link> links = this.linksResolver
-				.resolveLinks(request.getUriInfo().getAbsolutePath().toString());
+			Map<String, Link> links = this.linksResolver.resolveLinks(request.getUriInfo().getAbsolutePath().toString(),
+					new JerseySecurityContext(request.getSecurityContext()));
 			Map<String, Map<String, Link>> entity = OperationResponseBody.of(Collections.singletonMap("_links", links));
 			return Response.ok(entity).build();
 		}

@@ -35,6 +35,8 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.actuate.endpoint.web.EndpointAccessFilter;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -112,11 +114,12 @@ class JerseyWebEndpointIntegrationTests
 
 		@Bean
 		ResourceConfig resourceConfig(Environment environment, WebEndpointDiscoverer endpointDiscoverer,
-				EndpointMediaTypes endpointMediaTypes) {
+				EndpointMediaTypes endpointMediaTypes, ObjectProvider<EndpointAccessFilter> accessFilters) {
 			ResourceConfig resourceConfig = new ResourceConfig();
 			String endpointPath = environment.getProperty("endpointPath");
 			Collection<Resource> resources = new JerseyEndpointResourceFactory().createEndpointResources(
-					new EndpointMapping(endpointPath), endpointDiscoverer.getEndpoints(), endpointMediaTypes,
+					new EndpointMapping(endpointPath), endpointDiscoverer.getEndpoints(),
+					accessFilters.orderedStream().toList(), endpointMediaTypes,
 					new EndpointLinksResolver(endpointDiscoverer.getEndpoints()), StringUtils.hasText(endpointPath));
 			resourceConfig.registerResources(new HashSet<>(resources));
 			resourceConfig.register(JacksonFeature.class);
