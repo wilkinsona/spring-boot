@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,6 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties(prefix = "management.endpoints.web")
 public class WebEndpointProperties {
 
-	private final Exposure exposure = new Exposure();
-
 	/**
 	 * Base path for Web endpoints. Relative to the servlet context path
 	 * (server.servlet.context-path) or WebFlux base path (spring.webflux.base-path) when
@@ -53,9 +51,7 @@ public class WebEndpointProperties {
 
 	private final Discovery discovery = new Discovery();
 
-	public Exposure getExposure() {
-		return this.exposure;
-	}
+	private final Exposure exposure = new Exposure();
 
 	public String getBasePath() {
 		return this.basePath;
@@ -64,6 +60,10 @@ public class WebEndpointProperties {
 	public void setBasePath(String basePath) {
 		Assert.isTrue(basePath.isEmpty() || basePath.startsWith("/"), "Base path must start with '/' or be empty");
 		this.basePath = cleanBasePath(basePath);
+	}
+
+	public Exposure getExposure() {
+		return this.exposure;
 	}
 
 	private String cleanBasePath(String basePath) {

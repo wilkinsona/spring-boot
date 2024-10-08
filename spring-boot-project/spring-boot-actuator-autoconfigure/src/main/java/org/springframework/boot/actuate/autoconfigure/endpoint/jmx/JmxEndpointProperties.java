@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("management.endpoints.jmx")
 public class JmxEndpointProperties {
 
-	private final Exposure exposure = new Exposure();
-
 	/**
 	 * Endpoints JMX domain name. Fallback to 'spring.jmx.default-domain' if set.
 	 */
@@ -44,9 +42,7 @@ public class JmxEndpointProperties {
 	 */
 	private final Properties staticNames = new Properties();
 
-	public Exposure getExposure() {
-		return this.exposure;
-	}
+	private final Exposure exposure = new Exposure();
 
 	public String getDomain() {
 		return this.domain;
@@ -58,6 +54,10 @@ public class JmxEndpointProperties {
 
 	public Properties getStaticNames() {
 		return this.staticNames;
+	}
+
+	public Exposure getExposure() {
+		return this.exposure;
 	}
 
 	public static class Exposure {

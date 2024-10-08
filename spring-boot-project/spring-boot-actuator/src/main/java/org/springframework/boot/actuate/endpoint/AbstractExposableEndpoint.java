@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,9 +39,21 @@ public abstract class AbstractExposableEndpoint<O extends Operation> implements 
 	/**
 	 * Create a new {@link AbstractExposableEndpoint} instance.
 	 * @param id the endpoint id
-	 * @param enabledByDefault if the endpoint is enabled by default
 	 * @param operations the endpoint operations
 	 */
+	public AbstractExposableEndpoint(EndpointId id, Collection<? extends O> operations) {
+		this(id, false, operations);
+	}
+
+	/**
+	 * Create a new {@link AbstractExposableEndpoint} instance.
+	 * @param id the endpoint id
+	 * @param enabledByDefault if the endpoint is enabled by default
+	 * @param operations the endpoint operations
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #AbstractExposableEndpoint(EndpointId, Collection)}
+	 */
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public AbstractExposableEndpoint(EndpointId id, boolean enabledByDefault, Collection<? extends O> operations) {
 		Assert.notNull(id, "ID must not be null");
 		Assert.notNull(operations, "Operations must not be null");
@@ -56,6 +68,8 @@ public abstract class AbstractExposableEndpoint<O extends Operation> implements 
 	}
 
 	@Override
+	@SuppressWarnings("removal")
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public boolean isEnableByDefault() {
 		return this.enabledByDefault;
 	}

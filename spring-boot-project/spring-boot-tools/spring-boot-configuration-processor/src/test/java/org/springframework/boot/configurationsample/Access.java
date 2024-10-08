@@ -16,28 +16,17 @@
 
 package org.springframework.boot.configurationsample;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Alternative to Spring Boot's {@code @RestControllerEndpoint} for testing (removes the
- * need for a dependency on the real annotation).
+ * Permitted level of access to an endpoint.
  *
  * @author Andy Wilkinson
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface RestControllerEndpoint {
+public enum Access {
 
-	String id() default "";
+	DISABLED,
 
-	@Deprecated
-	boolean enableByDefault() default true;
+	READ_ONLY,
 
-	Access defaultAccess() default Access.UNRESTRICTED;
+	UNRESTRICTED
 
 }

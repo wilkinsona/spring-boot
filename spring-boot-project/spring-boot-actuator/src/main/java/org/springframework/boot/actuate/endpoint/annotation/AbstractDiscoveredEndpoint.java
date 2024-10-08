@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,9 +45,25 @@ public abstract class AbstractDiscoveredEndpoint<O extends Operation> extends Ab
 	 * @param discoverer the discoverer that discovered the endpoint
 	 * @param endpointBean the primary source bean
 	 * @param id the ID of the endpoint
-	 * @param enabledByDefault if the endpoint is enabled by default
 	 * @param operations the endpoint operations
 	 */
+	public AbstractDiscoveredEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id,
+			Collection<? extends O> operations) {
+		this(discoverer, endpointBean, id, false, operations);
+	}
+
+	/**
+	 * Create a new {@link AbstractDiscoveredEndpoint} instance.
+	 * @param discoverer the discoverer that discovered the endpoint
+	 * @param endpointBean the primary source bean
+	 * @param id the ID of the endpoint
+	 * @param enabledByDefault if the endpoint is enabled by default
+	 * @param operations the endpoint operations
+	 * @deprecated since 3.4.0 for removal in 3.6.0 in favor of
+	 * {@link #AbstractDiscoveredEndpoint(EndpointDiscoverer, Object, EndpointId, Collection)}
+	 */
+	@SuppressWarnings("removal")
+	@Deprecated(since = "3.4.0", forRemoval = true)
 	public AbstractDiscoveredEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id,
 			boolean enabledByDefault, Collection<? extends O> operations) {
 		super(id, enabledByDefault, operations);

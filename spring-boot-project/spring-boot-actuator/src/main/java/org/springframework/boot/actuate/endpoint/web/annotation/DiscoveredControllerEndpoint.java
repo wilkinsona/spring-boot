@@ -40,6 +40,12 @@ class DiscoveredControllerEndpoint extends AbstractDiscoveredEndpoint<Operation>
 		this.rootPath = rootPath;
 	}
 
+	DiscoveredControllerEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id,
+			String rootPath) {
+		super(discoverer, endpointBean, id, Collections.emptyList());
+		this.rootPath = rootPath;
+	}
+
 	@Override
 	public Object getController() {
 		return getEndpointBean();

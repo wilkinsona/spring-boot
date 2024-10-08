@@ -58,9 +58,18 @@
       "defaultValue": true
     },
     {
+      "name": "management.endpoints.default-access",
+      "type": "java.lang.Boolean",
+      "description": "Default access level for all endpoints."
+    },
+    {
       "name": "management.endpoints.enabled-by-default",
       "type": "java.lang.Boolean",
-      "description": "Whether to enable or disable all endpoints by default."
+      "description": "Whether to enable or disable all endpoints by default.",
+      "deprecation": {
+        "replacement": "management.endpoints.default-access",
+        "since": "3.4.0"
+      }
     },
     {
       "name": "management.endpoints.jackson.isolated-object-mapper",

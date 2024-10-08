@@ -60,7 +60,8 @@ public class ControllerEndpointDiscoverer extends EndpointDiscoverer<ExposableCo
 	 */
 	public ControllerEndpointDiscoverer(ApplicationContext applicationContext, List<PathMapper> endpointPathMappers,
 			Collection<EndpointFilter<ExposableControllerEndpoint>> filters) {
-		super(applicationContext, ParameterValueMapper.NONE, Collections.emptyList(), filters);
+		// TODO operation filtering for controller endpoints?
+		super(applicationContext, ParameterValueMapper.NONE, Collections.emptyList(), filters, Collections.emptyList());
 		this.endpointPathMappers = endpointPathMappers;
 	}
 
@@ -75,6 +76,13 @@ public class ControllerEndpointDiscoverer extends EndpointDiscoverer<ExposableCo
 			Collection<Operation> operations) {
 		String rootPath = PathMapper.getRootPath(this.endpointPathMappers, id);
 		return new DiscoveredControllerEndpoint(this, endpointBean, id, rootPath, enabledByDefault);
+	}
+
+	@Override
+	protected ExposableControllerEndpoint createEndpoint(Object endpointBean, EndpointId id,
+			Collection<Operation> operations) {
+		String rootPath = PathMapper.getRootPath(this.endpointPathMappers, id);
+		return new DiscoveredControllerEndpoint(this, endpointBean, id, rootPath);
 	}
 
 	@Override

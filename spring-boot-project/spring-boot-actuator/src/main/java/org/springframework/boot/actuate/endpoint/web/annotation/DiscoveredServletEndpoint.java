@@ -39,6 +39,20 @@ class DiscoveredServletEndpoint extends AbstractDiscoveredEndpoint<Operation> im
 
 	private final EndpointServlet endpointServlet;
 
+	DiscoveredServletEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id,
+			String rootPath) {
+		super(discoverer, endpointBean, id, Collections.emptyList());
+		String beanType = endpointBean.getClass().getName();
+		Assert.state(endpointBean instanceof Supplier,
+				() -> "ServletEndpoint bean " + beanType + " must be a supplier");
+		Object supplied = ((Supplier<?>) endpointBean).get();
+		Assert.state(supplied != null, () -> "ServletEndpoint bean " + beanType + " must not supply null");
+		Assert.state(supplied instanceof EndpointServlet,
+				() -> "ServletEndpoint bean " + beanType + " must supply an EndpointServlet");
+		this.endpointServlet = (EndpointServlet) supplied;
+		this.rootPath = rootPath;
+	}
+
 	DiscoveredServletEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id, String rootPath,
 			boolean enabledByDefault) {
 		super(discoverer, endpointBean, id, enabledByDefault, Collections.emptyList());

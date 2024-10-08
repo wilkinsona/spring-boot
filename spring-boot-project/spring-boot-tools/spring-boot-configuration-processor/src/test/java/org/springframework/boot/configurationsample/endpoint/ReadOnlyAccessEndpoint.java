@@ -14,30 +14,17 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationsample;
+package org.springframework.boot.configurationsample.endpoint;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.springframework.boot.configurationsample.Access;
+import org.springframework.boot.configurationsample.Endpoint;
 
 /**
- * Alternative to Spring Boot's {@code @RestControllerEndpoint} for testing (removes the
- * need for a dependency on the real annotation).
+ * An endpoint with read-only access unless configured explicitly.
  *
  * @author Andy Wilkinson
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface RestControllerEndpoint {
-
-	String id() default "";
-
-	@Deprecated
-	boolean enableByDefault() default true;
-
-	Access defaultAccess() default Access.UNRESTRICTED;
+@Endpoint(id = "readonlyaccess", defaultAccess = Access.READ_ONLY)
+public class ReadOnlyAccessEndpoint {
 
 }

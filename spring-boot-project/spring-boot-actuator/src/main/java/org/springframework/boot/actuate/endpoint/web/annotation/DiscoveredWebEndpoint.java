@@ -39,6 +39,15 @@ class DiscoveredWebEndpoint extends AbstractDiscoveredEndpoint<WebOperation> imp
 
 	private Collection<AdditionalPathsMapper> additionalPathsMappers;
 
+	@SuppressWarnings("removal")
+	DiscoveredWebEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id, String rootPath,
+			Collection<WebOperation> operations, Collection<AdditionalPathsMapper> additionalPathsMappers) {
+		super(discoverer, endpointBean, id, operations);
+		this.rootPath = rootPath;
+		this.additionalPathsMappers = additionalPathsMappers;
+	}
+
+	@SuppressWarnings("removal")
 	DiscoveredWebEndpoint(EndpointDiscoverer<?, ?> discoverer, Object endpointBean, EndpointId id, String rootPath,
 			boolean enabledByDefault, Collection<WebOperation> operations,
 			Collection<AdditionalPathsMapper> additionalPathsMappers) {

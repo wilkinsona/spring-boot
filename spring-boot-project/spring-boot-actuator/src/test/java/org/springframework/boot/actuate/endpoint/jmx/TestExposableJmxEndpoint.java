@@ -44,6 +44,7 @@ public class TestExposableJmxEndpoint implements ExposableJmxEndpoint {
 	}
 
 	@Override
+	@SuppressWarnings("removal")
 	public boolean isEnableByDefault() {
 		return true;
 	}

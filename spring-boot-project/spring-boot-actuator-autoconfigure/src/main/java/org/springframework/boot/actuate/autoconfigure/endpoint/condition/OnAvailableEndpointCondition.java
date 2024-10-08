@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.IncludeExcludeEndpointFilter;
+import org.springframework.boot.actuate.endpoint.Access;
 import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
@@ -35,6 +36,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionMessage;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage.Builder;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.context.properties.source.MutuallyExclusiveConfigurationPropertiesException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.annotation.MergedAnnotation;
@@ -64,9 +66,13 @@ class OnAvailableEndpointCondition extends SpringBootCondition {
 
 	private static final String ENABLED_BY_DEFAULT_KEY = "management.endpoints.enabled-by-default";
 
+	private static final String DEFAULT_ACCESS_KEY = "management.endpoints.default-access";
+
 	private static final Map<Environment, Set<EndpointExposureOutcomeContributor>> exposureOutcomeContributorsCache = new ConcurrentReferenceHashMap<>();
 
 	private static final ConcurrentReferenceHashMap<Environment, Optional<Boolean>> enabledByDefaultCache = new ConcurrentReferenceHashMap<>();
+
+	private static final ConcurrentReferenceHashMap<Environment, Optional<Access>> defaultAccessCache = new ConcurrentReferenceHashMap<>();
 
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
@@ -113,35 +119,65 @@ class OnAvailableEndpointCondition extends SpringBootCondition {
 			MergedAnnotation<Endpoint> endpointAnnotation) {
 		ConditionMessage.Builder message = ConditionMessage.forCondition(ConditionalOnAvailableEndpoint.class);
 		EndpointId endpointId = EndpointId.of(environment, endpointAnnotation.getString("id"));
-		ConditionOutcome enablementOutcome = getEnablementOutcome(environment, endpointAnnotation, endpointId, message);
-		ConditionOutcome exposureOutcome = (!enablementOutcome.isMatch()) ? null
-				: getExposureOutcome(environment, conditionAnnotation, endpointAnnotation, endpointId, message);
-		return (exposureOutcome != null) ? exposureOutcome
-				: ConditionOutcome.noMatch(message.because("not enabled or exposed"));
+		ConditionOutcome accessOutcome = getAccessOutcome(environment, endpointAnnotation, endpointId, message);
+		if (!accessOutcome.isMatch()) {
+			return accessOutcome;
+		}
+		ConditionOutcome exposureOutcome = getExposureOutcome(environment, conditionAnnotation, endpointAnnotation,
+				endpointId, message);
+		return (exposureOutcome != null) ? exposureOutcome : ConditionOutcome.noMatch(message.because("not exposed"));
 	}
 
-	private ConditionOutcome getEnablementOutcome(Environment environment,
-			MergedAnnotation<Endpoint> endpointAnnotation, EndpointId endpointId, ConditionMessage.Builder message) {
-		String key = "management.endpoint." + endpointId.toLowerCaseString() + ".enabled";
-		Boolean userDefinedEnabled = environment.getProperty(key, Boolean.class);
-		if (userDefinedEnabled != null) {
+	private ConditionOutcome getAccessOutcome(Environment environment, MergedAnnotation<Endpoint> endpointAnnotation,
+			EndpointId endpointId, ConditionMessage.Builder message) {
+		String accessKey = "management.endpoint." + endpointId.toLowerCaseString() + ".access";
+		String enabledKey = "management.endpoint." + endpointId.toLowerCaseString() + ".enabled";
+		Access userDefinedAccess = environment.getProperty(accessKey, Access.class);
+		Boolean userDefinedEnabled = environment.getProperty(enabledKey, Boolean.class);
+		MutuallyExclusiveConfigurationPropertiesException.throwIfMultipleNonNullValuesIn((entries) -> {
+			entries.put(accessKey, userDefinedAccess);
+			entries.put(enabledKey, userDefinedEnabled);
+		});
+		if (userDefinedAccess != null) {
+			return new ConditionOutcome(userDefinedAccess != Access.DISABLED,
+					message.because("found property " + accessKey + " with value " + userDefinedAccess));
+		}
+		else if (userDefinedEnabled != null) {
 			return new ConditionOutcome(userDefinedEnabled,
-					message.because("found property " + key + " with value " + userDefinedEnabled));
+					message.because("found property " + enabledKey + " with value " + userDefinedEnabled));
 		}
-		Boolean userDefinedDefault = isEnabledByDefault(environment);
-		if (userDefinedDefault != null) {
-			return new ConditionOutcome(userDefinedDefault, message
-				.because("no property " + key + " found so using user defined default from " + ENABLED_BY_DEFAULT_KEY));
+		Access userDefinedDefaultAccess = defaultAccess(environment);
+		Boolean userDefinedDefaultEnabled = isEnabledByDefault(environment);
+		MutuallyExclusiveConfigurationPropertiesException.throwIfMultipleNonNullValuesIn((entries) -> {
+			entries.put(DEFAULT_ACCESS_KEY, userDefinedDefaultAccess);
+			entries.put(ENABLED_BY_DEFAULT_KEY, userDefinedDefaultEnabled);
+		});
+		if (userDefinedDefaultAccess != null) {
+			return new ConditionOutcome(userDefinedDefaultAccess != Access.DISABLED, message.because(
+					"no property " + accessKey + " found so using user defined default from " + DEFAULT_ACCESS_KEY));
 		}
-		boolean endpointDefault = endpointAnnotation.getBoolean("enableByDefault");
-		return new ConditionOutcome(endpointDefault,
-				message.because("no property " + key + " found so using endpoint default of " + endpointDefault));
+		else if (userDefinedDefaultEnabled != null) {
+			return new ConditionOutcome(userDefinedDefaultEnabled, message.because("no property " + DEFAULT_ACCESS_KEY
+					+ " found so using user defined default from " + ENABLED_BY_DEFAULT_KEY));
+		}
+		Access endpointDefaultAccess = endpointAnnotation.getEnum("defaultAccess", Access.class);
+		boolean accessPermitted = endpointDefaultAccess != Access.DISABLED;
+		boolean endpointDefaultEnabled = endpointAnnotation.getBoolean("enableByDefault");
+		return new ConditionOutcome(accessPermitted && endpointDefaultEnabled,
+				message.because("no property " + accessKey + " found so using endpoint enabled default ("
+						+ endpointDefaultEnabled + ") and access default (" + endpointDefaultAccess + ")"));
 	}
 
 	private Boolean isEnabledByDefault(Environment environment) {
 		Optional<Boolean> enabledByDefault = enabledByDefaultCache.computeIfAbsent(environment,
 				(ignore) -> Optional.ofNullable(environment.getProperty(ENABLED_BY_DEFAULT_KEY, Boolean.class)));
 		return enabledByDefault.orElse(null);
+	}
+
+	private Access defaultAccess(Environment environment) {
+		Optional<Access> defaultAccess = defaultAccessCache.computeIfAbsent(environment,
+				(ignore) -> Optional.ofNullable(environment.getProperty(DEFAULT_ACCESS_KEY, Access.class)));
+		return defaultAccess.orElse(null);
 	}
 
 	private ConditionOutcome getExposureOutcome(Environment environment,

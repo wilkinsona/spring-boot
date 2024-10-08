@@ -14,30 +14,29 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationsample;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.springframework.boot.actuate.endpoint;
 
 /**
- * Alternative to Spring Boot's {@code @RestControllerEndpoint} for testing (removes the
- * need for a dependency on the real annotation).
+ * Permitted level of access to an endpoint and its operations.
  *
  * @author Andy Wilkinson
+ * @since 3.4.0
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface RestControllerEndpoint {
+public enum Access {
 
-	String id() default "";
+	/**
+	 * Access to the endpoint is disabled.
+	 */
+	DISABLED,
 
-	@Deprecated
-	boolean enableByDefault() default true;
+	/**
+	 * Access to the endpoint is limited to read operations.
+	 */
+	READ_ONLY,
 
-	Access defaultAccess() default Access.UNRESTRICTED;
+	/**
+	 * Access to the endpoint is unrestricted.
+	 */
+	UNRESTRICTED
 
 }

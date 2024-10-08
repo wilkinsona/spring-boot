@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.configurationsample;
-
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.springframework.boot.actuate.endpoint;
 
 /**
- * Alternative to Spring Boot's {@code @RestControllerEndpoint} for testing (removes the
- * need for a dependency on the real annotation).
+ * Strategy class that can be used to filter {@link Operation operations}.
  *
+ * @param <O> the operation type
  * @author Andy Wilkinson
+ * @since 3.4.0
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface RestControllerEndpoint {
+@FunctionalInterface
+public interface OperationFilter<O extends Operation> {
 
-	String id() default "";
-
-	@Deprecated
-	boolean enableByDefault() default true;
-
-	Access defaultAccess() default Access.UNRESTRICTED;
+	/**
+	 * Return {@code true} if the filter matches.
+	 * @param endpointId the ID of the endpoint to which the operation belongs
+	 * @param operation the operation to check
+	 * @param defaultAccess the default permitted level of access to the endpoint
+	 * @return {@code true} if the filter matches
+	 */
+	boolean match(O operation, EndpointId endpointId, Access defaultAccess);
 
 }

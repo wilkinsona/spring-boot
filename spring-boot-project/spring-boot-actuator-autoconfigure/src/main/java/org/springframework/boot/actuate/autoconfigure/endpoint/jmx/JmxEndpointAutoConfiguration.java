@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.LazyInitializationExcludeFilter;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.endpoint.access.AccessPropertiesOperationFilter;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.IncludeExcludeEndpointFilter;
 import org.springframework.boot.actuate.endpoint.EndpointFilter;
+import org.springframework.boot.actuate.endpoint.OperationFilter;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.invoke.OperationInvokerAdvisor;
 import org.springframework.boot.actuate.endpoint.invoke.ParameterValueMapper;
@@ -34,6 +36,7 @@ import org.springframework.boot.actuate.endpoint.jmx.ExposableJmxEndpoint;
 import org.springframework.boot.actuate.endpoint.jmx.JacksonJmxOperationResponseMapper;
 import org.springframework.boot.actuate.endpoint.jmx.JmxEndpointExporter;
 import org.springframework.boot.actuate.endpoint.jmx.JmxEndpointsSupplier;
+import org.springframework.boot.actuate.endpoint.jmx.JmxOperation;
 import org.springframework.boot.actuate.endpoint.jmx.JmxOperationResponseMapper;
 import org.springframework.boot.actuate.endpoint.jmx.annotation.JmxEndpointDiscoverer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -47,6 +50,7 @@ import org.springframework.boot.autoconfigure.jmx.JmxProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.util.ObjectUtils;
 
 /**
@@ -80,9 +84,11 @@ public class JmxEndpointAutoConfiguration {
 	@ConditionalOnMissingBean(JmxEndpointsSupplier.class)
 	public JmxEndpointDiscoverer jmxAnnotationEndpointDiscoverer(ParameterValueMapper parameterValueMapper,
 			ObjectProvider<OperationInvokerAdvisor> invokerAdvisors,
-			ObjectProvider<EndpointFilter<ExposableJmxEndpoint>> filters) {
+			ObjectProvider<EndpointFilter<ExposableJmxEndpoint>> endpointFilters,
+			ObjectProvider<OperationFilter<JmxOperation>> operationFilters) {
 		return new JmxEndpointDiscoverer(this.applicationContext, parameterValueMapper,
-				invokerAdvisors.orderedStream().toList(), filters.orderedStream().toList());
+				invokerAdvisors.orderedStream().toList(), endpointFilters.orderedStream().toList(),
+				operationFilters.orderedStream().toList());
 	}
 
 	@Bean
@@ -114,6 +120,11 @@ public class JmxEndpointAutoConfiguration {
 	@Bean
 	static LazyInitializationExcludeFilter eagerlyInitializeJmxEndpointExporter() {
 		return LazyInitializationExcludeFilter.forBeanTypes(JmxEndpointExporter.class);
+	}
+
+	@Bean
+	AccessPropertiesOperationFilter<JmxOperation> jmxAccessPropertiesOperationFilter(Environment environment) {
+		return new AccessPropertiesOperationFilter<>(environment);
 	}
 
 }
