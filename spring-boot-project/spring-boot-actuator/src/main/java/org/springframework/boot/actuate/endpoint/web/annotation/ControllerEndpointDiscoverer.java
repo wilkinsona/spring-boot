@@ -89,6 +89,11 @@ public class ControllerEndpointDiscoverer extends EndpointDiscoverer<ExposableCo
 		throw new IllegalStateException("ControllerEndpoints must not declare operations");
 	}
 
+	@Override
+	protected boolean hasOperations(ExposableControllerEndpoint endpoint) {
+		return true;
+	}
+
 	static class ControllerEndpointDiscovererRuntimeHints implements RuntimeHintsRegistrar {
 
 		@Override

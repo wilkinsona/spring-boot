@@ -208,11 +208,17 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 		Set<E> endpoints = new LinkedHashSet<>();
 		for (EndpointBean endpointBean : endpointBeans) {
 			if (isEndpointExposed(endpointBean)) {
-				// TODO Filter out standard endpoints with no operations?
-				endpoints.add(convertToEndpoint(endpointBean));
+				E endpoint = convertToEndpoint(endpointBean);
+				if (hasOperations(endpoint)) {
+					endpoints.add(endpoint);
+				}
 			}
 		}
 		return Collections.unmodifiableSet(endpoints);
+	}
+
+	protected boolean hasOperations(E endpoint) {
+		return !endpoint.getOperations().isEmpty();
 	}
 
 	private E convertToEndpoint(EndpointBean endpointBean) {
@@ -232,7 +238,7 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 		}
 		assertNoDuplicateOperations(endpointBean, indexed);
 		List<O> operations = indexed.values().stream().map(this::getLast).filter(Objects::nonNull).toList();
-		return createEndpoint(endpointBean.getBean(), id, endpointBean.isEnabledByDefault(), operations);
+		return createEndpoint(endpointBean.getBean(), id, endpointBean.getDefaultAccess(), operations);
 	}
 
 	private void addOperations(MultiValueMap<OperationKey, O> indexed, EndpointId id, Access defaultAccess,
@@ -359,7 +365,7 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 
 	private E getFilterEndpoint(EndpointBean endpointBean) {
 		return this.filterEndpoints.computeIfAbsent(endpointBean, (key) -> createEndpoint(endpointBean.getBean(),
-				endpointBean.getId(), endpointBean.isEnabledByDefault(), Collections.emptySet()));
+				endpointBean.getId(), endpointBean.getDefaultAccess(), Collections.emptySet()));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -468,8 +474,6 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 
 		private final EndpointId id;
 
-		private final boolean enabledByDefault;
-
 		private final Access defaultAccess;
 
 		private final Class<?> filter;
@@ -486,8 +490,8 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 			this.beanType = beanType;
 			this.beanSupplier = beanSupplier;
 			this.id = EndpointId.of(environment, id);
-			this.enabledByDefault = annotation.getBoolean("enableByDefault");
-			this.defaultAccess = annotation.getEnum("defaultAccess", Access.class);
+			boolean enabledByDefault = annotation.getBoolean("enableByDefault");
+			this.defaultAccess = enabledByDefault ? annotation.getEnum("defaultAccess", Access.class) : Access.NONE;
 			this.filter = getFilter(beanType);
 		}
 
@@ -520,10 +524,6 @@ public abstract class EndpointDiscoverer<E extends ExposableEndpoint<O>, O exten
 
 		EndpointId getId() {
 			return this.id;
-		}
-
-		boolean isEnabledByDefault() {
-			return this.enabledByDefault;
 		}
 
 		Access getDefaultAccess() {

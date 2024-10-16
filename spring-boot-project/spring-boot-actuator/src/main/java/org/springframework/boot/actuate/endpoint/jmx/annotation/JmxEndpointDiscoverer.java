@@ -97,6 +97,11 @@ public class JmxEndpointDiscoverer extends EndpointDiscoverer<ExposableJmxEndpoi
 		return new OperationKey(operation.getName(), () -> "MBean call '" + operation.getName() + "'");
 	}
 
+	@Override
+	protected boolean hasOperations(ExposableJmxEndpoint endpoint) {
+		return !endpoint.getOperations().isEmpty();
+	}
+
 	static class JmxEndpointDiscovererRuntimeHints implements RuntimeHintsRegistrar {
 
 		@Override

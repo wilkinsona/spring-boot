@@ -88,6 +88,11 @@ public class ServletEndpointDiscoverer extends EndpointDiscoverer<ExposableServl
 		throw new IllegalStateException("ServletEndpoints must not declare operations");
 	}
 
+	@Override
+	protected boolean hasOperations(ExposableServletEndpoint endpoint) {
+		return true;
+	}
+
 	static class ServletEndpointDiscovererRuntimeHints implements RuntimeHintsRegistrar {
 
 		@Override
