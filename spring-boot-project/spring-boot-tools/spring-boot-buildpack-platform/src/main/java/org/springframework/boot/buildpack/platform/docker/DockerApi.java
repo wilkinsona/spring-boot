@@ -233,7 +233,7 @@ public class DockerApi {
 			Assert.notNull(archive, "Archive must not be null");
 			Assert.notNull(listener, "Listener must not be null");
 			URI loadUri = buildUrl("/images/load");
-			StreamCaptureUpdateListener streamListener = new StreamCaptureUpdateListener();
+			LoadImageUpdateListener streamListener = new LoadImageUpdateListener(archive);
 			listener.onStart();
 			try {
 				try (Response response = http().post(loadUri, "application/x-tar", archive::writeTo)) {
@@ -243,8 +243,8 @@ public class DockerApi {
 					});
 				}
 				Assert.state(StringUtils.hasText(streamListener.getCapturedStream()),
-						"Invalid response received when loading image "
-								+ ((archive.getTag() != null) ? "\"" + archive.getTag() + "\"" : ""));
+						"Invalid response received when loading image"
+								+ ((archive.getTag() != null) ? "\" " + archive.getTag() + "\"" : ""));
 			}
 			finally {
 				listener.onFinish();
@@ -482,18 +482,31 @@ public class DockerApi {
 	}
 
 	/**
-	 * {@link UpdateListener} used to ensure an image load response stream.
+	 * {@link UpdateListener} for an image load response stream.
 	 */
-	private static final class StreamCaptureUpdateListener implements UpdateListener<LoadImageUpdateEvent> {
+	private static final class LoadImageUpdateListener implements UpdateListener<LoadImageUpdateEvent> {
+
+		private final ImageArchive archive;
 
 		private String stream;
 
+		private LoadImageUpdateListener(ImageArchive archive) {
+			this.archive = archive;
+		}
+
 		@Override
 		public void onUpdate(LoadImageUpdateEvent event) {
+			Assert.state(event.getErrorDetail() == null,
+					() -> "Error response received when loading image" + image() + ": " + event.getErrorDetail());
 			this.stream = event.getStream();
 		}
 
-		String getCapturedStream() {
+		private String image() {
+			ImageReference tag = this.archive.getTag();
+			return (tag != null) ? " \"" + tag + "\"" : "";
+		}
+
+		private String getCapturedStream() {
 			return this.stream;
 		}
 
