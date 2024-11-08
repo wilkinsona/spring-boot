@@ -140,19 +140,19 @@ abstract class AbstractApplicationContextRunnerTests<T extends AbstractApplicati
 	}
 
 	@Test
-	public void runWithConfigurationsShouldUseFullyQualifiedClassBeanNames() {
+	void runWithConfigurationsShouldUseFullyQualifiedClassBeanNames() {
 		get().withUserConfiguration(FooConfig.class)
-				.run((context) -> assertThat(context).hasBean(FooConfig.class.getName()));
+			.run((context) -> assertThat(context).hasBean(FooConfig.class.getName()));
 	}
 
 	@Test
-	public void runWithConfigurationsWithTheSameNameShouldRegisterBoth() {
-		get().withUserConfiguration(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class,
-				org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class)
-				.run((context) -> assertThat(context)
-						.hasSingleBean(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class)
-						.hasSingleBean(
-								org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class));
+	void runWithConfigurationsWithTheSameNameShouldRegisterBoth() {
+		get()
+			.withUserConfiguration(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class,
+					org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class)
+			.run((context) -> assertThat(context)
+				.hasSingleBean(org.springframework.boot.test.context.example.duplicate.first.EmptyConfig.class)
+				.hasSingleBean(org.springframework.boot.test.context.example.duplicate.second.EmptyConfig.class));
 	}
 
 	@Test

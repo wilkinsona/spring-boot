@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener;
 import io.micrometer.core.instrument.binder.mongodb.MongoMetricsConnectionPoolListener;
 import org.junit.jupiter.api.Test;
 
+import org.springframework.boot.actuate.autoconfigure.metrics.mongo.MongoMetricsAutoConfiguration.MongoCommandMetricsConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.mongo.MongoMetricsAutoConfiguration.MongoConnectionPoolMetricsConfiguration;
 import org.springframework.boot.actuate.autoconfigure.metrics.test.MetricsRun;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
@@ -116,19 +118,19 @@ class MongoMetricsAutoConfigurationTests {
 	}
 
 	@Test
-	void whenThereIsNoMongoClientSettingsOnClasspathThenNoMetricsCommandListenerIsAdded() {
+	void whenThereIsNoMongoClientOnClasspathThenNoMetricsCommandListenerIsAdded() {
 		this.contextRunner.with(MetricsRun.simple())
 			.withConfiguration(AutoConfigurations.of(MongoAutoConfiguration.class))
-			.withClassLoader(new FilteredClassLoader(MongoClientSettings.class))
-			.run(assertThatMetricsCommandListenerNotAdded());
+			.withClassLoader(new FilteredClassLoader("com.mongodb"))
+			.run((context) -> assertThat(context).doesNotHaveBean(MongoCommandMetricsConfiguration.class));
 	}
 
 	@Test
-	void whenThereIsNoMongoClientSettingsOnClasspathThenNoMetricsConnectionPoolListenerIsAdded() {
+	void whenThereIsNoMongoClientOnClasspathThenNoMetricsConnectionPoolListenerIsAdded() {
 		this.contextRunner.with(MetricsRun.simple())
 			.withConfiguration(AutoConfigurations.of(MongoAutoConfiguration.class))
-			.withClassLoader(new FilteredClassLoader(MongoClientSettings.class))
-			.run(assertThatMetricsConnectionPoolListenerNotAdded());
+			.withClassLoader(new FilteredClassLoader("com.mongodb"))
+			.run((context) -> assertThat(context).doesNotHaveBean(MongoConnectionPoolMetricsConfiguration.class));
 	}
 
 	@Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,18 @@ package org.springframework.boot.test.context.runner;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionCustomizer;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.boot.context.annotation.Configurations;
 import org.springframework.boot.context.annotation.UserConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
@@ -42,12 +40,18 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.context.annotation.AnnotationConfigRegistry;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportSelector;
 import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.core.Ordered;
-import org.springframework.core.PriorityOrdered;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.Assert;
 
 /**
@@ -427,11 +431,8 @@ public abstract class AbstractApplicationContextRunner<SELF extends AbstractAppl
 		this.runnerConfiguration.initializers.forEach((initializer) -> initializer.initialize(context));
 		Class<?>[] classes = Configurations.getClasses(this.runnerConfiguration.configurations);
 		if (classes.length > 0) {
-			context.addBeanFactoryPostProcessor(new ConfigurationClassesRegistrar(classes));
-			// GenericApplicationContext gac = (GenericApplicationContext) context;
-			// for (Class<?> aClass : classes) {
-			// gac.registerBean(aClass.getName(), aClass);
-			// }
+			ConfigurationClassesImporter.prepareEnvironment(context.getEnvironment(), classes);
+			((AnnotationConfigRegistry) context).register(ConfigurationClassesImportRegistrar.class);
 		}
 		if (refresh) {
 			context.refresh();
@@ -589,37 +590,33 @@ public abstract class AbstractApplicationContextRunner<SELF extends AbstractAppl
 
 	}
 
-	/**
-	 * A {@link BeanDefinitionRegistryPostProcessor} that mimics what an
-	 * {@code ImportSelector} does. In particular, it makes sure registered configuration
-	 * classes use their FQN as bean name.
-	 */
-	private static final class ConfigurationClassesRegistrar
-			implements BeanDefinitionRegistryPostProcessor, PriorityOrdered {
+	@Configuration(proxyBeanMethods = false)
+	@Import(ConfigurationClassesImporter.class)
+	static final class ConfigurationClassesImportRegistrar {
 
-		private final Class<?>[] configurationClasses;
+	}
 
-		private ConfigurationClassesRegistrar(Class<?>[] configurationClasses) {
-			this.configurationClasses = configurationClasses;
+	private static final class ConfigurationClassesImporter implements ImportSelector, EnvironmentAware {
+
+		private static final String PROPERTY_NAME = ApplicationContextRunner.class.getName() + ".configurations";
+
+		private Environment environment;
+
+		@Override
+		public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+			return this.environment.getProperty(PROPERTY_NAME, String[].class);
 		}
 
 		@Override
-		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry beanDefinitionRegistry)
-				throws BeansException {
-			for (Class<?> configurationClass : this.configurationClasses) {
-				beanDefinitionRegistry.registerBeanDefinition(configurationClass.getName(),
-						new RootBeanDefinition(configurationClass));
-			}
+		public void setEnvironment(Environment environment) {
+			this.environment = environment;
 		}
 
-		@Override
-		public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory)
-				throws BeansException {
-		}
-
-		@Override
-		public int getOrder() {
-			return Ordered.LOWEST_PRECEDENCE;
+		private static void prepareEnvironment(ConfigurableEnvironment environment, Class<?>[] classes) {
+			String[] classNames = Stream.of(classes).map(Class::getName).toArray(String[]::new);
+			environment.getPropertySources()
+				.addLast(new MapPropertySource("applicationContextRunnerConfigurations",
+						Map.of(ConfigurationClassesImporter.PROPERTY_NAME, classNames)));
 		}
 
 	}
