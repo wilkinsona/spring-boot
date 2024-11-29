@@ -32,10 +32,12 @@ import io.spring.javaformat.gradle.tasks.CheckFormat;
 import io.spring.javaformat.gradle.tasks.Format;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.artifacts.DependencySet;
+import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.plugins.JavaPluginExtension;
@@ -50,9 +52,12 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.external.javadoc.CoreJavadocOptions;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 import org.springframework.boot.build.architecture.ArchitecturePlugin;
 import org.springframework.boot.build.classpath.CheckClasspathForProhibitedDependencies;
+import org.springframework.boot.build.deprecation.CheckDeprecatedApisForOverdueRemoval;
+import org.springframework.boot.build.deprecation.GenerateDeprecationReport;
 import org.springframework.boot.build.optional.OptionalDependenciesPlugin;
 import org.springframework.boot.build.testing.TestFailuresPlugin;
 import org.springframework.boot.build.toolchain.ToolchainPlugin;
@@ -123,6 +128,7 @@ class JavaConventions {
 			configureDependencyManagement(project);
 			configureToolchain(project);
 			configureProhibitedDependencyChecks(project);
+			configureDeprecationChecks(project);
 		});
 	}
 
@@ -302,6 +308,43 @@ class JavaConventions {
 			.register("check" + StringUtils.capitalize(classpath.getName() + "ForProhibitedDependencies"),
 					CheckClasspathForProhibitedDependencies.class, (task) -> task.setClasspath(classpath));
 		project.getTasks().getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn(checkClasspathForProhibitedDependencies);
+	}
+
+	private void configureDeprecationChecks(Project project) {
+		TaskProvider<Task> lifecycleTask = project.getTasks()
+			.register("checkDeprecatedApisForOverdueRemoval", (task) -> {
+				task.setGroup(LifecycleBasePlugin.VERIFICATION_GROUP);
+				task.setDescription(
+						"Lifecycle task that checks all source sets for deprecated APIs whose removal is overdue.");
+			});
+		project.getTasks().named(BasePlugin.CLEAN_TASK_NAME).configure((task) -> task.dependsOn(lifecycleTask));
+		SourceSetContainer sourceSets = project.getExtensions().getByType(SourceSetContainer.class);
+		sourceSets.all((sourceSet) -> configureDeprecationChecks(project, sourceSet, lifecycleTask));
+	}
+
+	private void configureDeprecationChecks(Project project, SourceSet sourceSet, TaskProvider<Task> lifecycleTask) {
+		TaskProvider<GenerateDeprecationReport> generateDeprecationReport = project.getTasks()
+			.register("generate%sDeprecationReport".formatted(StringUtils.capitalize(sourceSet.getName())),
+					GenerateDeprecationReport.class);
+		generateDeprecationReport.configure((task) -> {
+			task.setSourceDirectories(sourceSet.getJava().getSourceDirectories());
+			task.setDependencies(sourceSet.getCompileClasspath());
+			task.getReportFile()
+				.set(project.getLayout()
+					.getBuildDirectory()
+					.file("generateDeprecationReport/%s.json".formatted(sourceSet.getName())));
+			task.setGroup(LifecycleBasePlugin.VERIFICATION_GROUP);
+			task.setDescription("Checks the '%s' source set for deprecated APIs whose removal is overdue."
+				.formatted(sourceSet.getName()));
+		});
+		TaskProvider<CheckDeprecatedApisForOverdueRemoval> checkForOverdueDeprecatedApiRemoval = project.getTasks()
+			.register("check%sDeprecatedApisForOverdueRemoval".formatted(StringUtils.capitalize(sourceSet.getName())),
+					CheckDeprecatedApisForOverdueRemoval.class);
+		checkForOverdueDeprecatedApiRemoval.configure((task) -> {
+			task.getVersion().set(project.getVersion().toString());
+			task.getReportFile().set(generateDeprecationReport.flatMap(GenerateDeprecationReport::getReportFile));
+		});
+		lifecycleTask.configure((task) -> task.dependsOn(checkForOverdueDeprecatedApiRemoval));
 	}
 
 }
