@@ -44,9 +44,9 @@ public class ArchitecturePlugin implements Plugin<Project> {
 
 	private void registerTasks(Project project) {
 		JavaPluginExtension javaPluginExtension = project.getExtensions().getByType(JavaPluginExtension.class);
-		List<TaskProvider<ArchitectureCheck>> packageTangleChecks = new ArrayList<>();
+		List<TaskProvider<ArchitectureCheck>> architectureChecks = new ArrayList<>();
 		for (SourceSet sourceSet : javaPluginExtension.getSourceSets()) {
-			TaskProvider<ArchitectureCheck> checkPackageTangles = project.getTasks()
+			TaskProvider<ArchitectureCheck> checkArchitecture = project.getTasks()
 				.register("checkArchitecture" + StringUtils.capitalize(sourceSet.getName()), ArchitectureCheck.class,
 						(task) -> {
 							task.setClasses(sourceSet.getOutput().getClassesDirs());
@@ -55,12 +55,15 @@ public class ArchitecturePlugin implements Plugin<Project> {
 							task.setDescription("Checks the architecture of the classes of the " + sourceSet.getName()
 									+ " source set.");
 							task.setGroup(LifecycleBasePlugin.VERIFICATION_GROUP);
+							if (!SourceSet.MAIN_SOURCE_SET_NAME.equals(sourceSet.getName())) {
+								task.getProhibitPropertyResolutionWithCatchingConversionFailedException().set(false);
+							}
 						});
-			packageTangleChecks.add(checkPackageTangles);
+			architectureChecks.add(checkArchitecture);
 		}
-		if (!packageTangleChecks.isEmpty()) {
+		if (!architectureChecks.isEmpty()) {
 			TaskProvider<Task> checkTask = project.getTasks().named(LifecycleBasePlugin.CHECK_TASK_NAME);
-			checkTask.configure((check) -> check.dependsOn(packageTangleChecks));
+			checkTask.configure((check) -> check.dependsOn(architectureChecks));
 		}
 	}
 

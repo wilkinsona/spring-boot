@@ -26,18 +26,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.AccessTarget.MethodCallTarget;
 import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaCall;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaCodeUnit;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.core.domain.JavaType;
+import com.tngtech.archunit.core.domain.TryCatchBlock;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.HasName;
 import com.tngtech.archunit.core.domain.properties.HasOwner.Predicates.With;
@@ -69,6 +74,9 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SkipWhenEmpty;
 import org.gradle.api.tasks.TaskAction;
 
+import org.springframework.core.convert.ConversionFailedException;
+import org.springframework.core.env.PropertyResolver;
+import org.springframework.core.env.PropertySource;
 import org.springframework.util.ResourceUtils;
 
 /**
@@ -86,6 +94,7 @@ public abstract class ArchitectureCheck extends DefaultTask {
 	public ArchitectureCheck() {
 		getOutputDirectory().convention(getProject().getLayout().getBuildDirectory().dir(getName()));
 		getProhibitObjectsRequireNonNull().convention(true);
+		getProhibitPropertyResolutionWithCatchingConversionFailedException().convention(true);
 		getRules().addAll(allPackagesShouldBeFreeOfTangles(),
 				allBeanPostProcessorBeanMethodsShouldBeStaticAndHaveParametersThatWillNotCausePrematureInitialization(),
 				allBeanFactoryPostProcessorBeanMethodsShouldBeStaticAndHaveNoParameters(),
@@ -97,6 +106,11 @@ public abstract class ArchitectureCheck extends DefaultTask {
 				conditionalOnMissingBeanShouldNotSpecifyOnlyATypeThatIsTheSameAsMethodReturnType());
 		getRules().addAll(getProhibitObjectsRequireNonNull()
 			.map((prohibit) -> prohibit ? noClassesShouldCallObjectsRequireNonNull() : Collections.emptyList()));
+		getRules()
+			.addAll(getProhibitPropertyResolutionWithCatchingConversionFailedException().map((prohibit) -> prohibit
+					? List
+						.of(noCodeUnitsShouldCallPropertyResolverGetPropertyWithoutCatchingConversionFailedException())
+					: Collections.emptyList()));
 		getRuleDescriptions().set(getRules().map((rules) -> rules.stream().map(ArchRule::getDescription).toList()));
 	}
 
@@ -297,6 +311,62 @@ public abstract class ArchitectureCheck extends DefaultTask {
 		};
 	}
 
+	private ArchRule noCodeUnitsShouldCallPropertyResolverGetPropertyWithoutCatchingConversionFailedException() {
+		return ArchRuleDefinition.codeUnits()
+			.that()
+			.areDeclaredInClassesThat()
+			.areNotAssignableTo(PropertyResolver.class)
+			.and()
+			.areDeclaredInClassesThat()
+			.areNotAssignableTo(PropertySource.class)
+			.should(notCallGetPropertyOrGetRequiredPropertyOnPropertyResolverWithoutCatchingConversionFailedException())
+			.allowEmptyShould(true);
+	}
+
+	private ArchCondition<JavaCodeUnit> notCallGetPropertyOrGetRequiredPropertyOnPropertyResolverWithoutCatchingConversionFailedException() {
+		return new ArchCondition<>(
+				"not call getProperty or getRequiredProperty on PropertyResolver without catching conversion failed exception") {
+
+			@Override
+			public void check(JavaCodeUnit item, ConditionEvents events) {
+				for (JavaMethodCall methodCall : item.getMethodCallsFromSelf()) {
+					MethodCallTarget target = methodCall.getTarget();
+					if (isPropertyResolverGetPropertyOrRequiredProperty(target) && performsConversion(target)) {
+						if (!catchesConversionFailedException(methodCall)) {
+							events.add(SimpleConditionEvent.violated(item,
+									methodCall.getDescription() + " without catching ConversionFailedException"));
+						}
+					}
+				}
+			}
+
+		};
+
+	}
+
+	private boolean isPropertyResolverGetPropertyOrRequiredProperty(MethodCallTarget target) {
+		return target.getOwner().isAssignableTo(PropertyResolver.class)
+				&& (target.getName().equals("getProperty") || target.getName().equals("getRequiredProperty"));
+	}
+
+	private boolean performsConversion(MethodCallTarget target) {
+		List<JavaClass> parameterTypes = target.getRawParameterTypes();
+		return parameterTypes.size() > 1 && parameterTypes.get(1).isEquivalentTo(Class.class);
+	}
+
+	private boolean catchesConversionFailedException(JavaMethodCall methodCall) {
+		Set<TryCatchBlock> containingTryBlocks = methodCall.getContainingTryBlocks();
+		for (TryCatchBlock tryCatchBlock : containingTryBlocks) {
+			Set<JavaClass> caughtThrowables = tryCatchBlock.getCaughtThrowables();
+			for (JavaClass caughtThrowable : caughtThrowables) {
+				if (caughtThrowable.isAssignableTo(ConversionFailedException.class)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	public void setClasses(FileCollection classes) {
 		this.classes = classes;
 	}
@@ -325,8 +395,11 @@ public abstract class ArchitectureCheck extends DefaultTask {
 	@Internal
 	public abstract ListProperty<ArchRule> getRules();
 
-	@Internal
+	@Input
 	public abstract Property<Boolean> getProhibitObjectsRequireNonNull();
+
+	@Input
+	public abstract Property<Boolean> getProhibitPropertyResolutionWithCatchingConversionFailedException();
 
 	@Input
 	// The rules themselves can't be an input as they aren't serializable so we use

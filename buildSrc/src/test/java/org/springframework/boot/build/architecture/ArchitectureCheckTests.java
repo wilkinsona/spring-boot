@@ -204,6 +204,31 @@ class ArchitectureCheckTests {
 		});
 	}
 
+	@Test
+	void whenCodeUnitCallsGetPropertyWithoutConversionShouldNotFail() throws Exception {
+		prepareTask("propertyresolver/noconversion", (architectureCheck) -> {
+			architectureCheck.checkArchitecture();
+			assertThat(failureReport(architectureCheck)).isEmpty();
+		});
+	}
+
+	@Test
+	void whenCodeUnitCallsGetPropertyWithConversionAndDoesNotCatchConversionFailedExceptionShouldFail()
+			throws Exception {
+		prepareTask("propertyresolver/conversionwithoutcatch", (architectureCheck) -> {
+			assertThatExceptionOfType(GradleException.class).isThrownBy(architectureCheck::checkArchitecture);
+			assertThat(failureReport(architectureCheck)).isNotEmpty().content().contains("(3 times)");
+		});
+	}
+
+	@Test
+	void whenCodeUnitCallsGetPropertyWithConversionAndCatchesConversionFailedExceptionShouldNotFail() throws Exception {
+		prepareTask("propertyresolver/conversionwithcatch", (architectureCheck) -> {
+			architectureCheck.checkArchitecture();
+			assertThat(failureReport(architectureCheck)).isEmpty();
+		});
+	}
+
 	private void prepareTask(String classes, Callback<ArchitectureCheck> callback) throws Exception {
 		File projectDir = new File(this.temp, "project");
 		projectDir.mkdirs();
