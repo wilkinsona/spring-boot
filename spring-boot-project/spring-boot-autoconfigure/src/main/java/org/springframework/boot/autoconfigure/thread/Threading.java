@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,11 @@
 
 package org.springframework.boot.autoconfigure.thread;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.system.JavaVersion;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 
 /**
  * Threading of the application.
@@ -46,8 +49,17 @@ public enum Threading {
 
 		@Override
 		public boolean isActive(Environment environment) {
-			return environment.getProperty("spring.threads.virtual.enabled", boolean.class, false)
+			return getConvertedProperty(environment, "spring.threads.virtual.enabled", boolean.class, false)
 					&& JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.TWENTY_ONE);
+		}
+
+		private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+			try {
+				return properties.getProperty(name, type, defaultValue);
+			}
+			catch (ConversionFailedException ex) {
+				throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+			}
 		}
 
 	};

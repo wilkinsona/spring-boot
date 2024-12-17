@@ -29,10 +29,13 @@ import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfigu
 import org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizationAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizers;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.support.JdbcTransactionManager;
@@ -69,8 +72,18 @@ public class DataSourceTransactionManagerAutoConfiguration {
 		}
 
 		private DataSourceTransactionManager createTransactionManager(Environment environment, DataSource dataSource) {
-			return environment.getProperty("spring.dao.exceptiontranslation.enabled", Boolean.class, Boolean.TRUE)
-					? new JdbcTransactionManager(dataSource) : new DataSourceTransactionManager(dataSource);
+			return getConvertedProperty(environment, "spring.dao.exceptiontranslation.enabled", Boolean.class,
+					Boolean.TRUE) ? new JdbcTransactionManager(dataSource)
+							: new DataSourceTransactionManager(dataSource);
+		}
+
+		private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+			try {
+				return properties.getProperty(name, type, defaultValue);
+			}
+			catch (ConversionFailedException ex) {
+				throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+			}
 		}
 
 	}

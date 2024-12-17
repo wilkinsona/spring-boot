@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.boot.ansi.AnsiOutput.Enabled;
 import org.springframework.boot.context.event.ApplicationEnvironmentPreparedEvent;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.env.EnvironmentPostProcessorApplicationListener;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.Ordered;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.PropertyResolver;
 
 /**
  * An {@link ApplicationListener} that configures {@link AnsiOutput} depending on the
@@ -43,7 +46,17 @@ public class AnsiOutputApplicationListener
 		Binder.get(environment)
 			.bind("spring.output.ansi.enabled", AnsiOutput.Enabled.class)
 			.ifBound(AnsiOutput::setEnabled);
-		AnsiOutput.setConsoleAvailable(environment.getProperty("spring.output.ansi.console-available", Boolean.class));
+		AnsiOutput.setConsoleAvailable(
+				getConvertedProperty(environment, "spring.output.ansi.console-available", Boolean.class));
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type) {
+		try {
+			return properties.getProperty(name, type);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2020 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.util.Assert;
 
 /**
@@ -130,10 +133,19 @@ public final class EndpointId {
 	}
 
 	private static String migrateLegacyId(Environment environment, String value) {
-		if (environment.getProperty(MIGRATE_LEGACY_NAMES_PROPERTY, Boolean.class, false)) {
+		if (getConvertedProperty(environment, MIGRATE_LEGACY_NAMES_PROPERTY, Boolean.class, false)) {
 			return value.replaceAll("[-.]+", "");
 		}
 		return value;
+	}
+
+	private static <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	/**

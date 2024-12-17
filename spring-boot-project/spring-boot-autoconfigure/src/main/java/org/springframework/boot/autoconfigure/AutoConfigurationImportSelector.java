@@ -42,14 +42,17 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.annotation.ImportCandidates;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DeferredImportSelector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.core.type.AnnotationMetadata;
@@ -140,9 +143,19 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 
 	protected boolean isEnabled(AnnotationMetadata metadata) {
 		if (getClass() == AutoConfigurationImportSelector.class) {
-			return getEnvironment().getProperty(EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY, Boolean.class, true);
+			return getConvertedProperty(getEnvironment(), EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY,
+					Boolean.class, true);
 		}
 		return true;
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	/**
@@ -245,7 +258,8 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 				.map(Arrays::asList)
 				.orElse(Collections.emptyList());
 		}
-		String[] excludes = environment.getProperty(PROPERTY_NAME_AUTOCONFIGURE_EXCLUDE, String[].class);
+		String[] excludes = getConvertedProperty(environment, PROPERTY_NAME_AUTOCONFIGURE_EXCLUDE, String[].class,
+				null);
 		return (excludes != null) ? Arrays.asList(excludes) : Collections.emptyList();
 	}
 

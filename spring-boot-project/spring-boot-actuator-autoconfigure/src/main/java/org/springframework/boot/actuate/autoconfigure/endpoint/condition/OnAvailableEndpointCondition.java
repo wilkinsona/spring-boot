@@ -35,12 +35,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionMessage;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.cloud.CloudPlatform;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.Assert;
@@ -128,7 +131,7 @@ class OnAvailableEndpointCondition extends SpringBootCondition {
 	private ConditionOutcome getEnablementOutcome(Environment environment,
 			MergedAnnotation<Endpoint> endpointAnnotation, EndpointId endpointId, ConditionMessage.Builder message) {
 		String key = "management.endpoint." + endpointId.toLowerCaseString() + ".enabled";
-		Boolean userDefinedEnabled = environment.getProperty(key, Boolean.class);
+		Boolean userDefinedEnabled = getConvertedProperty(environment, key, Boolean.class);
 		if (userDefinedEnabled != null) {
 			return new ConditionOutcome(userDefinedEnabled,
 					message.because("found property " + key + " with value " + userDefinedEnabled));
@@ -143,9 +146,22 @@ class OnAvailableEndpointCondition extends SpringBootCondition {
 				message.because("no property " + key + " found so using endpoint default of " + endpointDefault));
 	}
 
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type) {
+		return getConvertedProperty(properties, name, type, null);
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
+	}
+
 	private Boolean isEnabledByDefault(Environment environment) {
-		Optional<Boolean> enabledByDefault = enabledByDefaultCache.computeIfAbsent(environment,
-				(ignore) -> Optional.ofNullable(environment.getProperty(ENABLED_BY_DEFAULT_KEY, Boolean.class)));
+		Optional<Boolean> enabledByDefault = enabledByDefaultCache.computeIfAbsent(environment, (ignore) -> Optional
+			.ofNullable(getConvertedProperty(environment, ENABLED_BY_DEFAULT_KEY, Boolean.class)));
 		return enabledByDefault.orElse(null);
 	}
 
@@ -160,7 +176,7 @@ class OnAvailableEndpointCondition extends SpringBootCondition {
 		Set<ExposureFilter> exposureFilters = exposureFiltersCache.get(environment);
 		if (exposureFilters == null) {
 			exposureFilters = new HashSet<>(2);
-			if (environment.getProperty(JMX_ENABLED_KEY, Boolean.class, false)) {
+			if (getConvertedProperty(environment, JMX_ENABLED_KEY, Boolean.class, false)) {
 				exposureFilters.add(new ExposureFilter(environment, EndpointExposure.JMX));
 			}
 			if (CloudPlatform.CLOUD_FOUNDRY.isActive(environment)) {

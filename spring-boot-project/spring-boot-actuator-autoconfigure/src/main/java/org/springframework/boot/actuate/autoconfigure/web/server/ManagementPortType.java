@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 package org.springframework.boot.actuate.autoconfigure.web.server;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 
 /**
  * Port types that can be used to control how the management server is started.
@@ -61,7 +64,16 @@ public enum ManagementPortType {
 	}
 
 	private static Integer getPortProperty(Environment environment, String prefix) {
-		return environment.getProperty(prefix + "port", Integer.class);
+		return getConvertedProperty(environment, prefix + "port", Integer.class);
+	}
+
+	private static <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type) {
+		try {
+			return properties.getProperty(name, type);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 }

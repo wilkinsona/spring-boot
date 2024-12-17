@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package org.springframework.boot.actuate.autoconfigure.metrics.export;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
@@ -53,11 +56,20 @@ class OnMetricsExportEnabledCondition extends SpringBootCondition {
 		Environment environment = context.getEnvironment();
 		String enabledProperty = PROPERTY_TEMPLATE.formatted(productName);
 		if (environment.containsProperty(enabledProperty)) {
-			boolean match = environment.getProperty(enabledProperty, Boolean.class, true);
+			boolean match = getConvertedProperty(environment, enabledProperty, Boolean.class, true);
 			return new ConditionOutcome(match, ConditionMessage.forCondition(ConditionalOnEnabledMetricsExport.class)
 				.because(enabledProperty + " is " + match));
 		}
 		return null;
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	/**
@@ -68,7 +80,7 @@ class OnMetricsExportEnabledCondition extends SpringBootCondition {
 	 * @return the default outcome
 	 */
 	private ConditionOutcome getDefaultOutcome(ConditionContext context) {
-		boolean match = Boolean.parseBoolean(context.getEnvironment().getProperty(DEFAULT_PROPERTY_NAME, "true"));
+		boolean match = getConvertedProperty(context.getEnvironment(), DEFAULT_PROPERTY_NAME, Boolean.class, true);
 		return new ConditionOutcome(match, ConditionMessage.forCondition(ConditionalOnEnabledMetricsExport.class)
 			.because(DEFAULT_PROPERTY_NAME + " is considered " + match));
 	}

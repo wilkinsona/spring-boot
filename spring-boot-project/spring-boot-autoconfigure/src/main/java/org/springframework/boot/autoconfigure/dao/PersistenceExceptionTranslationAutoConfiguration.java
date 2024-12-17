@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor;
 
 /**
@@ -44,10 +47,19 @@ public class PersistenceExceptionTranslationAutoConfiguration {
 	public static PersistenceExceptionTranslationPostProcessor persistenceExceptionTranslationPostProcessor(
 			Environment environment) {
 		PersistenceExceptionTranslationPostProcessor postProcessor = new PersistenceExceptionTranslationPostProcessor();
-		boolean proxyTargetClass = environment.getProperty("spring.aop.proxy-target-class", Boolean.class,
+		boolean proxyTargetClass = getConvertedProperty(environment, "spring.aop.proxy-target-class", Boolean.class,
 				Boolean.TRUE);
 		postProcessor.setProxyTargetClass(proxyTargetClass);
 		return postProcessor;
+	}
+
+	private static <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 }

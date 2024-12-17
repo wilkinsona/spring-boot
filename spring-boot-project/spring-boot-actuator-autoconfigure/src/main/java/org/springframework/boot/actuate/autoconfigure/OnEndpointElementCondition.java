@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import java.lang.annotation.Annotation;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.annotation.AnnotationAttributes;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
@@ -61,11 +64,20 @@ public abstract class OnEndpointElementCondition extends SpringBootCondition {
 		Environment environment = context.getEnvironment();
 		String enabledProperty = this.prefix + endpointName + ".enabled";
 		if (environment.containsProperty(enabledProperty)) {
-			boolean match = environment.getProperty(enabledProperty, Boolean.class, true);
+			boolean match = getConvertedProperty(environment, enabledProperty, Boolean.class, true);
 			return new ConditionOutcome(match, ConditionMessage.forCondition(this.annotationType)
 				.because(this.prefix + endpointName + ".enabled is " + match));
 		}
 		return null;
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	/**

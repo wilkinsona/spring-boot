@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.devtools.logger.DevToolsLogFactory;
 import org.springframework.boot.devtools.restart.Restarter;
 import org.springframework.boot.devtools.system.DevToolsEnablementDeducer;
@@ -33,9 +34,11 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.NativeDetector;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.log.LogMessage;
 import org.springframework.util.ClassUtils;
 
@@ -93,10 +96,19 @@ public class DevToolsPropertyDefaultsPostProcessor implements EnvironmentPostPro
 	}
 
 	private boolean canAddProperties(Environment environment) {
-		if (environment.getProperty(ENABLED, Boolean.class, true)) {
+		if (getConvertedProperty(environment, ENABLED, Boolean.class, true)) {
 			return isRestarterInitialized() || isRemoteRestartEnabled(environment);
 		}
 		return false;
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	private boolean isRestarterInitialized() {

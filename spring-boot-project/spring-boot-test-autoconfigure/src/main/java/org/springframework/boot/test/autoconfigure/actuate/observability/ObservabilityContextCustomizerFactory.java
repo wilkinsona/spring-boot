@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package org.springframework.boot.test.autoconfigure.actuate.observability;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextCustomizerFactory;
@@ -74,14 +77,23 @@ class ObservabilityContextCustomizerFactory implements ContextCustomizerFactory 
 			if (this.annotation != null) {
 				return !this.annotation.metrics();
 			}
-			return !environment.getProperty(AUTO_CONFIGURE_PROPERTY, Boolean.class, false);
+			return !getConvertedProperty(environment, AUTO_CONFIGURE_PROPERTY, Boolean.class, false);
 		}
 
 		private boolean isTracingDisabled(Environment environment) {
 			if (this.annotation != null) {
 				return !this.annotation.tracing();
 			}
-			return !environment.getProperty(AUTO_CONFIGURE_PROPERTY, Boolean.class, false);
+			return !getConvertedProperty(environment, AUTO_CONFIGURE_PROPERTY, Boolean.class, false);
+		}
+
+		private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+			try {
+				return properties.getProperty(name, type, defaultValue);
+			}
+			catch (ConversionFailedException ex) {
+				throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+			}
 		}
 
 		@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 package org.springframework.boot.reactor;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.boot.system.JavaVersion;
 import org.springframework.core.Ordered;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -45,7 +48,8 @@ public class ReactorEnvironmentPostProcessor implements EnvironmentPostProcessor
 	@Override
 	public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
 		if (ClassUtils.isPresent(REACTOR_DEBUGAGENT_CLASS, null)) {
-			Boolean agentEnabled = environment.getProperty("spring.reactor.debug-agent.enabled", Boolean.class);
+			Boolean agentEnabled = getConvertedProperty(environment, "spring.reactor.debug-agent.enabled",
+					Boolean.class);
 			if (agentEnabled != Boolean.FALSE) {
 				try {
 					Class<?> debugAgent = Class.forName(REACTOR_DEBUGAGENT_CLASS);
@@ -56,9 +60,22 @@ public class ReactorEnvironmentPostProcessor implements EnvironmentPostProcessor
 				}
 			}
 		}
-		if (environment.getProperty("spring.threads.virtual.enabled", boolean.class, false)
+		if (getConvertedProperty(environment, "spring.threads.virtual.enabled", boolean.class, false)
 				&& JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.TWENTY_ONE)) {
 			System.setProperty("reactor.schedulers.defaultBoundedElasticOnVirtualThreads", "true");
+		}
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type) {
+		return getConvertedProperty(properties, name, type, null);
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
 		}
 	}
 

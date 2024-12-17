@@ -18,7 +18,6 @@ package org.springframework.boot;
 
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +28,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.ansi.AnsiPropertySource;
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
@@ -65,7 +66,7 @@ public class ResourceBanner implements Banner {
 	public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
 		try {
 			String banner = StreamUtils.copyToString(this.resource.getInputStream(),
-					environment.getProperty("spring.banner.charset", Charset.class, StandardCharsets.UTF_8));
+					getConvertedProperty(environment, "spring.banner.charset", Charset.class));
 			for (PropertyResolver resolver : getPropertyResolvers(environment, sourceClass)) {
 				banner = resolver.resolvePlaceholders(banner);
 			}
@@ -74,6 +75,15 @@ public class ResourceBanner implements Banner {
 		catch (Exception ex) {
 			logger.warn(LogMessage.format("Banner not printable: %s (%s: '%s')", this.resource, ex.getClass(),
 					ex.getMessage()), ex);
+		}
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type) {
+		try {
+			return properties.getProperty(name, type);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
 		}
 	}
 

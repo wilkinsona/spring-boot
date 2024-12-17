@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.util.Assert;
@@ -127,7 +130,7 @@ public class TemplateAvailabilityProviders {
 		Assert.notNull(environment, "Environment must not be null");
 		Assert.notNull(classLoader, "ClassLoader must not be null");
 		Assert.notNull(resourceLoader, "ResourceLoader must not be null");
-		Boolean useCache = environment.getProperty("spring.template.provider.cache", Boolean.class, true);
+		Boolean useCache = getConvertedProperty(environment, "spring.template.provider.cache", Boolean.class, true);
 		if (!useCache) {
 			return findProvider(view, environment, classLoader, resourceLoader);
 		}
@@ -141,6 +144,15 @@ public class TemplateAvailabilityProviders {
 			}
 		}
 		return (provider != NONE) ? provider : null;
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	private TemplateAvailabilityProvider findProvider(String view, Environment environment, ClassLoader classLoader,

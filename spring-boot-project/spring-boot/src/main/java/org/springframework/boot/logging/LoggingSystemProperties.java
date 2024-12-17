@@ -21,7 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
 import org.springframework.boot.system.ApplicationPid;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertyResolver;
@@ -246,12 +248,21 @@ public class LoggingSystemProperties {
 	}
 
 	private void setApplicationNameSystemProperty(PropertyResolver resolver) {
-		if (resolver.getProperty("logging.include-application-name", Boolean.class, Boolean.TRUE)) {
+		if (getConvertedProperty(resolver, "logging.include-application-name", Boolean.class, Boolean.TRUE)) {
 			String applicationName = resolver.getProperty("spring.application.name");
 			if (StringUtils.hasText(applicationName)) {
 				setSystemProperty(LoggingSystemProperty.APPLICATION_NAME.getEnvironmentVariableName(),
 						"[%s] ".formatted(applicationName));
 			}
+		}
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
 		}
 	}
 

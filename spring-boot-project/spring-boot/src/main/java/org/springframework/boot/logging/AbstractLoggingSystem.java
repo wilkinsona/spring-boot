@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.springframework.boot.context.properties.source.InvalidConfigurationPropertyValueException;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -189,11 +192,21 @@ public abstract class AbstractLoggingSystem extends LoggingSystem {
 		return (name) -> {
 			if (StringUtils.hasLength(defaultLogCorrelationPattern)
 					&& LoggingSystemProperty.CORRELATION_PATTERN.getApplicationPropertyName().equals(name)
-					&& environment.getProperty(LoggingSystem.EXPECT_CORRELATION_ID_PROPERTY, Boolean.class, false)) {
+					&& getConvertedProperty(environment, LoggingSystem.EXPECT_CORRELATION_ID_PROPERTY, Boolean.class,
+							false)) {
 				return defaultLogCorrelationPattern;
 			}
 			return null;
 		};
+	}
+
+	private <T> T getConvertedProperty(PropertyResolver properties, String name, Class<T> type, T defaultValue) {
+		try {
+			return properties.getProperty(name, type, defaultValue);
+		}
+		catch (ConversionFailedException ex) {
+			throw new InvalidConfigurationPropertyValueException(name, ex.getValue(), ex.getMessage());
+		}
 	}
 
 	/**
