@@ -503,8 +503,8 @@ class ConfigurationPropertiesTests {
 	@Test
 	void loadWhenOverridingPropertiesShouldBind() {
 		MutablePropertySources sources = this.context.getEnvironment().getPropertySources();
-		sources.addFirst(
-				new SystemEnvironmentPropertySource("system", Collections.singletonMap("SPRING_FOO_NAME", "Jane")));
+		sources.addFirst(new SystemEnvironmentPropertySource("test-systemEnvironment",
+				Collections.singletonMap("SPRING_FOO_NAME", "Jane")));
 		sources.addLast(new MapPropertySource("test", Collections.singletonMap("spring.foo.name", "John")));
 		load(PrefixConfiguration.class);
 		BasicProperties bean = this.context.getBean(BasicProperties.class);

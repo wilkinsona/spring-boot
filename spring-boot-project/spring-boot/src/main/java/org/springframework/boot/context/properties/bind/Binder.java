@@ -17,6 +17,7 @@
 package org.springframework.boot.context.properties.bind;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +46,7 @@ import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.env.Environment;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 
 /**
  * A container object which Binds objects from one or more
@@ -341,6 +343,19 @@ public class Binder {
 
 	private <T> T bind(ConfigurationPropertyName name, Bindable<T> target, BindHandler handler, Context context,
 			boolean allowRecursiveBinding, boolean create) {
+		List<ConfigurationPropertySource> relevantSources = new ArrayList<>();
+		for (ConfigurationPropertySource source : context.getSources()) {
+			if ((source.containsDescendantOf(name) != ConfigurationPropertyState.ABSENT)
+					|| (source.getConfigurationProperty(name) != null)) {
+				relevantSources.add(source);
+			}
+		}
+		return context.withSources(relevantSources,
+				() -> doBind(name, target, handler, context, allowRecursiveBinding, create));
+	}
+
+	private <T> T doBind(ConfigurationPropertyName name, Bindable<T> target, BindHandler handler, Context context,
+			boolean allowRecursiveBinding, boolean create) {
 		try {
 			Bindable<T> replacementTarget = handler.onStart(name, target, context);
 			if (replacementTarget == null) {
@@ -545,9 +560,7 @@ public class Binder {
 
 		private int depth;
 
-		private final List<ConfigurationPropertySource> source = Arrays.asList((ConfigurationPropertySource) null);
-
-		private int sourcePushCount;
+		private final Deque<Iterable<ConfigurationPropertySource>> sources = new ArrayDeque<>();
 
 		private final Deque<Class<?>> dataObjectBindings = new ArrayDeque<>();
 
@@ -564,16 +577,19 @@ public class Binder {
 		}
 
 		private <T> T withSource(ConfigurationPropertySource source, Supplier<T> supplier) {
-			if (source == null) {
+			return withSources((source != null) ? List.of(source) : Collections.emptyList(), supplier);
+		}
+
+		private <T> T withSources(Collection<ConfigurationPropertySource> sources, Supplier<T> supplier) {
+			if (CollectionUtils.isEmpty(sources)) {
 				return supplier.get();
 			}
-			this.source.set(0, source);
-			this.sourcePushCount++;
+			this.sources.push(sources);
 			try {
 				return supplier.get();
 			}
 			finally {
-				this.sourcePushCount--;
+				this.sources.pop();
 			}
 		}
 
@@ -641,10 +657,7 @@ public class Binder {
 
 		@Override
 		public Iterable<ConfigurationPropertySource> getSources() {
-			if (this.sourcePushCount > 0) {
-				return this.source;
-			}
-			return Binder.this.sources;
+			return this.sources.isEmpty() ? Binder.this.sources : this.sources.peek();
 		}
 
 		@Override
