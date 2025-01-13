@@ -53,7 +53,7 @@ public final class Extensions {
 		extensions.add(new Extension("@asciidoctor/tabs"));
 		extensions.add(new Extension("@springio/asciidoctor-extensions", "@springio/asciidoctor-extensions",
 				"@springio/asciidoctor-extensions/javadoc-extension",
-				"@springio/asciidoctor-extensions/configuration-properties-extension",
+				"/Users/awilkinson/dev/spring-io/asciidoctor-extensions/lib/configuration-properties-extension.js",
 				"@springio/asciidoctor-extensions/section-ids-extension"));
 		asciidoc = List.copyOf(extensions);
 	}

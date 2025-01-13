@@ -101,6 +101,12 @@ management:
 ----
 
 
+[[actuator.metrics.export.appoptics.properties]]
+==== Configuration Properties
+
+configprops::management.appoptics.metrics.export[]
+
+
 
 [[actuator.metrics.export.atlas]]
 === Atlas
