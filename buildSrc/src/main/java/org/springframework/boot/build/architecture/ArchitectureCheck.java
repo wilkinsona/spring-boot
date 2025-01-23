@@ -36,6 +36,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.JavaParameter;
 import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
@@ -97,7 +98,7 @@ public abstract class ArchitectureCheck extends DefaultTask {
 				noClassesShouldLoadResourcesUsingResourceUtils(), noClassesShouldCallStringToUpperCaseWithoutLocale(),
 				noClassesShouldCallStringToLowerCaseWithoutLocale(),
 				conditionalOnMissingBeanShouldNotSpecifyOnlyATypeThatIsTheSameAsMethodReturnType(),
-				enumSourceShouldNotSpecifyOnlyATypeThatIsTheSameAsMethodParameterType());
+				enumSourceShouldNotSpecifyOnlyATypeThatIsTheSameAsMethodParameterType(), conditionsShouldNotBePublic());
 		getRules().addAll(getProhibitObjectsRequireNonNull()
 			.map((prohibit) -> prohibit ? noClassesShouldCallObjectsRequireNonNull() : Collections.emptyList()));
 		getRuleDescriptions().set(getRules().map((rules) -> rules.stream().map(ArchRule::getDescription).toList()));
@@ -252,6 +253,20 @@ public abstract class ArchitectureCheck extends DefaultTask {
 			.should()
 			.callMethod(URLEncoder.class, "encode", String.class, String.class)
 			.because("java.net.URLEncoder.encode(String s, Charset charset) should be used instead");
+	}
+
+	private ArchRule conditionsShouldNotBePublic() {
+		String springBootCondition = "org.springframework.boot.autoconfigure.condition.SpringBootCondition";
+		return ArchRuleDefinition.noClasses()
+			.that()
+			.areAssignableTo(springBootCondition)
+			.and()
+			.doNotHaveModifier(JavaModifier.ABSTRACT)
+			.and()
+			.areNotAnnotatedWith(Deprecated.class)
+			.should()
+			.bePublic()
+			.allowEmptyShould(true);
 	}
 
 	private ArchRule noClassesShouldCallURLDecoderWithStringEncoding() {
