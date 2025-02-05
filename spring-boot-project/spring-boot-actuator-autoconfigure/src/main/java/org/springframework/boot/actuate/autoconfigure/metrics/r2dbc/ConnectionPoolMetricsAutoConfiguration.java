@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2022 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package org.springframework.boot.actuate.autoconfigure.metrics.r2dbc;
 
-import java.util.Map;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Wrapped;
 
+import org.springframework.beans.factory.BeanFactoryUtils;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.metrics.export.simple.SimpleMetricsExportAutoConfiguration;
@@ -49,14 +49,14 @@ import org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration;
 public class ConnectionPoolMetricsAutoConfiguration {
 
 	@Autowired
-	public void bindConnectionPoolsToRegistry(Map<String, ConnectionFactory> connectionFactories,
-			MeterRegistry registry) {
-		connectionFactories.forEach((beanName, connectionFactory) -> {
-			ConnectionPool pool = extractPool(connectionFactory);
-			if (pool != null) {
-				new ConnectionPoolMetrics(pool, beanName, Tags.empty()).bindTo(registry);
-			}
-		});
+	public void bindConnectionPoolsToRegistry(ListableBeanFactory beanFactory, MeterRegistry registry) {
+		BeanFactoryUtils.beansOfTypeIncludingAncestors(beanFactory, ConnectionFactory.class)
+			.forEach((beanName, connectionFactory) -> {
+				ConnectionPool pool = extractPool(connectionFactory);
+				if (pool != null) {
+					new ConnectionPoolMetrics(pool, beanName, Tags.empty()).bindTo(registry);
+				}
+			});
 	}
 
 	private ConnectionPool extractPool(Object candidate) {
