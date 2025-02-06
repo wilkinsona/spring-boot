@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2023 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.LinkedHashMap;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.server.servlet.tomcat.TomcatServletWebServerAutoConfiguration;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -52,7 +52,7 @@ class SessionAutoConfigurationEarlyInitializationIntegrationTests {
 
 	@Configuration(proxyBeanMethods = false)
 	@EnableSpringHttpSession
-	@ImportAutoConfiguration({ ServletWebServerFactoryAutoConfiguration.class, SessionAutoConfiguration.class })
+	@ImportAutoConfiguration({ TomcatServletWebServerAutoConfiguration.class, SessionAutoConfiguration.class })
 	static class TestConfiguration {
 
 		@Bean

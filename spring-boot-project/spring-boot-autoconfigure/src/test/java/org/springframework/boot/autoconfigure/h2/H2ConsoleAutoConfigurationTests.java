@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.server.servlet.tomcat.TomcatServletWebServerAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBindException;
 import org.springframework.boot.context.properties.bind.BindException;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
@@ -174,7 +174,7 @@ class H2ConsoleAutoConfigurationTests {
 	void dataSourceIsNotInitializedEarly(CapturedOutput output) {
 		new WebApplicationContextRunner(AnnotationConfigServletWebServerApplicationContext::new)
 			.withConfiguration(AutoConfigurations.of(H2ConsoleAutoConfiguration.class,
-					ServletWebServerFactoryAutoConfiguration.class))
+					TomcatServletWebServerAutoConfiguration.class))
 			.withUserConfiguration(EarlyInitializationConfiguration.class)
 			.withPropertyValues("spring.h2.console.enabled=true", "server.port=0")
 			.run((context) -> {
