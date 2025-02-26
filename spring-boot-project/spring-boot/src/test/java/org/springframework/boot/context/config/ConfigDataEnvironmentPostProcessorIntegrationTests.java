@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
@@ -47,6 +47,7 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationProperty;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
 import org.springframework.boot.origin.Origin;
+import org.springframework.boot.testsupport.BuildOutput;
 import org.springframework.boot.testsupport.classpath.resources.WithResource;
 import org.springframework.boot.testsupport.classpath.resources.WithResourceDirectory;
 import org.springframework.context.ApplicationContext;
@@ -62,6 +63,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
@@ -688,13 +690,21 @@ class ConfigDataEnvironmentPostProcessorIntegrationTests {
 
 	@Test
 	void loadWhenHasRelativeConfigLocationUsesFileLocation() throws IOException {
-		File properties = new File(this.temp, "specificlocation.properties");
-		Files.write(properties.toPath(),
-				List.of("my.property=fromspecificlocation", "the.property=fromspecificlocation"));
-		Path relative = Paths.get("").toAbsolutePath().relativize(properties.toPath());
-		ConfigurableApplicationContext context = this.application.run("--spring.config.location=" + relative);
-		assertThat(context.getEnvironment())
-			.has(matchingPropertySource("Config resource 'file [" + relative + "]' via location '" + relative + "'"));
+		File buildOutput = new BuildOutput(getClass()).getRootLocation();
+		File resources = new File(buildOutput, "resources-" + UUID.randomUUID());
+		try {
+			resources.mkdirs();
+			File properties = new File(resources, "specificlocation.properties").getAbsoluteFile();
+			Files.write(properties.toPath(),
+					List.of("my.property=fromspecificlocation", "the.property=fromspecificlocation"));
+			Path relative = new File("").getAbsoluteFile().toPath().relativize(properties.toPath());
+			ConfigurableApplicationContext context = this.application.run("--spring.config.location=" + relative);
+			assertThat(context.getEnvironment()).has(matchingPropertySource(
+					"Config resource 'file [" + relative + "]' via location '" + relative + "'"));
+		}
+		finally {
+			FileSystemUtils.deleteRecursively(resources);
+		}
 	}
 
 	@Test
