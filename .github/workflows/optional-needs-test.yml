@@ -1,0 +1,113 @@
+name: Optional Needs Test
+on:
+  push:
+    branches: optional-needs-test
+jobs:
+  build-and-stage-release:
+    name: Build and Stage Release
+    runs-on: ${{ vars.UBUNTU_MEDIUM || 'ubuntu-latest' }}
+    steps:
+      - name: Build and Stage Release
+        run: echo 'Build and Stage Release'
+  verify:
+    name: Verify
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Verify
+        run: echo 'Verify'
+  sync-to-maven-central:
+    name: Sync to Maven Central
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - verify
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Sync to Maven Central
+        run: echo 'Sync to Maven Central'
+  promote-release:
+    name: Promote Release
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - sync-to-maven-central
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Promote open source build
+        run: echo 'Promote open source build'
+  promote-commercial-release:
+    name: Promote Commercial Release
+    if: ${{ vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - verify
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Promote commercial build
+        run: echo 'Promote commercial build'
+  publish-gradle-plugin:
+    name: Publish Gradle Plugin
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - sync-to-maven-central
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Publish
+        run: echo 'Publish Gradle plugin'
+  publish-to-sdkman:
+    name: Publish to SDKMAN!
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - sync-to-maven-central
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Publish to SDKMAN!
+        run: echo 'Publish to SDKMAN!'
+  update-homebrew-tap:
+    name: Update Homebrew Tap
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - sync-to-maven-central
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Update Homebrew Tap
+        run: echo 'Update Homebrew Tap'
+  trigger-docs-build:
+    name: Trigger Docs Build
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - sync-to-maven-central
+    permissions:
+      actions: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Deploy Docs Workflow
+        run: echo 'Run Deploy Docs Workflow'
+  create-github-release:
+    name: Create GitHub Release
+    if: ${{ !vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - promote-release
+      - publish-gradle-plugin
+      - publish-to-sdkman
+      - trigger-docs-build
+      - update-homebrew-tap
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Create GitHub Release
+        run: echo 'Create GitHub Release'
+  create-commercial-github-release:
+    name: Create Commercial GitHub Release
+    if: ${{ vars.COMMERCIAL }}
+    needs:
+      - build-and-stage-release
+      - promote-commercial-release
+    runs-on: ${{ vars.UBUNTU_SMALL || 'ubuntu-latest' }}
+    steps:
+      - name: Create Commercial GitHub Release
+        run: echo 'Create Commercial GitHub Release'
