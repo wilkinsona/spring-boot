@@ -2,36 +2,20 @@ name: CI
 on:
   push:
     branches:
-      - '3.3.x'
+      - 'windows-problem'
 jobs:
   ci:
     name: '${{ matrix.os.name}} | Java ${{ matrix.java.version}}'
-    if: ${{ github.repository == 'spring-projects/spring-boot' || github.repository == 'spring-projects/spring-boot-commercial' }}
     runs-on: ${{ matrix.os.id }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - id: ${{ vars.UBUNTU_MEDIUM || 'ubuntu-latest' }}
-            name: Linux
           - id: windows-latest
             name: Windows
         java:
           - version: 17
             toolchain: false
-          - version: 21
-            toolchain: true
-          - version: 22
-            toolchain: true
-          - version: 23
-            toolchain: true
-        exclude:
-          - os:
-              name: Linux
-            java:
-              version: 17
-          - os:
-              name: ${{ github.repository == 'spring-projects/spring-boot-commercial' && 'Windows' }}
     steps:
       - name: Prepare Windows runner
         if: ${{ runner.os == 'Windows' }}
@@ -55,11 +39,9 @@ jobs:
           java-distribution: ${{ matrix.java.distribution }}
           java-toolchain: ${{ matrix.java.toolchain }}
           java-version: ${{ matrix.java.version }}
-      - name: Send Notification
-        if: always()
-        uses: ./.github/actions/send-notification
+      - name: Upload Build Reports
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          build-scan-url: ${{ steps.build.outputs.build-scan-url }}
-          run-name: ${{ format('{0} | {1} | Java {2}', github.ref_name, matrix.os.name, matrix.java.version) }}
-          status: ${{ job.status }}
-          webhook-url: ${{ secrets.GOOGLE_CHAT_WEBHOOK_URL }}
+          name: build-reports
+          path: '**/build/reports/'
