@@ -159,7 +159,9 @@ class Resources {
 	}
 
 	Resource find(String name) {
-		return this.resources.get(name);
+		Resource result = this.resources.get(name);
+		System.out.println("Finding '" + name + "' in " + this.resources.keySet() + " resulted in " + result);
+		return result;
 	}
 
 }
