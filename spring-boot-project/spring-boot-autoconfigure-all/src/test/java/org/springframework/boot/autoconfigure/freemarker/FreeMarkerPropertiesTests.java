@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2019 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.autoconfigure.template;
+package org.springframework.boot.autoconfigure.freemarker;
 
 import java.nio.charset.StandardCharsets;
 
@@ -25,34 +25,34 @@ import org.springframework.util.MimeTypeUtils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link AbstractViewResolverProperties}.
+ * Tests for {@link FreeMarkerProperties}.
  *
  * @author Stephane Nicoll
  */
-class ViewResolverPropertiesTests {
+public class FreeMarkerPropertiesTests {
 
 	@Test
 	void defaultContentType() {
-		assertThat(new ViewResolverProperties().getContentType()).hasToString("text/html;charset=UTF-8");
+		assertThat(new FreeMarkerProperties().getContentType()).hasToString("text/html;charset=UTF-8");
 	}
 
 	@Test
 	void customContentTypeDefaultCharset() {
-		ViewResolverProperties properties = new ViewResolverProperties();
+		FreeMarkerProperties properties = new FreeMarkerProperties();
 		properties.setContentType(MimeTypeUtils.parseMimeType("text/plain"));
 		assertThat(properties.getContentType()).hasToString("text/plain;charset=UTF-8");
 	}
 
 	@Test
 	void defaultContentTypeCustomCharset() {
-		ViewResolverProperties properties = new ViewResolverProperties();
+		FreeMarkerProperties properties = new FreeMarkerProperties();
 		properties.setCharset(StandardCharsets.UTF_16);
 		assertThat(properties.getContentType()).hasToString("text/html;charset=UTF-16");
 	}
 
 	@Test
 	void customContentTypeCustomCharset() {
-		ViewResolverProperties properties = new ViewResolverProperties();
+		FreeMarkerProperties properties = new FreeMarkerProperties();
 		properties.setContentType(MimeTypeUtils.parseMimeType("text/plain"));
 		properties.setCharset(StandardCharsets.UTF_16);
 		assertThat(properties.getContentType()).hasToString("text/plain;charset=UTF-16");
@@ -60,14 +60,10 @@ class ViewResolverPropertiesTests {
 
 	@Test
 	void customContentTypeWithPropertyAndCustomCharset() {
-		ViewResolverProperties properties = new ViewResolverProperties();
+		FreeMarkerProperties properties = new FreeMarkerProperties();
 		properties.setContentType(MimeTypeUtils.parseMimeType("text/plain;foo=bar"));
 		properties.setCharset(StandardCharsets.UTF_16);
 		assertThat(properties.getContentType()).hasToString("text/plain;charset=UTF-16;foo=bar");
-	}
-
-	static class ViewResolverProperties extends AbstractViewResolverProperties {
-
 	}
 
 }
