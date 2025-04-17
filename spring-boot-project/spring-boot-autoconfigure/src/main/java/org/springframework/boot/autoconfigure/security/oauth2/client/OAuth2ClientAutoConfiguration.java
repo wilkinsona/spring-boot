@@ -14,20 +14,25 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.autoconfigure.security.oauth2.client.servlet;
+package org.springframework.boot.autoconfigure.security.oauth2.client;
 
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for OAuth client support.
  *
  * @author Madhura Bhave
  * @author Phillip Webb
- * @since 2.0.0
- * @deprecated since 3.5.0 for removal in 4.0.0 in favor of
- * {@link org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientAutoConfiguration}
+ * @since 3.5.0
  */
-@Deprecated(since = "3.5.0", forRemoval = true)
+@AutoConfiguration
+@ConditionalOnClass(ClientRegistration.class)
+@Import({ OAuth2ClientConfigurations.ClientRegistrationRepositoryConfiguration.class,
+		OAuth2ClientConfigurations.OAuth2AuthorizedClientServiceConfiguration.class })
 public class OAuth2ClientAutoConfiguration {
 
 }
