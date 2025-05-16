@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2024 the original author or authors.
+ * Copyright 2012-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.List;
 
 import dev.adamko.dokkatoo.DokkatooExtension;
 import dev.adamko.dokkatoo.formats.DokkatooHtmlPlugin;
+import io.gitlab.arturbosch.detekt.DetektPlugin;
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
@@ -40,6 +42,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
  * <li>Treat all warnings as errors
  * <li>Suppress version warnings
  * </ul>
+ * <li>Detekt plugin is applied to perform static analysis of Kotlin code
  * </ul>
  *
  * <p/>
@@ -52,6 +55,7 @@ class KotlinConventions {
 		project.getPlugins().withId("org.jetbrains.kotlin.jvm", (plugin) -> {
 			project.getTasks().withType(KotlinCompile.class, this::configure);
 			project.getPlugins().withType(DokkatooHtmlPlugin.class, (dokkatooPlugin) -> configureDokkatoo(project));
+			configureDetekt(project);
 		});
 	}
 
@@ -89,6 +93,14 @@ class KotlinConventions {
 				});
 			}
 		});
+	}
+
+	private void configureDetekt(Project project) {
+		project.getPlugins().apply(DetektPlugin.class);
+		project.getExtensions()
+			.getByType(DetektExtension.class)
+			.getConfig()
+			.setFrom(project.getRootProject().file("src/detekt/config.yml"));
 	}
 
 }

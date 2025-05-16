@@ -1,0 +1,16 @@
+config:
+  validation: true
+  warningsAsErrors: true
+console-reports:
+  active: true
+  exclude:
+    - 'ProjectStatisticsReport'
+    - 'ComplexityReport'
+    - 'NotificationReport'
+    - 'FindingsReport'
+    - 'FileBasedFindingsReport'
+processors:
+  active: false
+style:
+  UnusedImports:
+    active: true
