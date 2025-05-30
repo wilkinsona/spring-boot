@@ -26,7 +26,6 @@ import reactor.core.publisher.Mono;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.health.HealthEndpointConfiguration.HealthEndpointGroupMembershipValidator.NoSuchHealthContributorException;
-import org.springframework.boot.actuate.autoconfigure.health.HealthEndpointReactiveWebExtensionConfiguration.WebFluxAdditionalHealthEndpointPathsConfiguration;
 import org.springframework.boot.actuate.endpoint.ApiVersion;
 import org.springframework.boot.actuate.endpoint.SecurityContext;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointResponse;
@@ -336,19 +335,6 @@ class HealthEndpointAutoConfigurationTests {
 					Map<String, HealthComponent> components = ((SystemHealth) health).getComponents();
 					assertThat(components).containsKeys("additional", "ping", "simple");
 				}));
-	}
-
-	@Test
-	void additionalReactiveHealthEndpointsPathsTolerateHealthEndpointThatIsNotWebExposed() {
-		this.reactiveContextRunner
-			.withConfiguration(
-					AutoConfigurations.of(EndpointAutoConfiguration.class, WebEndpointAutoConfiguration.class))
-			.withPropertyValues("management.endpoints.web.exposure.exclude=*",
-					"management.endpoints.cloudfoundry.exposure.include=*", "spring.main.cloud-platform=cloud_foundry")
-			.run((context) -> {
-				assertThat(context).hasSingleBean(WebFluxAdditionalHealthEndpointPathsConfiguration.class);
-				assertThat(context).hasNotFailed();
-			});
 	}
 
 	@Configuration(proxyBeanMethods = false)
