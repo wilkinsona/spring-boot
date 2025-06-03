@@ -11,11 +11,13 @@ dependencies {
 	testImplementation(project(":spring-boot-project:spring-boot-http-converter"))
 	testImplementation(project(":spring-boot-project:spring-boot-jackson"))
 	testImplementation(project(":spring-boot-project:spring-boot-jersey"))
+	testImplementation(project(":spring-boot-project:spring-boot-jetty"))
 	testImplementation(project(":spring-boot-project:spring-boot-metrics"))
 	testImplementation(project(":spring-boot-project:spring-boot-reactor-netty"))
 	testImplementation(project(":spring-boot-project:spring-boot-test"))
 	testImplementation(project(":spring-boot-project:spring-boot-tomcat"))
 	testImplementation(project(":spring-boot-project:spring-boot-tools:spring-boot-test-support"))
+	testImplementation(project(":spring-boot-project:spring-boot-undertow"))
 	testImplementation(project(":spring-boot-project:spring-boot-web-server"))
 	testImplementation(project(":spring-boot-project:spring-boot-webflux"))
 	testImplementation(project(":spring-boot-project:spring-boot-webmvc"))
@@ -27,4 +29,9 @@ dependencies {
 	testImplementation("net.minidev:json-smart")
 	testImplementation("org.springframework.security:spring-security-web")
 	testRuntimeOnly("ch.qos.logback:logback-classic")
+	testRuntimeOnly("org.apache.httpcomponents.client5:httpclient5")
+}
+
+test {
+	jvmArgs += "--add-opens=java.base/java.net=ALL-UNNAMED"
 }
