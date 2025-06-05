@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.actuate.web.servlet;
+package org.springframework.boot.autoconfigure.web.servlet;
 
 import java.net.URI;
 import java.util.stream.Stream;
