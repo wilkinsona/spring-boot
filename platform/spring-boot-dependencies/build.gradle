@@ -352,7 +352,7 @@ bom {
 			releaseNotes("https://github.com/ehcache/ehcache3/releases/tag/v{version}")
 		}
 	}
-	library("Elasticsearch Client", "9.0.3") {
+	library("Elasticsearch Client", "9.0.4") {
 		prohibit {
 			contains "-alpha"
 			contains "-beta"
@@ -365,12 +365,6 @@ bom {
 				managedBy "Spring Data Bom"
 			}
 		}
-		group("org.elasticsearch.client") {
-			modules = [
-				"elasticsearch-rest-client",
-				"elasticsearch-rest-client-sniffer"
-			]
-		}
 		group("co.elastic.clients") {
 			modules = [
 				"elasticsearch-java"
@@ -378,9 +372,7 @@ bom {
 		}
 		links {
 			releaseNotes("https://www.elastic.co/guide/en/elasticsearch/reference/current/release-notes-{version}.html")
-			javadoc("elasticsearch-rest-client", version -> "https://artifacts.elastic.co/javadoc/org/elasticsearch/client/elasticsearch-rest-client/%s".formatted(version), "org.elasticsearch.client")
 			javadoc("elasticsearch-java", version -> "https://artifacts.elastic.co/javadoc/co/elastic/clients/elasticsearch-java/%s".formatted(version), "co.elastic.clients.elasticsearch", "co.elastic.clients.transport")
-			javadoc("elasticsearch-rest-client-sniffer", version -> "https://artifacts.elastic.co/javadoc/org/elasticsearch/client/elasticsearch-rest-client-sniffer/%s".formatted(version), "org.elasticsearch.client.sniff")
 		}
 	}
 	library("Flyway", "11.10.1") {
