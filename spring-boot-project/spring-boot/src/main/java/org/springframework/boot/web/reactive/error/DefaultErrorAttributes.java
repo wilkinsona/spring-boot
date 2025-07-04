@@ -114,18 +114,18 @@ public class DefaultErrorAttributes implements ErrorAttributes {
 		if (error instanceof BindingResult bindingResult) {
 			exception = error;
 			errorAttributes.put("message", error.getMessage());
-			errorAttributes.put("errors", Error.wrap(bindingResult.getAllErrors()));
+			errorAttributes.put("errors", Error.wrapIfNecessary(bindingResult.getAllErrors()));
 		}
 		else if (error instanceof MethodValidationResult methodValidationResult) {
 			exception = error;
 			errorAttributes.put("message", getErrorMessage(methodValidationResult));
-			errorAttributes.put("errors", Error.wrap(methodValidationResult.getAllErrors()));
+			errorAttributes.put("errors", Error.wrapIfNecessary(methodValidationResult.getAllErrors()));
 		}
 		else if (error instanceof ResponseStatusException responseStatusException) {
 			exception = (responseStatusException.getCause() != null) ? responseStatusException.getCause() : error;
 			errorAttributes.put("message", responseStatusException.getReason());
 			if (exception instanceof BindingResult bindingResult) {
-				errorAttributes.put("errors", Error.wrap(bindingResult.getAllErrors()));
+				errorAttributes.put("errors", Error.wrapIfNecessary(bindingResult.getAllErrors()));
 			}
 		}
 		else {

@@ -154,14 +154,14 @@ public class DefaultErrorAttributes implements ErrorAttributes, HandlerException
 	private void addMessageAndErrorsFromBindingResult(Map<String, Object> errorAttributes, BindingResult result) {
 		errorAttributes.put("message", "Validation failed for object='%s'. Error count: %s"
 			.formatted(result.getObjectName(), result.getAllErrors().size()));
-		errorAttributes.put("errors", Error.wrap(result.getAllErrors()));
+		errorAttributes.put("errors", Error.wrapIfNecessary(result.getAllErrors()));
 	}
 
 	private void addMessageAndErrorsFromMethodValidationResult(Map<String, Object> errorAttributes,
 			MethodValidationResult result) {
 		errorAttributes.put("message", "Validation failed for method='%s'. Error count: %s"
 			.formatted(result.getMethod(), result.getAllErrors().size()));
-		errorAttributes.put("errors", Error.wrap(result.getAllErrors()));
+		errorAttributes.put("errors", Error.wrapIfNecessary(result.getAllErrors()));
 	}
 
 	private void addExceptionErrorMessage(Map<String, Object> errorAttributes, WebRequest webRequest, Throwable error) {
