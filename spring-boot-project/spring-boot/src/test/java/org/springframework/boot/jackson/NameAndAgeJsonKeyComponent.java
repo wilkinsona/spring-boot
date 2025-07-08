@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.KeyDeserializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.springframework.boot.jackson.JsonComponent.Scope;
 import org.springframework.boot.jackson.types.NameAndAge;
 
 /**
@@ -31,7 +32,7 @@ import org.springframework.boot.jackson.types.NameAndAge;
  *
  * @author Paul Aly
  */
-@JsonComponent(type = NameAndAge.class, scope = JsonComponent.Scope.KEYS)
+@JsonComponent(type = NameAndAge.class, scope = Scope.KEYS)
 public class NameAndAgeJsonKeyComponent {
 
 	static class Serializer extends JsonSerializer<NameAndAge> {

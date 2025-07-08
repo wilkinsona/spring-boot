@@ -19,6 +19,7 @@ package smoketest.webflux;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalManagementPort;
 import org.springframework.http.HttpStatus;
@@ -32,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author HaiTao Zhang
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
 		properties = { "management.server.port=0", "management.endpoints.web.base-path=/" })
 class SampleWebFluxApplicationActuatorDifferentPortTests {
 

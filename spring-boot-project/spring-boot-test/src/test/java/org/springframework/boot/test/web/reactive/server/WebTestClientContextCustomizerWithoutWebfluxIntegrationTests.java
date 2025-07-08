@@ -21,6 +21,7 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.testsupport.classpath.ClassPathExclusions;
 import org.springframework.test.context.ContextCustomizer;
 
@@ -44,7 +45,7 @@ class WebTestClientContextCustomizerWithoutWebfluxIntegrationTests {
 		assertThat(contextCustomizer).isNull();
 	}
 
-	@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+	@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 	private static final class TestClass {
 
 	}

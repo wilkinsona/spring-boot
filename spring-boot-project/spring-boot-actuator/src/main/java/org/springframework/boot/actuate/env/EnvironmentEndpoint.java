@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.SanitizableData;
@@ -238,7 +239,7 @@ public class EnvironmentEndpoint {
 	/**
 	 * Description of an entry of the {@link Environment}.
 	 */
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonInclude(Include.NON_NULL)
 	public static final class EnvironmentEntryDescriptor {
 
 		private final PropertySummaryDescriptor property;
@@ -278,7 +279,7 @@ public class EnvironmentEndpoint {
 	/**
 	 * Description of a particular entry of the {@link Environment}.
 	 */
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonInclude(Include.NON_NULL)
 	public static final class PropertySummaryDescriptor {
 
 		private final String source;
@@ -327,7 +328,7 @@ public class EnvironmentEndpoint {
 	/**
 	 * Description of a particular entry of {@link PropertySource}.
 	 */
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonInclude(Include.NON_NULL)
 	public static final class PropertySourceEntryDescriptor {
 
 		private final String name;
@@ -352,7 +353,7 @@ public class EnvironmentEndpoint {
 	/**
 	 * Description of a property's value, including its origin if available.
 	 */
-	@JsonInclude(JsonInclude.Include.NON_NULL)
+	@JsonInclude(Include.NON_NULL)
 	public static final class PropertyValueDescriptor {
 
 		private final Object value;

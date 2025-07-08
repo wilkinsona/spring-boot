@@ -25,6 +25,7 @@ import org.springframework.boot.actuate.autoconfigure.security.reactive.Endpoint
 import org.springframework.boot.actuate.web.mappings.MappingsEndpoint;
 import org.springframework.boot.autoconfigure.security.reactive.PathRequest;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -42,7 +43,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
  *
  * @author Madhura Bhave
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, classes = {
 		SampleSecureWebFluxCustomSecurityTests.SecurityConfiguration.class, SampleSecureWebFluxApplication.class })
 class SampleSecureWebFluxCustomSecurityTests {
 

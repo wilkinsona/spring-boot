@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConf
 import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Configuration;
@@ -41,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Madhura Bhave
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = {
 		"spring.web.resources.chain.strategy.content.enabled=true",
 		"spring.thymeleaf.prefix=classpath:/org/springframework/boot/autoconfigure/web/servlet/",
 		"spring.web.resources.static-locations=classpath:/org/springframework/boot/autoconfigure/web/servlet/static" })

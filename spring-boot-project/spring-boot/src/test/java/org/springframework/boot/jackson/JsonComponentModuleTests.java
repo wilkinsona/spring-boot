@@ -33,6 +33,7 @@ import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
 import org.springframework.aot.test.generate.TestGenerationContext;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContribution;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.jackson.JsonComponent.Scope;
 import org.springframework.boot.jackson.JsonComponentModule.JsonComponentBeanFactoryInitializationAotProcessor;
 import org.springframework.boot.jackson.JsonComponentModuleTests.ComponentWithInnerAbstractClass.AbstractSerializer;
 import org.springframework.boot.jackson.JsonComponentModuleTests.ComponentWithInnerAbstractClass.ConcreteSerializer;
@@ -233,12 +234,12 @@ class JsonComponentModuleTests {
 
 	}
 
-	@JsonComponent(scope = JsonComponent.Scope.KEYS)
+	@JsonComponent(scope = Scope.KEYS)
 	static class OnlyKeySerializer extends NameAndAgeJsonKeyComponent.Serializer {
 
 	}
 
-	@JsonComponent(scope = JsonComponent.Scope.KEYS, type = NameAndAge.class)
+	@JsonComponent(scope = Scope.KEYS, type = NameAndAge.class)
 	static class OnlyKeyDeserializer extends NameAndAgeJsonKeyComponent.Deserializer {
 
 	}

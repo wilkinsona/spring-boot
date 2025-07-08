@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings.Redirects;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -52,8 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Vedran Pavic
  * @author Madhura Bhave
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = { "server.servlet.session.timeout:2" })
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT, properties = { "server.servlet.session.timeout:2" })
 class SampleSessionJdbcApplicationTests {
 
 	private static final ClientHttpRequestFactorySettings DONT_FOLLOW_REDIRECTS = ClientHttpRequestFactorySettings
