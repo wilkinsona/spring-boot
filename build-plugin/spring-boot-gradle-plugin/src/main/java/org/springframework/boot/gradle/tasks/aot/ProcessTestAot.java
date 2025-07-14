@@ -40,7 +40,7 @@ import org.gradle.api.tasks.TaskAction;
  * @since 3.0.0
  */
 @CacheableTask
-public class ProcessTestAot extends AbstractAot {
+public abstract class ProcessTestAot extends AbstractAot {
 
 	private FileCollection classpathRoots;
 

@@ -162,14 +162,22 @@ class BootArchiveSupport {
 		return permissions.isPresent() ? permissions.get().toUnixNumeric() : null;
 	}
 
-	@SuppressWarnings("deprecation")
 	private Integer getDirMode(CopySpec copySpec) {
-		return copySpec.getDirMode();
+		try {
+			return (Integer) copySpec.getClass().getMethod("getDirMode").invoke(copySpec);
+		}
+		catch (Exception ex) {
+			throw new RuntimeException("Failed to get dir mode from CopySpec", ex);
+		}
 	}
 
-	@SuppressWarnings("deprecation")
 	private Integer getFileMode(CopySpec copySpec) {
-		return copySpec.getFileMode();
+		try {
+			return (Integer) copySpec.getClass().getMethod("getFileMode").invoke(copySpec);
+		}
+		catch (Exception ex) {
+			throw new RuntimeException("Failed to get file mode from CopySpec", ex);
+		}
 	}
 
 	private boolean isUsingDefaultLoader(Jar jar) {

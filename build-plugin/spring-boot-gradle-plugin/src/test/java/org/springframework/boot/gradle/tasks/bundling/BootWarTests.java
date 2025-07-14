@@ -123,10 +123,10 @@ class BootWarTests extends AbstractBootArchiveTests<BootWar> {
 	void whenWarIsLayeredClasspathIndexPointsToLayeredLibs() throws IOException {
 		try (JarFile jarFile = new JarFile(createLayeredJar())) {
 			assertThat(entryLines(jarFile, "WEB-INF/classpath.idx")).containsExactly(
-					"- \"WEB-INF/lib/first-library.jar\"", "- \"WEB-INF/lib/second-library.jar\"",
-					"- \"WEB-INF/lib/third-library-SNAPSHOT.jar\"", "- \"WEB-INF/lib/fourth-library.jar\"",
-					"- \"WEB-INF/lib/first-project-library.jar\"",
-					"- \"WEB-INF/lib/second-project-library-SNAPSHOT.jar\"");
+					"- \"WEB-INF/lib/first-library.jar\"", "- \"WEB-INF/lib/first-project-library.jar\"",
+					"- \"WEB-INF/lib/fourth-library.jar\"", "- \"WEB-INF/lib/second-library.jar\"",
+					"- \"WEB-INF/lib/second-project-library-SNAPSHOT.jar\"",
+					"- \"WEB-INF/lib/third-library-SNAPSHOT.jar\"");
 		}
 	}
 
@@ -136,10 +136,10 @@ class BootWarTests extends AbstractBootArchiveTests<BootWar> {
 			assertThat(jarFile.getManifest().getMainAttributes().getValue("Spring-Boot-Classpath-Index"))
 				.isEqualTo("WEB-INF/classpath.idx");
 			assertThat(entryLines(jarFile, "WEB-INF/classpath.idx")).containsExactly(
-					"- \"WEB-INF/lib/first-library.jar\"", "- \"WEB-INF/lib/second-library.jar\"",
-					"- \"WEB-INF/lib/third-library-SNAPSHOT.jar\"", "- \"WEB-INF/lib/fourth-library.jar\"",
-					"- \"WEB-INF/lib/first-project-library.jar\"",
-					"- \"WEB-INF/lib/second-project-library-SNAPSHOT.jar\"");
+					"- \"WEB-INF/lib/first-library.jar\"", "- \"WEB-INF/lib/first-project-library.jar\"",
+					"- \"WEB-INF/lib/fourth-library.jar\"", "- \"WEB-INF/lib/second-library.jar\"",
+					"- \"WEB-INF/lib/second-project-library-SNAPSHOT.jar\"",
+					"- \"WEB-INF/lib/third-library-SNAPSHOT.jar\"");
 		}
 	}
 
