@@ -359,12 +359,6 @@ bom {
 			contains "-rc"
 			because "we don't want preview releases"
 		}
-		alignWith {
-			version {
-				from "org.springframework.data:spring-data-elasticsearch"
-				managedBy "Spring Data Bom"
-			}
-		}
 		group("co.elastic.clients") {
 			modules = [
 				"elasticsearch-java"
