@@ -39,6 +39,12 @@ subprojects {
 				includeGroup "net.shibboleth"
 			}
 		}
+		mavenLocal {
+			content {
+				includeModule("org.springframework.data", "spring-data-commons")
+				includeModuleByRegex("org.springframework.data", "spring-data-rest.*")
+			}
+		}
 		spring.mavenRepositories()
 	}
 
