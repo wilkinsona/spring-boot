@@ -23,11 +23,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.KeyDeserializer;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.KeyDeserializer;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.module.SimpleModule;
 
 import org.springframework.aot.generate.GenerationContext;
 import org.springframework.aot.hint.MemberCategory;
@@ -102,11 +101,11 @@ public class JsonComponentModule extends SimpleModule implements BeanFactoryAwar
 	}
 
 	private void addJsonBean(Object bean, Class<?>[] types, Scope scope) {
-		if (bean instanceof JsonSerializer<?> jsonSerializer) {
-			addJsonSerializerBean(jsonSerializer, scope, types);
+		if (bean instanceof ValueSerializer<?> jsonSerializer) {
+			addValueSerializerBean(jsonSerializer, scope, types);
 		}
-		else if (bean instanceof JsonDeserializer<?> jsonDeserializer) {
-			addJsonDeserializerBean(jsonDeserializer, types);
+		else if (bean instanceof ValueDeserializer<?> jsonDeserializer) {
+			addValueDeserializerBean(jsonDeserializer, types);
 		}
 		else if (bean instanceof KeyDeserializer keyDeserializer) {
 			addKeyDeserializerBean(keyDeserializer, types);
@@ -120,14 +119,15 @@ public class JsonComponentModule extends SimpleModule implements BeanFactoryAwar
 	}
 
 	private static boolean isSuitableInnerClass(Class<?> innerClass) {
-		return !Modifier.isAbstract(innerClass.getModifiers()) && (JsonSerializer.class.isAssignableFrom(innerClass)
-				|| JsonDeserializer.class.isAssignableFrom(innerClass)
+		return !Modifier.isAbstract(innerClass.getModifiers()) && (ValueSerializer.class.isAssignableFrom(innerClass)
+				|| ValueDeserializer.class.isAssignableFrom(innerClass)
 				|| KeyDeserializer.class.isAssignableFrom(innerClass));
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> void addJsonSerializerBean(JsonSerializer<T> serializer, JsonComponent.Scope scope, Class<?>[] types) {
-		Class<T> baseType = (Class<T>) ResolvableType.forClass(JsonSerializer.class, serializer.getClass())
+	private <T> void addValueSerializerBean(ValueSerializer<T> serializer, JsonComponent.Scope scope,
+			Class<?>[] types) {
+		Class<T> baseType = (Class<T>) ResolvableType.forClass(ValueSerializer.class, serializer.getClass())
 			.resolveGeneric();
 		addBeanToModule(serializer, baseType, types,
 				(scope == Scope.VALUES) ? this::addSerializer : this::addKeySerializer);
@@ -135,8 +135,8 @@ public class JsonComponentModule extends SimpleModule implements BeanFactoryAwar
 	}
 
 	@SuppressWarnings("unchecked")
-	private <T> void addJsonDeserializerBean(JsonDeserializer<T> deserializer, Class<?>[] types) {
-		Class<T> baseType = (Class<T>) ResolvableType.forClass(JsonDeserializer.class, deserializer.getClass())
+	private <T> void addValueDeserializerBean(ValueDeserializer<T> deserializer, Class<?>[] types) {
+		Class<T> baseType = (Class<T>) ResolvableType.forClass(ValueDeserializer.class, deserializer.getClass())
 			.resolveGeneric();
 		addBeanToModule(deserializer, baseType, types, this::addDeserializer);
 	}

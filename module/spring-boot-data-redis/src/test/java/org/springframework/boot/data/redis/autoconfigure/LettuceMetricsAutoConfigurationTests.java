@@ -31,14 +31,14 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link LettuceMetricsAutoConfiguration}.
+ * Tests for {@link LettuceObservabilityAutoConfiguration}.
  *
  * @author Antonin Arquey
  */
 class LettuceMetricsAutoConfigurationTests {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-		.withConfiguration(AutoConfigurations.of(LettuceMetricsAutoConfiguration.class));
+		.withConfiguration(AutoConfigurations.of(LettuceObservabilityAutoConfiguration.class));
 
 	@Test
 	void whenThereIsAMeterRegistryThenCommandLatencyRecorderIsAdded() {

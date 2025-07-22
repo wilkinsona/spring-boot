@@ -689,7 +689,7 @@ bom {
 			releaseNotes("https://github.com/influxdata/influxdb-java/releases/tag/influxdb-java-{version}")
 		}
 	}
-	library("Jackson Bom", "${jacksonVersion}") {
+	library("Jackson 2 Bom", "${jackson2Version}") {
 		prohibit {
 			contains "-rc"
 			because "we don't want release candidates"
@@ -699,6 +699,14 @@ bom {
 		}
 		links {
 			releaseNotes("https://github.com/FasterXML/jackson/wiki/Jackson-Release-{version}")
+		}
+	}
+	library("Jackson Bom", "3.0.0-rc6") {
+		group("tools.jackson") {
+			bom("jackson-bom")
+		}
+		links {
+			releaseNotes("https://github.com/FasterXML/jackson/wiki/Jackson-Release-3.0")
 		}
 	}
 	library("Jakarta Activation", "2.1.3") {

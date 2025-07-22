@@ -22,7 +22,6 @@ import io.lettuce.core.metrics.MicrometerOptions;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -36,9 +35,8 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration(before = RedisAutoConfiguration.class,
 		afterName = "org.springframework.boot.metrics.autoconfigure.CompositeMeterRegistryAutoConfiguration")
-@ConditionalOnClass({ RedisClient.class, MicrometerCommandLatencyRecorder.class, MeterRegistry.class })
-@ConditionalOnBean(MeterRegistry.class)
-public class LettuceMetricsAutoConfiguration {
+@ConditionalOnClass(RedisClient.class)
+public class LettuceObservabilityAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean

@@ -16,8 +16,7 @@
 
 package org.springframework.boot.jackson;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.module.SimpleModule;
 
 /**
  * Spring Bean and Jackson {@link Module} to find and
