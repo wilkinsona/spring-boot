@@ -67,9 +67,17 @@ public abstract class AbstractFieldValuesProcessorTests {
 		assertThat(values.get("integer")).isEqualTo(1);
 		assertThat(values.get("integerNone")).isEqualTo(0);
 		assertThat(values.get("integerConst")).isEqualTo(2);
+		assertThat(values.get("integerExpressionAdd")).isEqualTo(12);
+		assertThat(values.get("integerExpressionDivide")).isEqualTo(5);
+		assertThat(values.get("integerExpressionMultiply")).isEqualTo(86400000);
+		assertThat(values.get("integerExpressionSubtract")).isEqualTo(2);
 		assertThat(values.get("integerObject")).isEqualTo(3);
 		assertThat(values.get("integerObjectNone")).isNull();
 		assertThat(values.get("integerObjectConst")).isEqualTo(4);
+		assertThat(values.get("integerObjectExpressionAdd")).isEqualTo(12);
+		assertThat(values.get("integerObjectExpressionDivide")).isEqualTo(5);
+		assertThat(values.get("integerObjectExpressionMultiply")).isEqualTo(86400000);
+		assertThat(values.get("integerObjectExpressionSubtract")).isEqualTo(2);
 		assertThat(values.get("charset")).isEqualTo("US-ASCII");
 		assertThat(values.get("charsetConst")).isEqualTo("UTF-8");
 		assertThat(values.get("mimeType")).isEqualTo("text/html");

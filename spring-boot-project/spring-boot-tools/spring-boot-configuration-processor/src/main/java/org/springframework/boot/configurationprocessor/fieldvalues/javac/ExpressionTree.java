@@ -46,6 +46,12 @@ class ExpressionTree extends ReflectionWrapper {
 
 	private final Method arrayValueMethod = findMethod(this.newArrayTreeType, "getInitializers");
 
+	private final Class<?> binaryOperationType = findClass("com.sun.source.tree.BinaryTree");
+
+	private final Method leftOperandMethod = findMethod(this.binaryOperationType, "getLeftOperand");
+
+	private final Method rightOperandMethod = findMethod(this.binaryOperationType, "getRightOperand");
+
 	ExpressionTree(Object instance) {
 		super("com.sun.source.tree.ExpressionTree", instance);
 	}
@@ -57,6 +63,25 @@ class ExpressionTree extends ReflectionWrapper {
 	Object getLiteralValue() throws Exception {
 		if (this.literalTreeType.isAssignableFrom(getInstance().getClass())) {
 			return this.literalValueMethod.invoke(getInstance());
+		}
+		if (this.binaryOperationType.isAssignableFrom(getInstance().getClass())) {
+			Object left = new ExpressionTree(getLeftOperand()).getLiteralValue();
+			Object right = new ExpressionTree(getRightOperand()).getLiteralValue();
+			if (left != null && right != null) {
+				String kind = getKind();
+				if ("DIVIDE".equals(kind)) {
+					return (int) left / (int) right;
+				}
+				if ("MINUS".equals(kind)) {
+					return (int) left - (int) right;
+				}
+				if ("MULTIPLY".equals(kind)) {
+					return (int) left * (int) right;
+				}
+				if ("PLUS".equals(kind)) {
+					return (int) left + (int) right;
+				}
+			}
 		}
 		return null;
 	}
@@ -93,6 +118,20 @@ class ExpressionTree extends ReflectionWrapper {
 				result.add(new ExpressionTree(element));
 			}
 			return result;
+		}
+		return null;
+	}
+
+	Object getLeftOperand() throws Exception {
+		if (this.binaryOperationType.isAssignableFrom(getInstance().getClass())) {
+			return this.leftOperandMethod.invoke(getInstance());
+		}
+		return null;
+	}
+
+	Object getRightOperand() throws Exception {
+		if (this.binaryOperationType.isAssignableFrom(getInstance().getClass())) {
+			return this.rightOperandMethod.invoke(getInstance());
 		}
 		return null;
 	}

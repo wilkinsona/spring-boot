@@ -76,11 +76,27 @@ public class FieldValues {
 
 	private int integerConst = INTEGER_CONST;
 
+	private int integerExpressionAdd = 5 + 4 + 3;
+
+	private int integerExpressionDivide = 100 / 4 / 5;
+
+	private int integerExpressionMultiply = 24 * 60 * 60 * 1000;
+
+	private int integerExpressionSubtract = 5 - 2 - 1;
+
 	private Integer integerObject = 3;
 
 	private Integer integerObjectNone;
 
 	private Integer integerObjectConst = INTEGER_OBJ_CONST;
+
+	private Integer integerObjectExpressionAdd = 5 + 4 + 3;
+
+	private Integer integerObjectExpressionDivide = 100 / 10 / 2;
+
+	private Integer integerObjectExpressionMultiply = 24 * 60 * 60 * 1000;
+
+	private Integer integerObjectExpressionSubtract = 5 - 2 - 1;
 
 	private Charset charset = StandardCharsets.US_ASCII;
 
