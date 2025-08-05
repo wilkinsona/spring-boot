@@ -63,7 +63,7 @@ public class DockerApi {
 
 	static final ApiVersion API_VERSION = ApiVersion.of(1, 24);
 
-	static final ApiVersion PLATFORM_API_VERSION = ApiVersion.of(1, 41);
+	static final ApiVersion PLATFORM_API_VERSION = ApiVersion.of(1, 48);
 
 	static final ApiVersion UNKNOWN_API_VERSION = ApiVersion.of(0, 0);
 
@@ -322,7 +322,10 @@ public class DockerApi {
 				throws IOException {
 			Assert.notNull(reference, "'reference' must not be null");
 			Assert.notNull(exports, "'exports' must not be null");
-			URI uri = buildUrl("/images/" + reference + "/get");
+			Image image = inspect(API_VERSION, reference);
+			ImagePlatform platform = ImagePlatform.from(image);
+			URI uri = buildUrl(PLATFORM_API_VERSION, "/images/" + reference + "/get", "platform",
+					platform.toJsonString());
 			try (Response response = http().get(uri)) {
 				try (ExportedImageTar exportedImageTar = new ExportedImageTar(reference, response.getContent())) {
 					exportedImageTar.exportLayers(exports);

@@ -71,6 +71,18 @@ public class ImagePlatform {
 		return builder.toString();
 	}
 
+	public String toJsonString() {
+		StringBuilder builder = new StringBuilder("{\"os\":\"%s\"".formatted(this.os));
+		if (this.architecture != null) {
+			builder.append(",\"architecture\":\"%s\"".formatted(this.architecture));
+		}
+		if (this.variant != null) {
+			builder.append(",\"variant\":\"%s\"".formatted(this.variant));
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Create a new {@link ImagePlatform} from the given value in the form
 	 * {@code os[/architecture[/variant]]}.

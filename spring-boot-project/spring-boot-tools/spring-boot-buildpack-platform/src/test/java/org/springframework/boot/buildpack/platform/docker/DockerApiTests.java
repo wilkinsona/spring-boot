@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -241,7 +243,7 @@ class DockerApiTests {
 					+ "/create?fromImage=gcr.io%2Fpaketo-buildpacks%2Fbuilder%3Abase&platform=linux%2Farm64%2Fv1");
 			URI imageUri = new URI(PLATFORM_IMAGES_URL + "/gcr.io/paketo-buildpacks/builder:base/json");
 			given(http().head(eq(new URI(PING_URL))))
-				.willReturn(responseWithHeaders(new BasicHeader(DockerApi.API_VERSION_HEADER_NAME, "1.41")));
+				.willReturn(responseWithHeaders(new BasicHeader(DockerApi.API_VERSION_HEADER_NAME, "1.48")));
 			given(http().post(eq(createUri), isNull())).willReturn(responseOf("pull-stream.json"));
 			given(http().get(imageUri)).willReturn(responseOf("type/image.json"));
 			Image image = this.api.pull(reference, platform, this.pullListener);
@@ -259,7 +261,7 @@ class DockerApiTests {
 			given(http().head(eq(new URI(PING_URL)))).willReturn(
 					responseWithHeaders(new BasicHeader(DockerApi.API_VERSION_HEADER_NAME, DockerApi.API_VERSION)));
 			assertThatIllegalStateException().isThrownBy(() -> this.api.pull(reference, platform, this.pullListener))
-				.withMessageContaining("must be at least 1.41")
+				.withMessageContaining("must be at least 1.48")
 				.withMessageContaining("current API version is 1.24");
 		}
 
@@ -394,7 +396,11 @@ class DockerApiTests {
 		@Test
 		void exportLayersExportsLayerTars() throws Exception {
 			ImageReference reference = ImageReference.of("docker.io/paketobuildpacks/builder:base");
-			URI exportUri = new URI(IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/get");
+			URI imageUri = new URI(IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/json");
+			given(http().get(imageUri)).willReturn(responseOf("type/image.json"));
+			String platformJson = ImagePlatform.of("linux/amd64/v1").toJsonString();
+			URI exportUri = new URI(PLATFORM_IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/get?platform="
+					+ URLEncoder.encode(platformJson, StandardCharsets.UTF_8));
 			given(DockerApiTests.this.http.get(exportUri)).willReturn(responseOf("export.tar"));
 			MultiValueMap<String, String> contents = new LinkedMultiValueMap<>();
 			this.api.exportLayers(reference, (name, archive) -> {
@@ -422,7 +428,11 @@ class DockerApiTests {
 		@Test
 		void exportLayersWithSymlinksExportsLayerTars() throws Exception {
 			ImageReference reference = ImageReference.of("docker.io/paketobuildpacks/builder:base");
-			URI exportUri = new URI(IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/get");
+			URI imageUri = new URI(IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/json");
+			given(http().get(imageUri)).willReturn(responseOf("type/image.json"));
+			String platformJson = ImagePlatform.of("linux/amd64/v1").toJsonString();
+			URI exportUri = new URI(PLATFORM_IMAGES_URL + "/docker.io/paketobuildpacks/builder:base/get?platform="
+					+ URLEncoder.encode(platformJson, StandardCharsets.UTF_8));
 			given(DockerApiTests.this.http.get(exportUri)).willReturn(responseOf("export-symlinks.tar"));
 			MultiValueMap<String, String> contents = new LinkedMultiValueMap<>();
 			this.api.exportLayers(reference, (name, archive) -> {
@@ -547,7 +557,7 @@ class DockerApiTests {
 
 		@Test
 		void createWithPlatformCreatesContainer() throws Exception {
-			createWithPlatform("1.41");
+			createWithPlatform("1.48");
 		}
 
 		@Test
@@ -582,7 +592,7 @@ class DockerApiTests {
 			given(http().head(eq(new URI(PING_URL))))
 				.willReturn(responseWithHeaders(new BasicHeader(DockerApi.API_VERSION_HEADER_NAME, "1.24")));
 			assertThatIllegalStateException().isThrownBy(() -> this.api.create(config, platform))
-				.withMessageContaining("must be at least 1.41")
+				.withMessageContaining("must be at least 1.48")
 				.withMessageContaining("current API version is 1.24");
 		}
 
