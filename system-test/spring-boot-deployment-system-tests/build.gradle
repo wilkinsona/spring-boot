@@ -53,6 +53,7 @@ dependencies {
 
 systemTest {
 	inputs.files(war).withNormalizer(ClasspathNormalizer).withPropertyName("war")
+	testLogging.events = EnumSet.allOf(org.gradle.api.tasks.testing.logging.TestLogEvent.class)
 }
 
 war {

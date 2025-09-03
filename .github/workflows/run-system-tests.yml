@@ -2,13 +2,12 @@ name: Run System Tests
 on:
   push:
     branches:
-      - 'main'
+      - 'diagnose-system-tests'
 permissions:
   contents: read
 jobs:
   run-system-tests:
     name: 'Java ${{ matrix.java.version}}'
-    if: ${{ github.repository == 'spring-projects/spring-boot' }}
     runs-on: ${{ vars.UBUNTU_MEDIUM || 'ubuntu-latest' }}
     strategy:
       matrix:
