@@ -45,7 +45,6 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.Classpath;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
@@ -96,7 +95,7 @@ public abstract class TestSliceMetadata extends DefaultTask {
 	@OutputFile
 	public abstract RegularFileProperty getOutputFile();
 
-	@InputFile
+	@InputFiles
 	@PathSensitive(PathSensitivity.RELATIVE)
 	abstract RegularFileProperty getSpringFactories();
 
@@ -131,7 +130,7 @@ public abstract class TestSliceMetadata extends DefaultTask {
 		try (URLClassLoader classLoader = new URLClassLoader(
 				StreamSupport.stream(this.classpath.spliterator(), false).map(this::toURL).toArray(URL[]::new))) {
 			MetadataReaderFactory metadataReaderFactory = new SimpleMetadataReaderFactory(classLoader);
-			Properties springFactories = readSpringFactories(getSpringFactories().getAsFile().get());
+			Properties springFactories = readSpringFactories(getSpringFactories().getAsFile().getOrNull());
 			readImportsFiles(springFactories, this.importsFiles);
 			for (File classesDir : this.classesDirs) {
 				addTestSlices(testSlices, classesDir, metadataReaderFactory, springFactories);
@@ -188,8 +187,10 @@ public abstract class TestSliceMetadata extends DefaultTask {
 
 	private Properties readSpringFactories(File file) throws IOException {
 		Properties springFactories = new Properties();
-		try (Reader in = new FileReader(file)) {
-			springFactories.load(in);
+		if (file.isFile()) {
+			try (Reader in = new FileReader(file)) {
+				springFactories.load(in);
+			}
 		}
 		return springFactories;
 	}
