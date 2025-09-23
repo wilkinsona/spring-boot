@@ -272,8 +272,15 @@ project.rootProject.gradle.projectsEvaluated {
 	}
 }
 
+aggregates {
+	testSliceMetadata {
+		category = Category.DOCUMENTATION
+		usage = "test-slice-metadata"
+	}
+}
+
 tasks.register("documentTestSlices", org.springframework.boot.build.test.autoconfigure.DocumentTestSlices) {
-	testSlices = configurations.testSlices
+	testSlices = aggregates.testSliceMetadata.files
 	outputFile = layout.buildDirectory.file("generated/docs/test-auto-configuration/documented-slices.adoc")
 }
 

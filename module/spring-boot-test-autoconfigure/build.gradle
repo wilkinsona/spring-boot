@@ -59,8 +59,3 @@ dependencies {
 	testRuntimeOnly(project(":module:spring-boot-tomcat"))
 	testRuntimeOnly("org.flywaydb:flyway-database-hsqldb")
 }
-
-tasks.register("testSliceMetadata", org.springframework.boot.build.test.autoconfigure.TestSliceMetadata) {
-	sourceSet = sourceSets.main
-	outputFile = layout.buildDirectory.file("test-slice-metadata.properties")
-}
