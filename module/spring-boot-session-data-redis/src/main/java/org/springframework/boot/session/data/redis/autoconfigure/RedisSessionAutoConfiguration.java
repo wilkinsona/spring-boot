@@ -74,7 +74,7 @@ import org.springframework.session.data.redis.config.annotation.web.server.Redis
 		after = { RedisAutoConfiguration.class, RedisReactiveAutoConfiguration.class },
 		afterName = "org.springframework.boot.webflux.autoconfigure.WebSessionIdResolverAutoConfiguration")
 @ConditionalOnClass(Session.class)
-@EnableConfigurationProperties({ RedisSessionProperties.class, ServerProperties.class, SessionProperties.class })
+@EnableConfigurationProperties({ SessionDataRedisProperties.class, ServerProperties.class, SessionProperties.class })
 public final class RedisSessionAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
@@ -85,7 +85,7 @@ public final class RedisSessionAutoConfiguration {
 	static class ServletRedisSessionConfiguration {
 
 		@Configuration(proxyBeanMethods = false)
-		@ConditionalOnProperty(name = "spring.session.redis.repository-type", havingValue = "default",
+		@ConditionalOnProperty(name = "spring.session.data.redis.repository-type", havingValue = "default",
 				matchIfMissing = true)
 		@Import(RedisHttpSessionConfiguration.class)
 		static class DefaultRedisSessionConfiguration {
@@ -93,13 +93,13 @@ public final class RedisSessionAutoConfiguration {
 			@Bean
 			@Order(Ordered.HIGHEST_PRECEDENCE)
 			SessionRepositoryCustomizer<RedisSessionRepository> springBootSessionRepositoryCustomizer(
-					SessionProperties sessionProperties, RedisSessionProperties redisSessionProperties,
+					SessionProperties sessionProperties, SessionDataRedisProperties redisSessionProperties,
 					ServerProperties serverProperties) {
 				String cleanupCron = redisSessionProperties.getCleanupCron();
 				if (cleanupCron != null) {
-					throw new InvalidConfigurationPropertyValueException("spring.session.redis.cleanup-cron",
+					throw new InvalidConfigurationPropertyValueException("spring.session.data.redis.cleanup-cron",
 							cleanupCron, "Cron-based cleanup is only supported when "
-									+ "spring.session.redis.repository-type is set to indexed.");
+									+ "spring.session.data.redis.repository-type is set to indexed.");
 				}
 				return (sessionRepository) -> {
 					PropertyMapper map = PropertyMapper.get();
@@ -115,13 +115,13 @@ public final class RedisSessionAutoConfiguration {
 		}
 
 		@Configuration(proxyBeanMethods = false)
-		@ConditionalOnProperty(name = "spring.session.redis.repository-type", havingValue = "indexed")
+		@ConditionalOnProperty(name = "spring.session.data.redis.repository-type", havingValue = "indexed")
 		@Import(RedisIndexedHttpSessionConfiguration.class)
 		static class IndexedRedisSessionConfiguration {
 
 			@Bean
 			@ConditionalOnMissingBean
-			ConfigureRedisAction configureRedisAction(RedisSessionProperties redisSessionProperties) {
+			ConfigureRedisAction configureRedisAction(SessionDataRedisProperties redisSessionProperties) {
 				return switch (redisSessionProperties.getConfigureAction()) {
 					case NOTIFY_KEYSPACE_EVENTS -> new ConfigureNotifyKeyspaceEventsAction();
 					case NONE -> ConfigureRedisAction.NO_OP;
@@ -131,7 +131,7 @@ public final class RedisSessionAutoConfiguration {
 			@Bean
 			@Order(Ordered.HIGHEST_PRECEDENCE)
 			SessionRepositoryCustomizer<RedisIndexedSessionRepository> springBootSessionRepositoryCustomizer(
-					SessionProperties sessionProperties, RedisSessionProperties redisSessionProperties,
+					SessionProperties sessionProperties, SessionDataRedisProperties redisSessionProperties,
 					ServerProperties serverProperties) {
 				return (sessionRepository) -> {
 					PropertyMapper map = PropertyMapper.get();
@@ -157,14 +157,14 @@ public final class RedisSessionAutoConfiguration {
 	class ReactiveRedisSessionConfiguration {
 
 		@Configuration(proxyBeanMethods = false)
-		@ConditionalOnProperty(name = "spring.session.redis.repository-type", havingValue = "default",
+		@ConditionalOnProperty(name = "spring.session.data.redis.repository-type", havingValue = "default",
 				matchIfMissing = true)
 		@Import(RedisWebSessionConfiguration.class)
 		static class DefaultRedisSessionConfiguration {
 
 			@Bean
 			ReactiveSessionRepositoryCustomizer<ReactiveRedisSessionRepository> springBootSessionRepositoryCustomizer(
-					SessionProperties sessionProperties, RedisSessionProperties redisSessionProperties,
+					SessionProperties sessionProperties, SessionDataRedisProperties redisSessionProperties,
 					ServerProperties serverProperties) {
 				return (sessionRepository) -> {
 					PropertyMapper map = PropertyMapper.get();
@@ -179,13 +179,14 @@ public final class RedisSessionAutoConfiguration {
 		}
 
 		@Configuration(proxyBeanMethods = false)
-		@ConditionalOnProperty(name = "spring.session.redis.repository-type", havingValue = "indexed")
+		@ConditionalOnProperty(name = "spring.session.data.redis.repository-type", havingValue = "indexed")
 		@Import(RedisIndexedWebSessionConfiguration.class)
 		static class IndexedRedisSessionConfiguration {
 
 			@Bean
 			@ConditionalOnMissingBean
-			ConfigureReactiveRedisAction configureReactiveRedisAction(RedisSessionProperties redisSessionProperties) {
+			ConfigureReactiveRedisAction configureReactiveRedisAction(
+					SessionDataRedisProperties redisSessionProperties) {
 				return switch (redisSessionProperties.getConfigureAction()) {
 					case NOTIFY_KEYSPACE_EVENTS -> new ConfigureNotifyKeyspaceEventsReactiveAction();
 					case NONE -> ConfigureReactiveRedisAction.NO_OP;
@@ -194,7 +195,7 @@ public final class RedisSessionAutoConfiguration {
 
 			@Bean
 			ReactiveSessionRepositoryCustomizer<ReactiveRedisIndexedSessionRepository> springBootSessionRepositoryCustomizer(
-					SessionProperties sessionProperties, RedisSessionProperties redisSessionProperties,
+					SessionProperties sessionProperties, SessionDataRedisProperties redisSessionProperties,
 					ServerProperties serverProperties) {
 				return (sessionRepository) -> {
 					PropertyMapper map = PropertyMapper.get();
