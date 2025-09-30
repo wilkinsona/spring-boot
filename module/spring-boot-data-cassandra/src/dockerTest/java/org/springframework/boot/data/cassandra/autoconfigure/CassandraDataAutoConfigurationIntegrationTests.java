@@ -38,7 +38,7 @@ import org.springframework.data.cassandra.config.SessionFactoryFactoryBean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for {@link CassandraDataAutoConfiguration} that require a Cassandra instance.
+ * Tests for {@link DataCassandraAutoConfiguration} that require a Cassandra instance.
  *
  * @author Mark Paluch
  * @author Stephane Nicoll
@@ -51,7 +51,7 @@ class CassandraDataAutoConfigurationIntegrationTests {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(
-				AutoConfigurations.of(CassandraAutoConfiguration.class, CassandraDataAutoConfiguration.class))
+				AutoConfigurations.of(CassandraAutoConfiguration.class, DataCassandraAutoConfiguration.class))
 		.withPropertyValues(
 				"spring.cassandra.contact-points:" + cassandra.getHost() + ":" + cassandra.getFirstMappedPort(),
 				"spring.cassandra.local-datacenter=datacenter1", "spring.cassandra.connection.connect-timeout=60s",
