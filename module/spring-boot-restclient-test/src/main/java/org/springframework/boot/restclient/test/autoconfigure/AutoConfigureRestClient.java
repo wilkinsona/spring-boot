@@ -25,32 +25,20 @@ import java.lang.annotation.Target;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.restclient.RestTemplateBuilder;
-import org.springframework.boot.test.autoconfigure.json.AutoConfigureJson;
-import org.springframework.boot.test.context.PropertyMapping;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient.Builder;
 
 /**
- * Annotation that can be applied to a test class to enable and configure
- * auto-configuration of web clients.
+ * Annotation that can be applied to a test class to enable auto-configuration of a
+ * {@link Builder RestClient.Builder} and a {@link RestTemplateBuilder}.
  *
- * @author Stephane Nicoll
- * @author Phillip Webb
+ * @author Andy Wilkinson
  * @since 4.0.0
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@AutoConfigureJson
 @ImportAutoConfiguration
-@PropertyMapping("spring.test.webclient")
-public @interface AutoConfigureWebClient {
-
-	/**
-	 * If a {@link RestTemplate} bean should be registered. Defaults to {@code false} with
-	 * the assumption that the {@link RestTemplateBuilder} will be used.
-	 * @return if a {@link RestTemplate} bean should be added.
-	 */
-	boolean registerRestTemplate() default false;
+public @interface AutoConfigureRestClient {
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.webflux.test.autoconfigure;
+package org.springframework.boot.webmvc.test.autoconfigure;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -22,32 +22,22 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.time.Duration;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.context.PropertyMapping;
-import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.client.RestTestClient;
 
 /**
- * Annotation that can be applied to a test class to enable a {@link WebTestClient}.
+ * Annotation that can be applied to a test class to enable a {@link RestTestClient}.
  *
  * @author Stephane Nicoll
  * @since 4.0.0
- * @see WebTestClientAutoConfiguration
+ * @see RestTestClientAutoConfiguration
  */
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 @ImportAutoConfiguration
-@PropertyMapping("spring.test.webtestclient")
-public @interface AutoConfigureWebTestClient {
-
-	/**
-	 * The timeout duration for the client (in any format handled by
-	 * {@link Duration#parse(CharSequence)}).
-	 * @return the web client timeout
-	 */
-	String timeout() default "";
+public @interface AutoConfigureRestTestClient {
 
 }
