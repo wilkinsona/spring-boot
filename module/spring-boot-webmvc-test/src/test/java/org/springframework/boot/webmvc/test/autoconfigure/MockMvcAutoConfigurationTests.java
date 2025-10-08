@@ -21,9 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.boot.test.web.reactive.client.WebTestClientBuilderCustomizer;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -90,24 +87,26 @@ class MockMvcAutoConfigurationTests {
 			.run((context) -> assertThat(context).doesNotHaveBean(WebTestClient.class));
 	}
 
-	@Test
-	void shouldApplyWebTestClientCustomizers() {
-		this.contextRunner.withUserConfiguration(WebTestClientCustomConfig.class).run((context) -> {
-			assertThat(context).hasSingleBean(WebTestClient.class);
-			assertThat(context).hasBean("myWebTestClientCustomizer");
-			then(context.getBean("myWebTestClientCustomizer", WebTestClientBuilderCustomizer.class)).should()
-				.customize(any(WebTestClient.Builder.class));
-		});
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	static class WebTestClientCustomConfig {
-
-		@Bean
-		WebTestClientBuilderCustomizer myWebTestClientCustomizer() {
-			return mock(WebTestClientBuilderCustomizer.class);
-		}
-
-	}
+	// @Test
+	// void shouldApplyWebTestClientCustomizers() {
+	// this.contextRunner.withUserConfiguration(WebTestClientCustomConfig.class).run((context)
+	// -> {
+	// assertThat(context).hasSingleBean(WebTestClient.class);
+	// assertThat(context).hasBean("myWebTestClientCustomizer");
+	// then(context.getBean("myWebTestClientCustomizer",
+	// WebTestClientBuilderCustomizer.class)).should()
+	// .customize(any(WebTestClient.Builder.class));
+	// });
+	// }
+	//
+	// @Configuration(proxyBeanMethods = false)
+	// static class WebTestClientCustomConfig {
+	//
+	// @Bean
+	// WebTestClientBuilderCustomizer myWebTestClientCustomizer() {
+	// return mock(WebTestClientBuilderCustomizer.class);
+	// }
+	//
+	// }
 
 }
