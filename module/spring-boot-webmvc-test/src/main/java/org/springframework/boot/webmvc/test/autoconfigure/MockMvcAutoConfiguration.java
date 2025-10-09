@@ -67,7 +67,7 @@ public final class MockMvcAutoConfiguration {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass({ WebClient.class, WebTestClient.class })
+	@ConditionalOnClass({ WebClient.class, WebTestClient.class, WebTestClientBuilderCustomizer.class })
 	static class WebTestClientMockMvcConfiguration {
 
 		@Bean
