@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.webmvc.test.autoconfigure;
+package org.springframework.boot.testrestclient.autoconfigure;
 
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.boot.testrestclient.autoconfigure.RestTestClientAutoConfiguration;
-import org.springframework.boot.testrestclient.autoconfigure.RestTestClientBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.web.servlet.client.RestTestClient;

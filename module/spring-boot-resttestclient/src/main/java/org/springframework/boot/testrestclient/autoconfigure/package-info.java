@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.docs.testing.utilities.testresttemplate
+/**
+ * Auto-configuration for RestTestClient and TestRestTemplate.
+ */
+@NullMarked
+package org.springframework.boot.testrestclient.autoconfigure;
 
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.Test
-import org.springframework.boot.testrestclient.TestRestTemplate
-
-class MyTests {
-
-	private val template = TestRestTemplate()
-
-	@Test
-	fun testRequest() {
-		val headers = template.getForEntity("https://myhost.example.com/example", String::class.java)
-		assertThat(headers.headers.location).hasHost("other.example.com")
-	}
-
-}
-
+import org.jspecify.annotations.NullMarked;

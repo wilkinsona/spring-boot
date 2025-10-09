@@ -17,7 +17,6 @@
 plugins {
 	id "java-library"
 	id "org.springframework.boot.auto-configuration"
-	id "org.springframework.boot.configuration-properties"
 	id "org.springframework.boot.deployed"
 	id "org.springframework.boot.optional-dependencies"
 }
@@ -28,7 +27,7 @@ dependencies {
 	api(project(":core:spring-boot-test"))
 	api(project(":module:spring-boot-http-codec"))
 	api("org.springframework:spring-webflux")
-	
+
 	optional(project(":core:spring-boot-autoconfigure"))
 
 	testImplementation(project(":core:spring-boot-test"))
