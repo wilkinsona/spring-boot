@@ -22,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.AutoConfigureWebTestClient;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.config.EnableWebFlux;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +38,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(properties = { "spring.main.web-application-type=reactive", "debug=true" },
 		classes = ExampleWebTestClientApplication.class)
 @AutoConfigureWebTestClient
+@EnableWebFlux
+@Import({ ExampleController1.class, ExampleController2.class })
 class WebTestClientSpringBootTestIntegrationTests {
 
 	@Autowired

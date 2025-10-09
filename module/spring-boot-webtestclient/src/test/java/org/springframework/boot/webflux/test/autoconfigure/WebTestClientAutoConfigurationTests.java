@@ -49,14 +49,6 @@ class WebTestClientAutoConfigurationTests {
 		.withConfiguration(AutoConfigurations.of(WebTestClientAutoConfiguration.class));
 
 	@Test
-	void shouldNotBeConfiguredWithoutWebHandler() {
-		this.contextRunner.run((context) -> {
-			assertThat(context).hasNotFailed();
-			assertThat(context).doesNotHaveBean(WebTestClient.class);
-		});
-	}
-
-	@Test
 	void shouldCustomizeClientCodecs() {
 		this.contextRunner.withUserConfiguration(CodecConfiguration.class).run((context) -> {
 			assertThat(context).hasSingleBean(WebTestClient.class);

@@ -20,12 +20,12 @@ import java.util.List;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.codec.CodecCustomizer;
+import org.springframework.boot.http.codec.autoconfigure.CodecsAutoConfiguration;
 import org.springframework.boot.test.http.client.BaseUrlUriBuilderFactory;
 import org.springframework.boot.test.http.server.BaseUrl;
 import org.springframework.boot.test.http.server.BaseUrlProviders;
@@ -34,7 +34,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.reactive.server.MockServerConfigurer;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.WebHandler;
 
 /**
  * Auto-configuration for {@link WebTestClient}.
@@ -43,15 +42,13 @@ import org.springframework.web.server.WebHandler;
  * @author Andy Wilkinson
  * @since 4.0.0
  */
-@AutoConfiguration(afterName = { "org.springframework.boot.http.codec.autoconfigure.CodecsAutoConfiguration",
-		"org.springframework.boot.webflux.autoconfigure.WebFluxAutoConfiguration" })
+@AutoConfiguration(after = CodecsAutoConfiguration.class)
 @ConditionalOnClass({ CodecCustomizer.class, WebClient.class, WebTestClient.class })
 @EnableConfigurationProperties
 public final class WebTestClientAutoConfiguration {
 
 	@Bean
 	@ConditionalOnMissingBean
-	@ConditionalOnBean(WebHandler.class)
 	WebTestClient webTestClient(ApplicationContext applicationContext, List<WebTestClientBuilderCustomizer> customizers,
 			List<MockServerConfigurer> configurers) {
 		WebTestClient.Builder builder = prepareBuilder(applicationContext, configurers);
