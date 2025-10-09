@@ -30,7 +30,7 @@ import org.springframework.boot.testrestclient.autoconfigure.AutoConfigureTestRe
 import org.springframework.boot.tomcat.reactive.TomcatReactiveWebServerFactory;
 import org.springframework.boot.web.context.reactive.ReactiveWebApplicationContext;
 import org.springframework.boot.web.server.reactive.ReactiveWebServerFactory;
-import org.springframework.boot.webflux.test.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.boot.webtestclient.AutoConfigureWebTestClient;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
