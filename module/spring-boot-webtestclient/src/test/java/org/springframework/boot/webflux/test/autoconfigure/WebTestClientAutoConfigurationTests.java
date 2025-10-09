@@ -18,6 +18,7 @@ package org.springframework.boot.webflux.test.autoconfigure;
 
 import java.time.Duration;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -47,6 +48,16 @@ class WebTestClientAutoConfigurationTests {
 
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(WebTestClientAutoConfiguration.class));
+
+	@Disabled // FIXME not sure we want a link to webflux because it's a cycle
+	// so perhaps we should just let it fail if there's no handler and you've
+	// opted into webtestclient?
+	void shouldNotBeConfiguredWithoutWebHandler() {
+		this.contextRunner.run((context) -> {
+			assertThat(context).hasNotFailed();
+			assertThat(context).doesNotHaveBean(WebTestClient.class);
+		});
+	}
 
 	@Test
 	void shouldCustomizeClientCodecs() {
