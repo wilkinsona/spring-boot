@@ -16,10 +16,7 @@
 
 package org.springframework.boot.webmvc.test.autoconfigure;
 
-import java.util.List;
-
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
@@ -28,14 +25,9 @@ import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletPath;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties;
-import org.springframework.boot.webtestclient.WebTestClientBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.DispatcherServlet;
 
 /**
@@ -64,22 +56,6 @@ public final class MockMvcAutoConfiguration {
 	@ConditionalOnMissingBean
 	DispatcherServlet dispatcherServlet(MockMvc mockMvc) {
 		return mockMvc.getDispatcherServlet();
-	}
-
-	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass({ WebClient.class, WebTestClient.class, WebTestClientBuilderCustomizer.class })
-	static class WebTestClientMockMvcConfiguration {
-
-		@Bean
-		@ConditionalOnMissingBean
-		WebTestClient webTestClient(MockMvc mockMvc, List<WebTestClientBuilderCustomizer> customizers) {
-			WebTestClient.Builder builder = MockMvcWebTestClient.bindTo(mockMvc);
-			for (WebTestClientBuilderCustomizer customizer : customizers) {
-				customizer.customize(builder);
-			}
-			return builder.build();
-		}
-
 	}
 
 }

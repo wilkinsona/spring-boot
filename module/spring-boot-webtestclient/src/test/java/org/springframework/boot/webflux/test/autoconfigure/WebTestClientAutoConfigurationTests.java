@@ -18,19 +18,26 @@ package org.springframework.boot.webflux.test.autoconfigure;
 
 import java.time.Duration;
 
-import org.junit.jupiter.api.Disabled;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.http.codec.CodecCustomizer;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.http.server.BaseUrl;
+import org.springframework.boot.test.http.server.BaseUrlProvider;
+import org.springframework.boot.testsupport.classpath.resources.WithResource;
 import org.springframework.boot.webtestclient.WebTestClientAutoConfiguration;
+import org.springframework.boot.webtestclient.WebTestClientBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.client.reactive.JdkClientHttpConnector;
 import org.springframework.http.codec.CodecConfigurer;
+import org.springframework.test.web.reactive.server.HttpHandlerConnector;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.WebHandler;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,13 +56,40 @@ class WebTestClientAutoConfigurationTests {
 	private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
 		.withConfiguration(AutoConfigurations.of(WebTestClientAutoConfiguration.class));
 
-	@Disabled // FIXME not sure we want a link to webflux because it's a cycle
-	// so perhaps we should just let it fail if there's no handler and you've
-	// opted into webtestclient?
-	void shouldNotBeConfiguredWithoutWebHandler() {
+	@Test
+	void shouldDefineWebTestClientBoundToHttpHandler() {
+		this.contextRunner.withUserConfiguration(BaseConfiguration.class).run((context) -> {
+			assertThat(context).hasSingleBean(WebTestClient.class);
+			assertThat(context).hasBean("webTestClient");
+			assertThat(context.getBean(WebTestClient.class)).extracting("wiretapConnector")
+				.extracting("delegate")
+				.isInstanceOf(HttpHandlerConnector.class);
+		});
+	}
+
+	@Test
+	@WithResource(name = "META-INF/spring.factories", content = """
+			org.springframework.boot.test.http.server.BaseUrlProvider=\
+			org.springframework.boot.webflux.test.autoconfigure.WebTestClientAutoConfigurationTests$TestBaseUrlProvider
+			""")
+	void shouldDefineWebTestClientBoundToWebServer() {
 		this.contextRunner.run((context) -> {
-			assertThat(context).hasNotFailed();
-			assertThat(context).doesNotHaveBean(WebTestClient.class);
+			assertThat(context).hasSingleBean(WebTestClient.class);
+			assertThat(context).hasBean("webTestClient");
+			assertThat(context.getBean(WebTestClient.class)).extracting("wiretapConnector")
+				.extracting("delegate")
+				.isInstanceOf(JdkClientHttpConnector.class);
+		});
+	}
+
+	@Test
+	void failsWithMockBaseUrlAndNoWebHandlerOrMockMvcBean() {
+		this.contextRunner.run((context) -> {
+			assertThat(context).hasFailed();
+			assertThat(context).getFailure()
+				.rootCause()
+				.isInstanceOf(RuntimeException.class)
+				.hasMessageStartingWith("Mock WebTestClient support requires");
 		});
 	}
 
@@ -94,6 +128,29 @@ class WebTestClientAutoConfigurationTests {
 			.run((context) -> assertThat(context).doesNotHaveBean(WebTestClient.class));
 	}
 
+	@Test
+	void shouldCreateMockMvcBasedWebTestClientWhenMockMvcBeanIsPresent() {
+		this.contextRunner.withBean(MockMvc.class, () -> mock(MockMvc.class))
+			.withUserConfiguration(WebTestClientCustomConfig.class)
+			.run((context) -> {
+				assertThat(context).hasSingleBean(WebTestClient.class);
+				assertThat(context).hasBean("mockMvcWebTestClient");
+				assertThat(context).hasBean("myWebTestClientCustomizer");
+				then(context.getBean("myWebTestClientCustomizer", WebTestClientBuilderCustomizer.class)).should()
+					.customize(any(WebTestClient.Builder.class));
+			});
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class WebTestClientCustomConfig {
+
+		@Bean
+		WebTestClientBuilderCustomizer myWebTestClientCustomizer() {
+			return mock(WebTestClientBuilderCustomizer.class);
+		}
+
+	}
+
 	@Configuration(proxyBeanMethods = false)
 	static class BaseConfiguration {
 
@@ -111,6 +168,15 @@ class WebTestClientAutoConfigurationTests {
 		@Bean
 		CodecCustomizer myCodecCustomizer() {
 			return mock(CodecCustomizer.class);
+		}
+
+	}
+
+	static class TestBaseUrlProvider implements BaseUrlProvider {
+
+		@Override
+		public @Nullable BaseUrl getBaseUrl() {
+			return BaseUrl.of("https://localhost:8080");
 		}
 
 	}

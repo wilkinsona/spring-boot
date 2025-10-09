@@ -21,11 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.servlet.DispatcherServlet;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,38 +73,5 @@ class MockMvcAutoConfigurationTests {
 			then(mockMvc).should().perform(any(RequestBuilder.class));
 		});
 	}
-
-	@Test
-	void registersWebTestClient() {
-		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(WebTestClient.class));
-	}
-
-	@Test
-	void shouldNotRegisterWebTestClientIfWebFluxMissing() {
-		this.contextRunner.withClassLoader(new FilteredClassLoader(WebClient.class))
-			.run((context) -> assertThat(context).doesNotHaveBean(WebTestClient.class));
-	}
-
-	// @Test
-	// void shouldApplyWebTestClientCustomizers() {
-	// this.contextRunner.withUserConfiguration(WebTestClientCustomConfig.class).run((context)
-	// -> {
-	// assertThat(context).hasSingleBean(WebTestClient.class);
-	// assertThat(context).hasBean("myWebTestClientCustomizer");
-	// then(context.getBean("myWebTestClientCustomizer",
-	// WebTestClientBuilderCustomizer.class)).should()
-	// .customize(any(WebTestClient.Builder.class));
-	// });
-	// }
-	//
-	// @Configuration(proxyBeanMethods = false)
-	// static class WebTestClientCustomConfig {
-	//
-	// @Bean
-	// WebTestClientBuilderCustomizer myWebTestClientCustomizer() {
-	// return mock(WebTestClientBuilderCustomizer.class);
-	// }
-	//
-	// }
 
 }

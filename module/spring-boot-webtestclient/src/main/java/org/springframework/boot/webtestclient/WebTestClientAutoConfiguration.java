@@ -18,8 +18,10 @@ package org.springframework.boot.webtestclient;
 
 import java.util.List;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -31,9 +33,13 @@ import org.springframework.boot.test.http.server.BaseUrl;
 import org.springframework.boot.test.http.server.BaseUrlProviders;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.test.web.reactive.server.MockServerConfigurer;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.WebHandler;
 
 /**
  * Auto-configuration for {@link WebTestClient}.
@@ -46,6 +52,13 @@ import org.springframework.web.reactive.function.client.WebClient;
 @ConditionalOnClass({ CodecCustomizer.class, WebClient.class, WebTestClient.class })
 @EnableConfigurationProperties
 public final class WebTestClientAutoConfiguration {
+
+	@Bean
+	@ConfigurationProperties("spring.test.webtestclient")
+	SpringBootWebTestClientBuilderCustomizer springBootWebTestClientBuilderCustomizer(
+			ObjectProvider<CodecCustomizer> codecCustomizers) {
+		return new SpringBootWebTestClientBuilderCustomizer(codecCustomizers.orderedStream().toList());
+	}
 
 	@Bean
 	@ConditionalOnMissingBean
@@ -62,20 +75,49 @@ public final class WebTestClientAutoConfiguration {
 			List<MockServerConfigurer> configurers) {
 		BaseUrl baseUrl = new BaseUrlProviders(applicationContext).getBaseUrlOrDefault();
 		if (baseUrl == BaseUrl.DEFAULT) {
+			return prepareMockBuilder(applicationContext, configurers);
+		}
+		return WebTestClient.bindToServer().uriBuilderFactory(BaseUrlUriBuilderFactory.get(baseUrl));
+	}
+
+	private WebTestClient.Builder prepareMockBuilder(ApplicationContext applicationContext,
+			List<MockServerConfigurer> configurers) {
+		try {
+			applicationContext.getBean(WebHandler.class);
 			WebTestClient.MockServerSpec<?> mockServerSpec = WebTestClient.bindToApplicationContext(applicationContext);
 			for (MockServerConfigurer configurer : configurers) {
 				mockServerSpec.apply(configurer);
 			}
 			return mockServerSpec.configureClient();
 		}
-		return WebTestClient.bindToServer().uriBuilderFactory(BaseUrlUriBuilderFactory.get(baseUrl));
+		catch (NoSuchBeanDefinitionException ex) {
+			// Continue and try with MockMvc
+		}
+		try {
+			MockMvc mockMvc = applicationContext.getBean(MockMvc.class);
+			return MockMvcWebTestClient.bindTo(mockMvc);
+		}
+		catch (NoSuchBeanDefinitionException ex) {
+			throw new RuntimeException(
+					"Mock WebTestClient support requires a WebHandler or MockMvc bean and neither was present");
+		}
 	}
 
-	@Bean
-	@ConfigurationProperties("spring.test.webtestclient")
-	SpringBootWebTestClientBuilderCustomizer springBootWebTestClientBuilderCustomizer(
-			ObjectProvider<CodecCustomizer> codecCustomizers) {
-		return new SpringBootWebTestClientBuilderCustomizer(codecCustomizers.orderedStream().toList());
+	@ConditionalOnBean(MockMvc.class)
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass({ WebClient.class, WebTestClient.class, WebTestClientBuilderCustomizer.class })
+	static class MockMvcWebTestClientConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean
+		WebTestClient mockMvcWebTestClient(MockMvc mockMvc, List<WebTestClientBuilderCustomizer> customizers) {
+			WebTestClient.Builder builder = MockMvcWebTestClient.bindTo(mockMvc);
+			for (WebTestClientBuilderCustomizer customizer : customizers) {
+				customizer.customize(builder);
+			}
+			return builder.build();
+		}
+
 	}
 
 }

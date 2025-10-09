@@ -28,7 +28,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.MockMvcPrint;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.client.RestTestClient;
 
@@ -76,11 +75,6 @@ class MockMvcTesterSpringBootTestIntegrationTests {
 	@Test
 	void shouldHaveRealService() {
 		assertThat(this.applicationContext.getBean(ExampleRealService.class)).isNotNull();
-	}
-
-	@Test
-	void shouldTestWithWebTestClient(@Autowired WebTestClient webTestClient) {
-		webTestClient.get().uri("/one").exchange().expectStatus().isOk().expectBody(String.class).isEqualTo("one");
 	}
 
 	@Test
