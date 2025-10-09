@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.restclient.test.autoconfigure;
+package org.springframework.boot.testrestclient.autoconfigure;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -24,7 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.restclient.test.TestRestTemplate;
+import org.springframework.boot.testrestclient.TestRestTemplate;
 
 /**
  * Annotation that can be applied to a test class to enable auto-configuration of a

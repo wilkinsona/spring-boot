@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.boot.webmvc.test.autoconfigure;
+package org.springframework.boot.testrestclient.autoconfigure;
 
 import java.util.List;
 
