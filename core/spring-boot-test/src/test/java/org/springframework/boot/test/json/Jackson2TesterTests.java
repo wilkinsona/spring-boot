@@ -18,7 +18,7 @@ package org.springframework.boot.test.json;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 	@Test
 	@SuppressWarnings("NullAway") // Test null check
 	void initFieldsWhenTestIsNullShouldThrowException() {
-		assertThatIllegalArgumentException().isThrownBy(() -> Jackson2Tester.initFields(null, new JsonMapper()))
+		assertThatIllegalArgumentException().isThrownBy(() -> Jackson2Tester.initFields(null, new ObjectMapper()))
 			.withMessageContaining("'testInstance' must not be null");
 	}
 
@@ -48,7 +48,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 	@SuppressWarnings("NullAway") // Test null check
 	void initFieldsWhenMarshallerIsNullShouldThrowException() {
 		assertThatIllegalArgumentException()
-			.isThrownBy(() -> Jackson2Tester.initFields(new InitFieldsTestClass(), (JsonMapper) null))
+			.isThrownBy(() -> Jackson2Tester.initFields(new InitFieldsTestClass(), (ObjectMapper) null))
 			.withMessageContaining("'marshaller' must not be null");
 	}
 
@@ -57,7 +57,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 		InitFieldsTestClass test = new InitFieldsTestClass();
 		assertThat(test.test).isNull();
 		assertThat(test.base).isNull();
-		Jackson2Tester.initFields(test, new JsonMapper());
+		Jackson2Tester.initFields(test, new ObjectMapper());
 		assertThat(test.test).isNotNull();
 		assertThat(test.base).isNotNull();
 		ResolvableType type = test.test.getType();
@@ -68,7 +68,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 
 	@Override
 	protected AbstractJsonMarshalTester<Object> createTester(Class<?> resourceLoadClass, ResolvableType type) {
-		return new org.springframework.boot.test.json.Jackson2Tester<>(resourceLoadClass, type, new JsonMapper());
+		return new org.springframework.boot.test.json.Jackson2Tester<>(resourceLoadClass, type, new ObjectMapper());
 	}
 
 	abstract static class InitFieldsBaseClass {
@@ -76,7 +76,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 		public org.springframework.boot.test.json.@Nullable Jackson2Tester<ExampleObject> base;
 
 		public org.springframework.boot.test.json.Jackson2Tester<ExampleObject> baseSet = new org.springframework.boot.test.json.Jackson2Tester<>(
-				InitFieldsBaseClass.class, ResolvableType.forClass(ExampleObject.class), new JsonMapper());
+				InitFieldsBaseClass.class, ResolvableType.forClass(ExampleObject.class), new ObjectMapper());
 
 	}
 
@@ -85,7 +85,7 @@ class Jackson2TesterTests extends AbstractJsonMarshalTesterTests {
 		public org.springframework.boot.test.json.@Nullable Jackson2Tester<List<ExampleObject>> test;
 
 		public org.springframework.boot.test.json.Jackson2Tester<ExampleObject> testSet = new org.springframework.boot.test.json.Jackson2Tester<>(
-				InitFieldsBaseClass.class, ResolvableType.forClass(ExampleObject.class), new JsonMapper());
+				InitFieldsBaseClass.class, ResolvableType.forClass(ExampleObject.class), new ObjectMapper());
 
 	}
 

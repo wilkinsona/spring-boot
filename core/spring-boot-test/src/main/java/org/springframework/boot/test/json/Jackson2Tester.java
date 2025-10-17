@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
@@ -35,16 +34,16 @@ import org.springframework.core.ResolvableType;
 import org.springframework.util.Assert;
 
 /**
- * AssertJ based JSON tester backed by Jackson. Usually instantiated via
- * {@link #initFields(Object, JsonMapper)}, for example: <pre class="code">
+ * AssertJ based JSON tester backed by Jackson 2. Usually instantiated via
+ * {@link #initFields(Object, ObjectMapper)}, for example: <pre class="code">
  * public class ExampleObjectJsonTests {
  *
- *     private JacksonTester&lt;ExampleObject&gt; json;
+ *     private Jackson2Tester&lt;ExampleObject&gt; json;
  *
  *     &#064;Before
  *     public void setup() {
- *         JsonMapper jsonMapper = new JsonMapper();
- *         JacksonTester.initFields(this, jsonMapper);
+ *         ObjectMapper objectMapper = new ObjectMapper();
+ *         Jackson2Tester.initFields(this, objectMapper);
  *     }
  *
  *     &#064;Test
@@ -156,24 +155,22 @@ public class Jackson2Tester<T> extends AbstractJsonMarshalTester<T> {
 	 * Utility method to initialize {@link Jackson2Tester} fields. See
 	 * {@link Jackson2Tester class-level documentation} for example usage.
 	 * @param testInstance the test instance
-	 * @param jsonMapper the JSON mapper
-	 * @since 4.0.0
-	 * @see #initFields(Object, JsonMapper)
+	 * @param objectMapper the JSON mapper
+	 * @see #initFields(Object, ObjectMapper)
 	 */
-	public static void initFields(Object testInstance, JsonMapper jsonMapper) {
-		new Jackson2FieldInitializer().initFields(testInstance, jsonMapper);
+	public static void initFields(Object testInstance, ObjectMapper objectMapper) {
+		new Jackson2FieldInitializer().initFields(testInstance, objectMapper);
 	}
 
 	/**
 	 * Utility method to initialize {@link Jackson2Tester} fields. See
 	 * {@link Jackson2Tester class-level documentation} for example usage.
 	 * @param testInstance the test instance
-	 * @param jsonMapperFactory a factory to create the JSON mapper
-	 * @since 4.0.0
-	 * @see #initFields(Object, JsonMapper)
+	 * @param objectMapperFactory a factory to create the object mapper
+	 * @see #initFields(Object, ObjectMapper)
 	 */
-	public static void initFields(Object testInstance, ObjectFactory<JsonMapper> jsonMapperFactory) {
-		new Jackson2FieldInitializer().initFields(testInstance, jsonMapperFactory);
+	public static void initFields(Object testInstance, ObjectFactory<ObjectMapper> objectMapperFactory) {
+		new Jackson2FieldInitializer().initFields(testInstance, objectMapperFactory);
 	}
 
 	/**
@@ -193,7 +190,7 @@ public class Jackson2Tester<T> extends AbstractJsonMarshalTester<T> {
 	/**
 	 * {@link FieldInitializer} for Jackson.
 	 */
-	private static class Jackson2FieldInitializer extends FieldInitializer<JsonMapper> {
+	private static class Jackson2FieldInitializer extends FieldInitializer<ObjectMapper> {
 
 		protected Jackson2FieldInitializer() {
 			super(Jackson2Tester.class);
@@ -201,7 +198,7 @@ public class Jackson2Tester<T> extends AbstractJsonMarshalTester<T> {
 
 		@Override
 		protected AbstractJsonMarshalTester<Object> createTester(Class<?> resourceLoadClass, ResolvableType type,
-				JsonMapper marshaller) {
+				ObjectMapper marshaller) {
 			return new Jackson2Tester<>(resourceLoadClass, type, marshaller);
 		}
 
