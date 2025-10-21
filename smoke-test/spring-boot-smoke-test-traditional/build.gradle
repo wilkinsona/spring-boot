@@ -30,7 +30,7 @@ dependencies {
 	implementation(project(":starter:spring-boot-starter"))
 	implementation(project(":module:spring-boot-webmvc"))
 
-	providedRuntime(project(":starter:spring-boot-starter-tomcat"))
+	providedRuntime(project(":module:spring-boot-tomcat-runtime"))
 	providedRuntime("org.apache.tomcat.embed:tomcat-embed-jasper")
 
 	testImplementation(project(":module:spring-boot-resttestclient"))
