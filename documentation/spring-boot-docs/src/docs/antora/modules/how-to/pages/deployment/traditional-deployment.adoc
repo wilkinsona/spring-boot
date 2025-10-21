@@ -56,7 +56,7 @@ If you use Gradle, the following example marks the servlet container (Tomcat, in
 ----
 dependencies {
 	// ...
-	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-embedded-tomcat'
 	// ...
 }
 ----

@@ -2147,6 +2147,8 @@ bom {
 				"spring-boot-starter-data-rest-test",
 				"spring-boot-starter-elasticsearch",
 				"spring-boot-starter-elasticsearch-test",
+				"spring-boot-starter-embedded-jetty",
+				"spring-boot-starter-embedded-tomcat",
 				"spring-boot-starter-flyway",
 				"spring-boot-starter-flyway-test",
 				"spring-boot-starter-freemarker",
