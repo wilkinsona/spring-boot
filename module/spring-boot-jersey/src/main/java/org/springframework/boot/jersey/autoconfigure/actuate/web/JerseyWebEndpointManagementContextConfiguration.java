@@ -23,13 +23,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.ext.ContextResolver;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 import org.jspecify.annotations.Nullable;
-import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
@@ -41,7 +41,7 @@ import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
-import org.springframework.boot.actuate.endpoint.jackson.EndpointJsonMapper;
+import org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
@@ -109,12 +109,12 @@ class JerseyWebEndpointManagementContextConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnBean(EndpointJsonMapper.class)
-	ResourceConfigCustomizer endpointObjectMapperResourceConfigCustomizer(EndpointJsonMapper endpointJsonMapper) {
-		return (config) -> {
-			config.register(new EndpointJsonMapperContextResolver(endpointJsonMapper), ContextResolver.class);
-			config.register(EndpointJacksonFeature.class);
-		};
+	@ConditionalOnBean(EndpointJackson2ObjectMapper.class)
+	@SuppressWarnings("removal")
+	ResourceConfigCustomizer endpointJackson2ObjectMapperResourceConfigCustomizer(
+			org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper endpointJackson2ObjectMapper) {
+		return (config) -> config.register(
+				new EndpointJackson2ObjectMapperContextResolver(endpointJackson2ObjectMapper), ContextResolver.class);
 	}
 
 	private boolean shouldRegisterLinksMapping(WebEndpointProperties properties, Environment environment,
@@ -218,20 +218,22 @@ class JerseyWebEndpointManagementContextConfiguration {
 	}
 
 	/**
-	 * {@link ContextResolver} used to obtain the {@link JsonMapper} that should be used
+	 * {@link ContextResolver} used to obtain the {@link ObjectMapper} that should be used
 	 * for {@link OperationResponseBody} instances.
 	 */
+	@SuppressWarnings("removal")
 	@Priority(Priorities.USER - 100)
-	private static final class EndpointJsonMapperContextResolver implements ContextResolver<JsonMapper> {
+	private static final class EndpointJackson2ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
 
-		private final EndpointJsonMapper mapper;
+		private final org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper mapper;
 
-		private EndpointJsonMapperContextResolver(EndpointJsonMapper mapper) {
+		private EndpointJackson2ObjectMapperContextResolver(
+				org.springframework.boot.actuate.endpoint.jackson.EndpointJackson2ObjectMapper mapper) {
 			this.mapper = mapper;
 		}
 
 		@Override
-		public @Nullable JsonMapper getContext(Class<?> type) {
+		public @Nullable ObjectMapper getContext(Class<?> type) {
 			return OperationResponseBody.class.isAssignableFrom(type) ? this.mapper.get() : null;
 		}
 

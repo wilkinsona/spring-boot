@@ -2183,6 +2183,7 @@ bom {
 				"spring-boot-starter-jdbc",
 				"spring-boot-starter-jdbc-test",
 				"spring-boot-starter-jersey",
+				"spring-boot-starter-jersey-test",
 				"spring-boot-starter-jetty",
 				"spring-boot-starter-jms",
 				"spring-boot-starter-jms-test",

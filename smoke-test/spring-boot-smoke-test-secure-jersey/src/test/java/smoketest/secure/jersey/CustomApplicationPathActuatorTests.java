@@ -26,7 +26,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
 		properties = "spring.jersey.application-path=/example")
-
 class CustomApplicationPathActuatorTests extends AbstractJerseySecureTests {
 
 	@LocalServerPort

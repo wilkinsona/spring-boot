@@ -15,15 +15,18 @@
  */
 
 plugins {
-	id "java"
+	id "org.springframework.boot.starter"
 }
 
-description = "Spring Boot secure Jersey smoke test"
+description = "Starter for testing JAX-RS and Jersey"
 
 dependencies {
-	implementation(project(":starter:spring-boot-starter-actuator"))
-	implementation(project(":starter:spring-boot-starter-jersey"))
-	implementation(project(":starter:spring-boot-starter-security"))
+	api(project(":starter:spring-boot-starter-jersey"))
+	api(project(":starter:spring-boot-starter-test"))
+	api(project(":module:spring-boot-resttestclient"))
+}
 
-	testImplementation(project(":starter:spring-boot-starter-jersey-test"))
+checkRuntimeClasspathForConflicts {
+	ignore { name -> name.startsWith("org/aopalliance/intercept/") }
+	ignore { name -> name.startsWith("org/aopalliance/aop/") }
 }

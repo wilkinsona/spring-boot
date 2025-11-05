@@ -68,8 +68,7 @@ import org.springframework.web.filter.RequestContextFilter;
  * @author Stephane Nicoll
  * @since 4.0.0
  */
-@AutoConfiguration(afterName = { "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration",
-		"org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" })
+@AutoConfiguration(afterName = { "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" })
 @ConditionalOnClass({ SpringComponentProvider.class, ServletRegistration.class })
 @ConditionalOnBean(type = "org.glassfish.jersey.server.ResourceConfig")
 @ConditionalOnWebApplication(type = Type.SERVLET)
