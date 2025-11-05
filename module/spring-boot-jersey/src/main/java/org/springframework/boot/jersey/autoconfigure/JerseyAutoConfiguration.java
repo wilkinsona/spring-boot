@@ -192,7 +192,7 @@ public final class JerseyAutoConfiguration implements ServletContextAware {
 		@Configuration(proxyBeanMethods = false)
 		@ConditionalOnClass({ com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationIntrospector.class,
 				XmlElement.class })
-		static class JaxbJackson2ObjectMapperCustomizer {
+		static class JaxbJackson2ObjectMapperCustomizerConfiguration {
 
 			@Autowired
 			void addJaxbAnnotationIntrospector(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
