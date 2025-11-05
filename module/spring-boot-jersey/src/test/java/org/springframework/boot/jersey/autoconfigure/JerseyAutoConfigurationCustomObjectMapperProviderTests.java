@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
-import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration;
@@ -50,7 +50,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Eddú Meléndez
  */
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,
-		properties = "spring.jackson.default-property-inclusion=non_null")
+		properties = "spring.jackson2.default-property-inclusion=non_null")
+@AutoConfigureTestRestTemplate
 @DirtiesContext
 class JerseyAutoConfigurationCustomObjectMapperProviderTests {
 
@@ -113,11 +114,13 @@ class JerseyAutoConfigurationCustomObjectMapperProviderTests {
 
 	}
 
+	@SuppressWarnings("removal")
 	@Target(ElementType.TYPE)
 	@Retention(RetentionPolicy.RUNTIME)
 	@Documented
 	@Configuration
-	@Import({ TomcatServletWebServerAutoConfiguration.class, JacksonAutoConfiguration.class,
+	@Import({ TomcatServletWebServerAutoConfiguration.class,
+			org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration.class,
 			JerseyAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class })
 	protected @interface MinimalWebConfiguration {
 

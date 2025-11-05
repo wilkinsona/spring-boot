@@ -34,6 +34,9 @@ import jakarta.ws.rs.ext.Providers;
 import org.jspecify.annotations.Nullable;
 import tools.jackson.databind.json.JsonMapper;
 
+import org.springframework.boot.actuate.endpoint.OperationResponseBody;
+import org.springframework.util.Assert;
+
 /**
  * Jakarta RS {@link MessageBodyWriter} to support actuator endpoint serialization with
  * Jackson 3.
@@ -53,14 +56,16 @@ class EndpointJacksonJsonProvider implements MessageBodyWriter<Object> {
 
 	@Override
 	public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-		return getJsonMapper(type, mediaType) != null;
+		return OperationResponseBody.class.isAssignableFrom(type) && getJsonMapper(type, mediaType) != null;
 	}
 
 	@Override
 	public void writeTo(Object value, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType,
 			MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
 			throws IOException, WebApplicationException {
-		getJsonMapper(type, mediaType).writer().writeValue(entityStream, value);
+		JsonMapper jsonMapper = getJsonMapper(type, mediaType);
+		Assert.state(jsonMapper != null, "No JsonMapper found");
+		jsonMapper.writer().writeValue(entityStream, value);
 	}
 
 	private @Nullable JsonMapper getJsonMapper(Class<?> type, MediaType mediaType) {
