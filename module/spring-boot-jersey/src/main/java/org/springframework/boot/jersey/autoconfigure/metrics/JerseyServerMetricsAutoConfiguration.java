@@ -16,7 +16,6 @@
 
 package org.springframework.boot.jersey.autoconfigure.metrics;
 
-import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.observation.ObservationRegistry;
 import org.glassfish.jersey.micrometer.server.JerseyObservationConvention;
 import org.glassfish.jersey.micrometer.server.ObservationApplicationEventListener;
@@ -31,7 +30,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jersey.autoconfigure.ResourceConfigCustomizer;
-import org.springframework.boot.micrometer.metrics.OnlyOnceLoggingDenyMeterFilter;
+import org.springframework.boot.micrometer.metrics.MaximumAllowableTagsMeterFilter;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties;
 import org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties;
 import org.springframework.context.annotation.Bean;
@@ -70,12 +69,10 @@ public final class JerseyServerMetricsAutoConfiguration {
 
 	@Bean
 	@Order(0)
-	MeterFilter jerseyMetricsUriTagFilter(MetricsProperties metricsProperties) {
-		String metricName = this.observationProperties.getHttp().getServer().getRequests().getName();
-		MeterFilter filter = new OnlyOnceLoggingDenyMeterFilter(
-				() -> String.format("Reached the maximum number of URI tags for '%s'.", metricName));
-		return MeterFilter.maximumAllowableTags(metricName, "uri",
-				metricsProperties.getWeb().getServer().getMaxUriTags(), filter);
+	MaximumAllowableTagsMeterFilter jerseyMetricsUriTagFilter(MetricsProperties metricsProperties) {
+		String meterNamePrefix = this.observationProperties.getHttp().getServer().getRequests().getName();
+		int maxUriTags = metricsProperties.getWeb().getServer().getMaxUriTags();
+		return new MaximumAllowableTagsMeterFilter(meterNamePrefix, "uri", maxUriTags);
 	}
 
 }

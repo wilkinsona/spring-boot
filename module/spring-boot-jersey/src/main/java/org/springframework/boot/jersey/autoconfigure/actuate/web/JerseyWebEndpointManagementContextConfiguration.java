@@ -23,13 +23,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.ext.ContextResolver;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.model.Resource;
 import org.jspecify.annotations.Nullable;
+import tools.jackson.databind.json.JsonMapper;
 
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.autoconfigure.endpoint.expose.EndpointExposure;
@@ -41,20 +41,20 @@ import org.springframework.boot.actuate.endpoint.EndpointId;
 import org.springframework.boot.actuate.endpoint.ExposableEndpoint;
 import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
-import org.springframework.boot.actuate.endpoint.jackson.EndpointObjectMapper;
+import org.springframework.boot.actuate.endpoint.jackson.EndpointJsonMapper;
 import org.springframework.boot.actuate.endpoint.web.EndpointLinksResolver;
 import org.springframework.boot.actuate.endpoint.web.EndpointMapping;
 import org.springframework.boot.actuate.endpoint.web.EndpointMediaTypes;
 import org.springframework.boot.actuate.endpoint.web.ExposableWebEndpoint;
 import org.springframework.boot.actuate.endpoint.web.WebEndpointsSupplier;
 import org.springframework.boot.actuate.endpoint.web.WebServerNamespace;
-import org.springframework.boot.actuate.health.HealthEndpoint;
-import org.springframework.boot.actuate.health.HealthEndpointGroups;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpoint;
+import org.springframework.boot.health.actuate.endpoint.HealthEndpointGroups;
 import org.springframework.boot.jersey.actuate.endpoint.web.JerseyEndpointResourceFactory;
 import org.springframework.boot.jersey.actuate.endpoint.web.JerseyHealthEndpointAdditionalPathResourceFactory;
 import org.springframework.boot.jersey.autoconfigure.ResourceConfigCustomizer;
@@ -109,10 +109,12 @@ class JerseyWebEndpointManagementContextConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnBean(EndpointObjectMapper.class)
-	ResourceConfigCustomizer endpointObjectMapperResourceConfigCustomizer(EndpointObjectMapper endpointObjectMapper) {
-		return (config) -> config.register(new EndpointObjectMapperContextResolver(endpointObjectMapper),
-				ContextResolver.class);
+	@ConditionalOnBean(EndpointJsonMapper.class)
+	ResourceConfigCustomizer endpointObjectMapperResourceConfigCustomizer(EndpointJsonMapper endpointJsonMapper) {
+		return (config) -> {
+			config.register(new EndpointJsonMapperContextResolver(endpointJsonMapper), ContextResolver.class);
+			config.register(EndpointJacksonFeature.class);
+		};
 	}
 
 	private boolean shouldRegisterLinksMapping(WebEndpointProperties properties, Environment environment,
@@ -216,26 +218,21 @@ class JerseyWebEndpointManagementContextConfiguration {
 	}
 
 	/**
-	 * {@link ContextResolver} used to obtain the {@link ObjectMapper} that should be used
+	 * {@link ContextResolver} used to obtain the {@link JsonMapper} that should be used
 	 * for {@link OperationResponseBody} instances.
 	 */
 	@Priority(Priorities.USER - 100)
-	private static final class EndpointObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
+	private static final class EndpointJsonMapperContextResolver implements ContextResolver<JsonMapper> {
 
-		private final EndpointObjectMapper endpointObjectMapper;
+		private final EndpointJsonMapper mapper;
 
-		private EndpointObjectMapperContextResolver(EndpointObjectMapper endpointObjectMapper) {
-			this.endpointObjectMapper = endpointObjectMapper;
+		private EndpointJsonMapperContextResolver(EndpointJsonMapper mapper) {
+			this.mapper = mapper;
 		}
 
 		@Override
-		public @Nullable ObjectMapper getContext(Class<?> type) {
-			for (Class<?> supportedType : this.endpointObjectMapper.getSupportedTypes()) {
-				if (supportedType.isAssignableFrom(type)) {
-					return this.endpointObjectMapper.get();
-				}
-			}
-			return null;
+		public @Nullable JsonMapper getContext(Class<?> type) {
+			return OperationResponseBody.class.isAssignableFrom(type) ? this.mapper.get() : null;
 		}
 
 	}
