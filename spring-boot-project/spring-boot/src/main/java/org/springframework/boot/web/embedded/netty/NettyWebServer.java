@@ -64,6 +64,11 @@ public class NettyWebServer implements WebServer {
 	 */
 	private static final int ERROR_NO_EACCES = -13;
 
+	/**
+	 * Address in use error code from {@code errno.h}.
+	 */
+	private static final int ERROR_ADDR_IN_USE = -98;
+
 	private static final Predicate<HttpServerRequest> ALWAYS = (request) -> true;
 
 	private static final Log logger = LogFactory.getLog(NettyWebServer.class);
@@ -120,6 +125,13 @@ public class NettyWebServer implements WebServer {
 						throw new PortInUseException(bindException.localPort(), ex);
 					}
 				});
+				if (ex instanceof ChannelBindException bindException) {
+					PortInUseException.ifCausedBy(ex, NativeIoException.class, (nativeIoException) -> {
+						if (nativeIoException.expectedErr() == ERROR_ADDR_IN_USE) {
+							throw new PortInUseException(bindException.localPort(), ex);
+						}
+					});
+				}
 				throw new WebServerException("Unable to start Netty", ex);
 			}
 			if (this.disposableServer != null) {
