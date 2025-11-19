@@ -38,6 +38,7 @@ repositories {
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc:{bootVersion}")
+	providedRuntime("org.springframework.boot:spring-boot-starter-tomcat-runtime:{bootVersion}")
 }
 
 war {

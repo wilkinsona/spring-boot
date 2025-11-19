@@ -43,6 +43,11 @@ If you use Maven, the following example marks the servlet runtime (Tomcat, in th
 	<!-- ... -->
 	<dependency>
 		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-tomcat-runtime</artifactId>
+		<scope>provided</scope>
+	</dependency>
+	<dependency>
+		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-tomcat-runtime</artifactId>
 		<scope>provided</scope>
 	</dependency>
@@ -50,16 +55,20 @@ If you use Maven, the following example marks the servlet runtime (Tomcat, in th
 </dependencies>
 ----
 
+NOTE: If you are not using Spring Boot's starters, only `spring-boot-tomcat-runtime` needs to be declared in `provided` scope.
+
 If you use Gradle, the following example marks the servlet runtime (Tomcat, in this case) as being provided:
 
 [source,gradle]
 ----
 dependencies {
 	// ...
-	providedRuntime 'org.springframework.boot:spring-boot-tomcat-runtime'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat-runtime'
 	// ...
 }
 ----
+
+NOTE: If you are not using Spring Boot's starters, declare a `providedRuntime` dependency on `spring-boot-tomcat-runtime` instead.
 
 TIP: `providedRuntime` is preferred to Gradle's `compileOnly` configuration.
 Among other limitations, `compileOnly` dependencies are not on the test classpath, so any web-based integration tests fail.

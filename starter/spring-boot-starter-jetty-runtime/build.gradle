@@ -15,11 +15,10 @@
  */
 
 plugins {
-	id "java-library"
-	id "org.springframework.boot.deployed"
+	id "org.springframework.boot.starter"
 }
 
-description = "Spring Boot Jetty Runtime"
+description = "Starter for Jetty Runtime"
 
 dependencies {
 	api("org.apache.tomcat.embed:tomcat-embed-el")
@@ -33,6 +32,16 @@ dependencies {
 		exclude group: "org.slf4j",  module: "slf4j-api"
 	}
 	api("org.eclipse.jetty.ee11:jetty-ee11-webapp") {
+		exclude group: "org.slf4j",  module: "slf4j-api"
+	}
+	api("org.eclipse.jetty.ee11.websocket:jetty-ee11-websocket-jakarta-server") {
+		exclude group: "jakarta.el",  module: "jakarta.el-api"
+		exclude group: "org.eclipse.jetty", module: "jetty-jndi"
+		exclude group: "org.slf4j",  module: "slf4j-api"
+	}
+	api("org.eclipse.jetty.ee11.websocket:jetty-ee11-websocket-jetty-server") {
+		exclude group: "jakarta.el",  module: "jakarta.el-api"
+		exclude group: "org.eclipse.jetty", module: "jetty-jndi"
 		exclude group: "org.slf4j",  module: "slf4j-api"
 	}
 }
