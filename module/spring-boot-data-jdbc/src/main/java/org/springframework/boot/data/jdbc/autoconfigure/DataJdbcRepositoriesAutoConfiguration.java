@@ -16,9 +16,10 @@
 
 package org.springframework.boot.data.jdbc.autoconfigure;
 
+import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -36,13 +37,17 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.jdbc.core.JdbcAggregateTemplate;
 import org.springframework.data.jdbc.core.convert.DataAccessStrategy;
+import org.springframework.data.jdbc.core.convert.IdGeneratingEntityCallback;
 import org.springframework.data.jdbc.core.convert.JdbcConverter;
 import org.springframework.data.jdbc.core.convert.JdbcCustomConversions;
+import org.springframework.data.jdbc.core.convert.QueryMappingConfiguration;
 import org.springframework.data.jdbc.core.convert.RelationResolver;
+import org.springframework.data.jdbc.core.dialect.DialectResolver;
 import org.springframework.data.jdbc.core.dialect.JdbcDialect;
 import org.springframework.data.jdbc.core.mapping.JdbcMappingContext;
 import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
 import org.springframework.data.jdbc.repository.config.EnableJdbcRepositories;
+import org.springframework.data.jdbc.repository.config.JdbcConfiguration;
 import org.springframework.data.jdbc.repository.config.JdbcRepositoryConfigExtension;
 import org.springframework.data.relational.RelationalManagedTypes;
 import org.springframework.data.relational.core.mapping.NamingStrategy;
@@ -80,75 +85,65 @@ public final class DataJdbcRepositoriesAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnMissingBean(AbstractJdbcConfiguration.class)
-	static class SpringBootJdbcConfiguration extends AbstractJdbcConfiguration {
+	static class SpringBootJdbcConfiguration {
 
-		private final ApplicationContext applicationContext;
-
-		private final DataJdbcProperties properties;
-
-		SpringBootJdbcConfiguration(ApplicationContext applicationContext, DataJdbcProperties properties) {
-			this.applicationContext = applicationContext;
-			this.properties = properties;
-		}
-
-		@Override
-		protected Set<Class<?>> getInitialEntitySet() throws ClassNotFoundException {
-			return new EntityScanner(this.applicationContext).scan(Table.class);
-		}
-
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public RelationalManagedTypes jdbcManagedTypes() throws ClassNotFoundException {
-			return super.jdbcManagedTypes();
+		RelationalManagedTypes jdbcManagedTypes(ApplicationContext applicationContext) throws ClassNotFoundException {
+			return RelationalManagedTypes.fromIterable(new EntityScanner(applicationContext).scan(Table.class));
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public JdbcMappingContext jdbcMappingContext(Optional<NamingStrategy> namingStrategy,
+		JdbcMappingContext jdbcMappingContext(Optional<NamingStrategy> namingStrategy,
 				JdbcCustomConversions customConversions, RelationalManagedTypes jdbcManagedTypes) {
-			return super.jdbcMappingContext(namingStrategy, customConversions, jdbcManagedTypes);
+			return JdbcConfiguration.createMappingContext(jdbcManagedTypes, customConversions,
+					namingStrategy.orElse(null));
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public JdbcConverter jdbcConverter(JdbcMappingContext mappingContext, NamedParameterJdbcOperations operations,
+		IdGeneratingEntityCallback idGeneratingBeforeSaveCallback(JdbcMappingContext mappingContext,
+				NamedParameterJdbcOperations operations, JdbcDialect dialect) {
+			return new IdGeneratingEntityCallback(mappingContext, dialect, operations);
+		}
+
+		@Bean
+		@ConditionalOnMissingBean
+		JdbcConverter jdbcConverter(JdbcMappingContext mappingContext, NamedParameterJdbcOperations operations,
 				@Lazy RelationResolver relationResolver, JdbcCustomConversions conversions, JdbcDialect dialect) {
-			return super.jdbcConverter(mappingContext, operations, relationResolver, conversions, dialect);
+			return JdbcConfiguration.createConverter(mappingContext, operations, relationResolver, conversions,
+					dialect);
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public JdbcCustomConversions jdbcCustomConversions() {
-			return super.jdbcCustomConversions();
+		JdbcCustomConversions jdbcCustomConversions(JdbcDialect dialect) {
+			return JdbcConfiguration.createCustomConversions(dialect, Collections.emptyList());
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public JdbcAggregateTemplate jdbcAggregateTemplate(ApplicationContext applicationContext,
+		JdbcAggregateTemplate jdbcAggregateTemplate(ApplicationContext applicationContext,
 				JdbcMappingContext mappingContext, JdbcConverter converter, DataAccessStrategy dataAccessStrategy) {
-			return super.jdbcAggregateTemplate(applicationContext, mappingContext, converter, dataAccessStrategy);
+			return new JdbcAggregateTemplate(applicationContext, mappingContext, converter, dataAccessStrategy);
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public DataAccessStrategy dataAccessStrategyBean(NamedParameterJdbcOperations operations,
-				JdbcConverter jdbcConverter, JdbcMappingContext context, JdbcDialect dialect) {
-			return super.dataAccessStrategyBean(operations, jdbcConverter, context, dialect);
+		DataAccessStrategy dataAccessStrategyBean(NamedParameterJdbcOperations operations, JdbcConverter jdbcConverter,
+				JdbcMappingContext context, JdbcDialect dialect) {
+			return JdbcConfiguration.createDataAccessStrategy(operations, jdbcConverter,
+					QueryMappingConfiguration.EMPTY, dialect);
 		}
 
-		@Override
 		@Bean
 		@ConditionalOnMissingBean
-		public JdbcDialect jdbcDialect(NamedParameterJdbcOperations operations) {
-			DataJdbcDatabaseDialect dialect = this.properties.getDialect();
-			return (dialect != null) ? dialect.getJdbcDialect(operations.getJdbcOperations())
-					: super.jdbcDialect(operations);
+		JdbcDialect jdbcDialect(DataJdbcProperties properties,
+				ObjectProvider<NamedParameterJdbcOperations> operations) {
+			DataJdbcDatabaseDialect dialect = properties.getDialect();
+			return (dialect != null) ? dialect.getJdbcDialect(() -> operations.getObject().getJdbcOperations())
+					: DialectResolver.getDialect(operations.getObject().getJdbcOperations());
 		}
 
 	}

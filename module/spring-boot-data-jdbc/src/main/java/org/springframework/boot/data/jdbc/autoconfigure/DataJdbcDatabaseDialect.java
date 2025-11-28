@@ -17,6 +17,7 @@
 package org.springframework.boot.data.jdbc.autoconfigure;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.springframework.data.jdbc.core.dialect.DialectResolver;
 import org.springframework.data.jdbc.core.dialect.JdbcDb2Dialect;
@@ -81,11 +82,11 @@ public enum DataJdbcDatabaseDialect {
 	 */
 	SQL_SERVER(JdbcSqlServerDialect.INSTANCE);
 
-	private final Function<JdbcOperations, JdbcDialect> jdbcDialectResolver;
+	private final Function<Supplier<JdbcOperations>, JdbcDialect> jdbcDialectResolver;
 
 	DataJdbcDatabaseDialect(Class<? extends JdbcDialect> jdbcDialectType) {
 		this.jdbcDialectResolver = (jdbc) -> {
-			JdbcDialect dialect = DialectResolver.getDialect(jdbc);
+			JdbcDialect dialect = DialectResolver.getDialect(jdbc.get());
 			Assert.isInstanceOf(jdbcDialectType, dialect);
 			return dialect;
 		};
@@ -95,7 +96,7 @@ public enum DataJdbcDatabaseDialect {
 		this.jdbcDialectResolver = (jdbc) -> jdbcDialect;
 	}
 
-	JdbcDialect getJdbcDialect(JdbcOperations jdbc) {
+	JdbcDialect getJdbcDialect(Supplier<JdbcOperations> jdbc) {
 		return this.jdbcDialectResolver.apply(jdbc);
 	}
 

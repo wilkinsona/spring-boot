@@ -16,6 +16,9 @@
 
 package org.springframework.boot.data.jdbc.autoconfigure;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
@@ -25,6 +28,7 @@ import org.mockito.Answers;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.TestAutoConfigurationPackage;
+import org.springframework.boot.data.jdbc.autoconfigure.DataJdbcRepositoriesAutoConfiguration.SpringBootJdbcConfiguration;
 import org.springframework.boot.data.jdbc.domain.city.City;
 import org.springframework.boot.data.jdbc.domain.city.CityRepository;
 import org.springframework.boot.data.jdbc.domain.empty.EmptyDataPackage;
@@ -51,6 +55,7 @@ import org.springframework.data.relational.core.dialect.Dialect;
 import org.springframework.data.repository.Repository;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.ReflectionUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -112,7 +117,7 @@ class DataJdbcRepositoriesAutoConfigurationTests {
 					DataSourceTransactionManagerAutoConfiguration.class))
 			.withUserConfiguration(TestConfiguration.class)
 			.run((context) -> {
-				assertThat(context).hasSingleBean(AbstractJdbcConfiguration.class);
+				assertThat(context).hasSingleBean(SpringBootJdbcConfiguration.class);
 				assertThat(context).hasSingleBean(CityRepository.class);
 				assertThat(context.getBean(CityRepository.class).findById(2000L)).isPresent();
 			});
@@ -139,7 +144,7 @@ class DataJdbcRepositoriesAutoConfigurationTests {
 					DataSourceTransactionManagerAutoConfiguration.class))
 			.withUserConfiguration(EmptyConfiguration.class)
 			.run((context) -> {
-				assertThat(context).hasSingleBean(AbstractJdbcConfiguration.class);
+				assertThat(context).hasSingleBean(SpringBootJdbcConfiguration.class);
 				assertThat(context).doesNotHaveBean(Repository.class);
 			});
 	}
@@ -151,7 +156,7 @@ class DataJdbcRepositoriesAutoConfigurationTests {
 					DataSourceTransactionManagerAutoConfiguration.class))
 			.withUserConfiguration(EnableRepositoriesConfiguration.class)
 			.run((context) -> {
-				assertThat(context).hasSingleBean(AbstractJdbcConfiguration.class);
+				assertThat(context).hasSingleBean(SpringBootJdbcConfiguration.class);
 				assertThat(context).hasSingleBean(CityRepository.class);
 				assertThat(context.getBean(CityRepository.class).findById(2000L)).isPresent();
 			});
@@ -205,6 +210,19 @@ class DataJdbcRepositoriesAutoConfigurationTests {
 					DataSourceTransactionManagerAutoConfiguration.class))
 			.withUserConfiguration(TestConfiguration.class)
 			.run((context) -> assertThat(context).hasSingleBean(JdbcPostgresDialect.class));
+	}
+
+	@Test
+	void springBootJdbcConfigurationDefinesTheSameBeansAsAbstractJdbcConfiguration() {
+		assertThat(beanMethodsOf(SpringBootJdbcConfiguration.class))
+			.containsExactlyInAnyOrderElementsOf(beanMethodsOf(AbstractJdbcConfiguration.class));
+	}
+
+	private List<BeanMethod> beanMethodsOf(Class<?> source) {
+		List<BeanMethod> beanMethods = new ArrayList<>();
+		ReflectionUtils.doWithMethods(source, (method) -> beanMethods.add(BeanMethod.of(method)),
+				(method) -> method.isAnnotationPresent(Bean.class));
+		return beanMethods;
 	}
 
 	private void allowsUserToDefineCustomBean(Class<?> configuration, Class<?> beanType, String beanName) {
@@ -309,6 +327,14 @@ class DataJdbcRepositoriesAutoConfigurationTests {
 		@Bean
 		Dialect customDialect() {
 			return mock(Dialect.class, Answers.RETURNS_MOCKS);
+		}
+
+	}
+
+	record BeanMethod(String name, Class<?> returnType) {
+
+		static BeanMethod of(Method method) {
+			return new BeanMethod(method.getName(), method.getReturnType());
 		}
 
 	}
