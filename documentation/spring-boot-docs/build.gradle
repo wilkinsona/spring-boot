@@ -76,6 +76,10 @@ architectureCheck {
 	}
 }
 
+nullability {
+	requireExplicitNullMarking = false
+}
+
 plugins.withType(EclipsePlugin) {
 	eclipse.classpath { classpath ->
 		classpath.plusConfigurations.add(configurations.getByName(sourceSets.main.runtimeClasspathConfigurationName))

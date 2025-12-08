@@ -41,3 +41,7 @@ architectureCheck {
 		ignoredPackages = ["org.springframework.boot.configurationmetadata.json"]
 	}
 }
+
+nullability {
+	requireExplicitNullMarking = false
+}

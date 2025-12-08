@@ -37,6 +37,10 @@ architectureCheck {
 	}
 }
 
+nullability {
+	requireExplicitNullMarking = false
+}
+
 dependencies {
 	testCompileOnly("com.google.code.findbugs:jsr305:3.0.2")
 	testCompileOnly("org.jspecify:jspecify")

@@ -67,3 +67,7 @@ architectureCheck {
 		enabled = false
 	}
 }
+
+nullability {
+	requireExplicitNullMarking = false
+}

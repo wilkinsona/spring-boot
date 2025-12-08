@@ -68,6 +68,10 @@ architectureCheck {
 	}
 }
 
+nullability {
+	requireExplicitNullMarking = false
+}
+
 tasks.register("fullJar", Jar) {
 	dependsOn configurations.loader
 	archiveClassifier = "full"

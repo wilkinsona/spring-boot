@@ -44,6 +44,10 @@ architectureCheck {
 	}
 }
 
+nullability {
+	requireExplicitNullMarking = false
+}
+
 def dependenciesOf(String version) {
 	if (version.startsWith("4.0")) {
 		return [
