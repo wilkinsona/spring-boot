@@ -195,26 +195,19 @@ public class SpringBootContextLoader extends AbstractContextLoader implements Ao
 
 	private static Method findMainJavaMethod(Class<?> type) {
 		try {
-			Method method = getMainMethod(type);
-			if (Modifier.isStatic(method.getModifiers())) {
-				method.setAccessible(true);
-				return method;
+			Method mainMethod = ReflectionUtils.findMethod(type, "main", String[].class);
+			if (mainMethod == null) {
+				mainMethod = ReflectionUtils.findMethod(type, "main");
+			}
+			if (mainMethod != null && Modifier.isStatic(mainMethod.getModifiers())) {
+				mainMethod.setAccessible(true);
+				return mainMethod;
 			}
 		}
 		catch (Exception ex) {
 			// Ignore
 		}
 		return null;
-	}
-
-	private static Method getMainMethod(Class<?> type) throws NoSuchMethodException {
-		try {
-			return type.getDeclaredMethod("main", String[].class);
-		}
-		catch (NoSuchMethodException ex) {
-			return type.getDeclaredMethod("main");
-		}
-
 	}
 
 	private boolean isSpringBootConfiguration(Class<?> candidate) {

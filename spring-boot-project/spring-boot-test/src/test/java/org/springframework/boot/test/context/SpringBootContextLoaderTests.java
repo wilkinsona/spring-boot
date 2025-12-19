@@ -205,7 +205,8 @@ class SpringBootContextLoaderTests {
 	@ValueSource(classes = { UsePublicMainMethodWhenAvailableAndMainMethod.class,
 			UsePublicParameterlessMainMethodWhenAvailableAndMainMethod.class,
 			UsePackagePrivateMainMethodWhenAvailableAndMainMethod.class,
-			UsePackagePrivateParameterlessMainMethodWhenAvailableAndMainMethod.class })
+			UsePackagePrivateParameterlessMainMethodWhenAvailableAndMainMethod.class,
+			UsePublicMainMethodFromSuperClassWhenAvailableAndMainMethod.class })
 	void whenUseMainMethodWhenAvailableAndMainMethod(Class<?> testClass) {
 		TestContext testContext = new ExposedTestContextManager(testClass).getExposedTestContext();
 		ApplicationContext applicationContext = testContext.getApplicationContext();
@@ -380,6 +381,11 @@ class SpringBootContextLoaderTests {
 
 	}
 
+	@SpringBootTest(classes = ConfigWithPublicMainFromSuperClass.class, useMainMethod = UseMainMethod.WHEN_AVAILABLE)
+	static class UsePublicMainMethodFromSuperClassWhenAvailableAndMainMethod {
+
+	}
+
 	@SpringBootTest(classes = ConfigWithPublicParameterlessMain.class, useMainMethod = UseMainMethod.WHEN_AVAILABLE)
 	static class UsePublicParameterlessMainMethodWhenAvailableAndMainMethod {
 
@@ -447,6 +453,19 @@ class SpringBootContextLoaderTests {
 
 		public static void main(String[] args) {
 			new SpringApplication(ConfigWithPublicMain.class).run("--spring.profiles.active=frommain");
+		}
+
+	}
+
+	@SpringBootConfiguration(proxyBeanMethods = false)
+	public static class ConfigWithPublicMainFromSuperClass extends Base {
+
+	}
+
+	public static class Base {
+
+		public static void main(String[] args) {
+			new SpringApplication(ConfigWithPublicMainFromSuperClass.class).run("--spring.profiles.active=frommain");
 		}
 
 	}
