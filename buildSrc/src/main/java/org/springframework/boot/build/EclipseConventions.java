@@ -20,7 +20,6 @@ import org.gradle.api.DomainObjectCollection;
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.JavaBasePlugin;
-import org.gradle.api.tasks.TaskProvider;
 import org.gradle.plugins.ide.api.XmlFileContentMerger;
 import org.gradle.plugins.ide.eclipse.EclipsePlugin;
 import org.gradle.plugins.ide.eclipse.model.Classpath;
@@ -43,31 +42,20 @@ class EclipseConventions {
 	}
 
 	private DomainObjectCollection<JavaBasePlugin> configure(Project project, EclipsePlugin eclipsePlugin) {
-		TaskProvider<EclipseSynchronizeJdtSettings> eclipseSynchronizeJdtSettings = registerEclipseSynchronizeJdtSettingsTask(
-				project);
 		return project.getPlugins().withType(JavaBasePlugin.class, (javaBase) -> {
 			EclipseModel model = project.getExtensions().getByType(EclipseModel.class);
-			model.synchronizationTasks(eclipseSynchronizeJdtSettings);
+			model.synchronizationTasks("eclipseJdt");
 			model.jdt(this::configureJdt);
 			model.classpath(this::configureClasspath);
 		});
-	}
-
-	private TaskProvider<EclipseSynchronizeJdtSettings> registerEclipseSynchronizeJdtSettingsTask(Project project) {
-		TaskProvider<EclipseSynchronizeJdtSettings> taskProvider = project.getTasks()
-			.register("eclipseSynchronizateJdt", EclipseSynchronizeJdtSettings.class);
-		taskProvider.configure((task) -> {
-			task.setDescription("Synchronizate the Eclipse JDT settings file from Buildship.");
-			task.setOutputFile(project.file(".settings/org.eclipse.jdt.core.prefs"));
-			task.setInputFile(project.file(".settings/org.eclipse.jdt.core.prefs"));
-		});
-		return taskProvider;
 	}
 
 	private void configureJdt(EclipseJdt jdt) {
 		jdt.setSourceCompatibility(JavaVersion.toVersion(JavaConventions.RUNTIME_JAVA_VERSION));
 		jdt.setTargetCompatibility(JavaVersion.toVersion(JavaConventions.RUNTIME_JAVA_VERSION));
 		jdt.setJavaRuntimeName("JavaSE-" + JavaConventions.BUILD_JAVA_VERSION);
+		jdt.file((fileContentMerger) -> fileContentMerger
+			.withProperties((properties) -> properties.put("org.eclipse.jdt.core.compiler.release", "true")));
 	}
 
 	private void configureClasspath(EclipseClasspath classpath) {
