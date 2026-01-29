@@ -241,12 +241,12 @@ class JsonComponentModuleTests {
 
 	}
 
-	@JsonComponent(scope = JsonComponent.Scope.KEYS)
+	@JsonComponent(scope = org.springframework.boot.jackson2.JsonComponent.Scope.KEYS)
 	static class OnlyKeySerializer extends NameAndAgeJsonKeyComponent.Serializer {
 
 	}
 
-	@JsonComponent(scope = JsonComponent.Scope.KEYS, type = NameAndAge.class)
+	@JsonComponent(scope =  org.springframework.boot.jackson2.JsonComponent.Scope.KEYS, type = NameAndAge.class)
 	static class OnlyKeyDeserializer extends NameAndAgeJsonKeyComponent.Deserializer {
 
 	}

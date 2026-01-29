@@ -34,7 +34,8 @@ import org.springframework.boot.jackson2.types.NameAndAge;
  */
 @Deprecated(since = "4.0.0", forRemoval = true)
 @SuppressWarnings("removal")
-@JsonComponent(type = NameAndAge.class, scope = JsonComponent.Scope.KEYS)
+@JsonComponent(type = org.springframework.boot.jackson2.types.NameAndAge.class,
+		scope = org.springframework.boot.jackson2.JsonComponent.Scope.KEYS)
 public class NameAndAgeJsonKeyComponent {
 
 	static class Serializer extends JsonSerializer<NameAndAge> {
