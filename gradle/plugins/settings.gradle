@@ -16,6 +16,9 @@
 
 
 pluginManagement {
+	repositories {
+		mavenLocal()
+	}
 	new File(rootDir.parentFile.parentFile, "gradle.properties").withInputStream {
 		def properties = new Properties()
 		properties.load(it)

@@ -39,6 +39,7 @@ subprojects {
 				includeGroup "net.shibboleth"
 			}
 		}
+		mavenLocal()
 		spring.mavenRepositories()
 	}
 
