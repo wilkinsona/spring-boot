@@ -23,6 +23,8 @@ import java.util.List;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmCpuMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmCpuMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmCpuMeterConventions;
 import io.micrometer.core.instrument.binder.system.FileDescriptorMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.binder.system.UptimeMetrics;
@@ -38,7 +40,10 @@ import org.springframework.boot.micrometer.metrics.autoconfigure.CompositeMeterR
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties;
 import org.springframework.boot.micrometer.metrics.system.DiskSpaceMetricsBinder;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.ConditionalOnSemanticConventions;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.SemanticConventions;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * {@link EnableAutoConfiguration Auto-configuration} for system metrics.
@@ -78,6 +83,30 @@ public final class SystemMetricsAutoConfiguration {
 	DiskSpaceMetricsBinder diskSpaceMetrics(MetricsProperties properties) {
 		List<File> paths = properties.getSystem().getDiskspace().getPaths();
 		return new DiskSpaceMetricsBinder(paths, Tags.empty());
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnSemanticConventions(SemanticConventions.MICROMETER)
+	static class MicrometerSystemConventionsConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(JvmCpuMeterConventions.class)
+		MicrometerJvmCpuMeterConventions micrometerJvmCpuMeterConventions() {
+			return new MicrometerJvmCpuMeterConventions(Tags.empty());
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnSemanticConventions(SemanticConventions.OPEN_TELEMETRY)
+	static class OpenTelemetrySystemConventionsConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(JvmCpuMeterConventions.class)
+		OpenTelemetryJvmCpuMeterConventions openTelemetryJvmCpuMeterConventions() {
+			return new OpenTelemetryJvmCpuMeterConventions(Tags.empty());
+		}
+
 	}
 
 }

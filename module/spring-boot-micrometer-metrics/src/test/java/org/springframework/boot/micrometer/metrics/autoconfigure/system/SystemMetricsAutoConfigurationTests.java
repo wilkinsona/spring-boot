@@ -22,14 +22,19 @@ import java.util.Collections;
 
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmCpuMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmCpuMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmCpuMeterConventions;
 import io.micrometer.core.instrument.binder.system.FileDescriptorMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.micrometer.metrics.system.DiskSpaceMetricsBinder;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.SemanticConventions;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -73,10 +78,12 @@ class SystemMetricsAutoConfigurationTests {
 				.hasBean("customProcessorMetrics"));
 	}
 
-	@Test
-	void allowsCustomJvmCpuMeterConventionsToBeUsed() {
+	@EnumSource
+	@ParameterizedTest
+	void allowsCustomJvmCpuMeterConventionsToBeUsed(SemanticConventions conventions) {
 		JvmCpuMeterConventions jvmCpuMeterConventions = mock(JvmCpuMeterConventions.class);
-		this.contextRunner.withBean(JvmCpuMeterConventions.class, () -> jvmCpuMeterConventions)
+		this.contextRunner.withPropertyValues("management.observations.conventions=" + conventions.name())
+			.withBean("customConventions", JvmCpuMeterConventions.class, () -> jvmCpuMeterConventions)
 			.run((context) -> assertThat(context).hasSingleBean(ProcessorMetrics.class)
 				.getBean(ProcessorMetrics.class)
 				.hasFieldOrPropertyWithValue("conventions", jvmCpuMeterConventions));
@@ -127,6 +134,19 @@ class SystemMetricsAutoConfigurationTests {
 			.run((context) -> assertThat(context).hasBean("diskSpaceMetrics")
 				.getBean(DiskSpaceMetricsBinder.class)
 				.hasFieldOrPropertyWithValue("paths", Arrays.asList(new File("."), new File(".."))));
+	}
+
+	@Test
+	void registersMicrometerConventionsByDefault() {
+		this.contextRunner.run((context) -> assertThat(context).hasSingleBean(MicrometerJvmCpuMeterConventions.class)
+			.doesNotHaveBean(OpenTelemetryJvmCpuMeterConventions.class));
+	}
+
+	@Test
+	void registersOpenTelemetryConventionsWhenConventionsSetToOpenTelemetry() {
+		this.contextRunner.withPropertyValues("management.observations.conventions=opentelemetry")
+			.run((context) -> assertThat(context).hasSingleBean(OpenTelemetryJvmCpuMeterConventions.class)
+				.hasSingleBean(JvmCpuMeterConventions.class));
 	}
 
 	@Configuration(proxyBeanMethods = false)

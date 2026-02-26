@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
+import org.springframework.boot.logging.LogLevel;
 import org.springframework.boot.micrometer.metrics.MaximumAllowableTagsMeterFilter;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties;
@@ -96,16 +98,15 @@ class WebMvcObservationAutoConfigurationTests {
 
 	@Test
 	void defaultMicrometerConvention() {
-		this.contextRunner.run((context) -> {
-			assertThat(context).hasSingleBean(DefaultServerRequestObservationConvention.class);
-		});
+		this.contextRunner
+			.run((context) -> assertThat(context).hasSingleBean(DefaultServerRequestObservationConvention.class));
 	}
 
 	@Test
 	void openTelemetryConventionConfiguredViaProperties() {
-		this.contextRunner.withPropertyValues("management.observations.conventions=opentelemetry").run((context) -> {
-			assertThat(context).hasSingleBean(OpenTelemetryServerRequestObservationConvention.class);
-		});
+		this.contextRunner.withPropertyValues("management.observations.conventions=opentelemetry")
+			.withInitializer(ConditionEvaluationReportLoggingListener.forLogLevel(LogLevel.INFO))
+			.run((context) -> assertThat(context).hasSingleBean(OpenTelemetryServerRequestObservationConvention.class));
 	}
 
 	@Test

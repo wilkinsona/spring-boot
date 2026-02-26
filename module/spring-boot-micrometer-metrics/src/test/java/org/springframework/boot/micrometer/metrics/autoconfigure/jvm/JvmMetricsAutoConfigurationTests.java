@@ -16,8 +16,12 @@
 
 package org.springframework.boot.micrometer.metrics.autoconfigure.jvm;
 
+import java.lang.management.MemoryPoolMXBean;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.binder.MeterConvention;
+import io.micrometer.core.instrument.binder.SimpleMeterConvention;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmCompilationMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
@@ -28,10 +32,18 @@ import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmClassLoadingMeterConventions;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmMemoryMeterConventions;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmThreadMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmClassLoadingMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmMemoryMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmThreadMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmClassLoadingMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmMemoryMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmThreadMeterConventions;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledForJreRange;
 import org.junit.jupiter.api.condition.JRE;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
@@ -39,6 +51,9 @@ import org.springframework.aot.hint.TypeReference;
 import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLoggingListener;
+import org.springframework.boot.logging.LogLevel;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.SemanticConventions;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
@@ -86,10 +101,12 @@ class JvmMetricsAutoConfigurationTests {
 			.run(assertMetricsBeans().andThen((context) -> assertThat(context).hasBean("customJvmMemoryMetrics")));
 	}
 
-	@Test
-	void allowCustomJvmMemoryMeterConventionsToBeUsed() {
+	@EnumSource
+	@ParameterizedTest
+	void allowCustomJvmMemoryMeterConventionsToBeUsed(SemanticConventions conventions) {
 		JvmMemoryMeterConventions jvmMemoryMeterConventions = mock(JvmMemoryMeterConventions.class);
-		this.contextRunner.withBean(JvmMemoryMeterConventions.class, () -> jvmMemoryMeterConventions)
+		this.contextRunner.withPropertyValues("management.observations.conventions=" + conventions.name())
+			.withBean("customConventions", JvmMemoryMeterConventions.class, () -> jvmMemoryMeterConventions)
 			.run((context) -> assertThat(context).hasSingleBean(JvmMemoryMetrics.class)
 				.getBean(JvmMemoryMetrics.class)
 				.hasFieldOrPropertyWithValue("conventions", jvmMemoryMeterConventions));
@@ -101,10 +118,12 @@ class JvmMetricsAutoConfigurationTests {
 			.run(assertMetricsBeans().andThen((context) -> assertThat(context).hasBean("customJvmThreadMetrics")));
 	}
 
-	@Test
-	void allowCustomJvmThreadMeterConventionsToBeUsed() {
+	@EnumSource
+	@ParameterizedTest
+	void allowCustomJvmThreadMeterConventionsToBeUsed(SemanticConventions conventions) {
 		JvmThreadMeterConventions jvmThreadMeterConventions = mock(JvmThreadMeterConventions.class);
-		this.contextRunner.withBean(JvmThreadMeterConventions.class, () -> jvmThreadMeterConventions)
+		this.contextRunner.withPropertyValues("management.observations.conventions=" + conventions.name())
+			.withBean("customConventions", JvmThreadMeterConventions.class, () -> jvmThreadMeterConventions)
 			.run((context) -> assertThat(context).hasSingleBean(JvmThreadMetrics.class)
 				.getBean(JvmThreadMetrics.class)
 				.hasFieldOrPropertyWithValue("conventions", jvmThreadMeterConventions));
@@ -116,10 +135,13 @@ class JvmMetricsAutoConfigurationTests {
 			.run(assertMetricsBeans().andThen((context) -> assertThat(context).hasBean("customClassLoaderMetrics")));
 	}
 
-	@Test
-	void allowCustomJvmClassLoadingMeterConventionsToBeUsed() {
+	@EnumSource
+	@ParameterizedTest
+	void allowCustomJvmClassLoadingMeterConventionsToBeUsed(SemanticConventions conventions) {
 		JvmClassLoadingMeterConventions jvmClassLoadingMeterConventions = mock(JvmClassLoadingMeterConventions.class);
-		this.contextRunner.withBean(JvmClassLoadingMeterConventions.class, () -> jvmClassLoadingMeterConventions)
+		this.contextRunner.withPropertyValues("management.observations.conventions=" + conventions.name())
+			.withInitializer(ConditionEvaluationReportLoggingListener.forLogLevel(LogLevel.INFO))
+			.withBean("customConventions", JvmClassLoadingMeterConventions.class, () -> jvmClassLoadingMeterConventions)
 			.run((context) -> assertThat(context).hasSingleBean(ClassLoaderMetrics.class)
 				.getBean(ClassLoaderMetrics.class)
 				.hasFieldOrPropertyWithValue("conventions", jvmClassLoadingMeterConventions));
@@ -165,6 +187,30 @@ class JvmMetricsAutoConfigurationTests {
 		assertThat(RuntimeHintsPredicates.reflection()
 			.onType(TypeReference.of(getVirtualThreadMetricsClass()))
 			.withMemberCategories(MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS)).accepts(hints);
+	}
+
+	@Test
+	void registersMicrometerConventionsByDefault() {
+		this.contextRunner.run((context) -> {
+			assertThat(context).hasSingleBean(MicrometerJvmMemoryMeterConventions.class);
+			assertThat(context).hasSingleBean(MicrometerJvmClassLoadingMeterConventions.class);
+			assertThat(context).hasSingleBean(MicrometerJvmThreadMeterConventions.class);
+			assertThat(context).doesNotHaveBean(OpenTelemetryJvmMemoryMeterConventions.class);
+			assertThat(context).doesNotHaveBean(OpenTelemetryJvmClassLoadingMeterConventions.class);
+			assertThat(context).doesNotHaveBean(OpenTelemetryJvmThreadMeterConventions.class);
+		});
+	}
+
+	@Test
+	void registersOpenTelemetryConventionsWhenConventionsSetToOpenTelemetry() {
+		this.contextRunner.withPropertyValues("management.observations.conventions=opentelemetry").run((context) -> {
+			assertThat(context).hasSingleBean(JvmMemoryMeterConventions.class)
+				.hasSingleBean(OpenTelemetryJvmMemoryMeterConventions.class);
+			assertThat(context).hasSingleBean(JvmClassLoadingMeterConventions.class)
+				.hasSingleBean(OpenTelemetryJvmClassLoadingMeterConventions.class);
+			assertThat(context).hasSingleBean(JvmThreadMeterConventions.class)
+				.hasSingleBean(OpenTelemetryJvmThreadMeterConventions.class);
+		});
 	}
 
 	private ContextConsumer<AssertableApplicationContext> assertMetricsBeans() {
@@ -249,6 +295,56 @@ class JvmMetricsAutoConfigurationTests {
 		@Bean
 		JvmCompilationMetrics customJvmCompilationMetrics() {
 			return new JvmCompilationMetrics();
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class CustomJvmMemoryMeterConventionsConfiguration {
+
+		@Bean
+		JvmMemoryMeterConventions customJvmMemoryMeterConventions() {
+			return new JvmMemoryMeterConventions() {
+				@Override
+				public MeterConvention<MemoryPoolMXBean> getMemoryUsedConvention() {
+					return new SimpleMeterConvention<>("my.memory.used");
+				}
+
+				@Override
+				public MeterConvention<MemoryPoolMXBean> getMemoryCommittedConvention() {
+					return new SimpleMeterConvention<>("my.memory.committed");
+				}
+
+				@Override
+				public MeterConvention<MemoryPoolMXBean> getMemoryMaxConvention() {
+					return new SimpleMeterConvention<>("my.memory.max");
+				}
+			};
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	static class CustomJvmClassLoadingMeterConventionsConfiguration {
+
+		@Bean
+		JvmClassLoadingMeterConventions customJvmClassLoadingMeterConventions() {
+			return new JvmClassLoadingMeterConventions() {
+				@Override
+				public MeterConvention<Object> loadedConvention() {
+					return new SimpleMeterConvention<>("my.classes.loaded");
+				}
+
+				@Override
+				public MeterConvention<Object> unloadedConvention() {
+					return new SimpleMeterConvention<>("my.classes.unloaded");
+				}
+
+				@Override
+				public MeterConvention<Object> currentClassCountConvention() {
+					return new SimpleMeterConvention<>("my.classes.current");
+				}
+			};
 		}
 
 	}

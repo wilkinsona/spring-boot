@@ -19,6 +19,7 @@ package org.springframework.boot.micrometer.metrics.autoconfigure.jvm;
 import java.util.Collections;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmCompilationMetrics;
@@ -30,6 +31,12 @@ import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmClassLoadingMeterConventions;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmMemoryMeterConventions;
 import io.micrometer.core.instrument.binder.jvm.convention.JvmThreadMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmClassLoadingMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmMemoryMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.micrometer.MicrometerJvmThreadMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmClassLoadingMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmMemoryMeterConventions;
+import io.micrometer.core.instrument.binder.jvm.convention.otel.OpenTelemetryJvmThreadMeterConventions;
 import org.jspecify.annotations.Nullable;
 
 import org.springframework.aot.hint.MemberCategory;
@@ -44,6 +51,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.micrometer.metrics.autoconfigure.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.ConditionalOnSemanticConventions;
+import org.springframework.boot.micrometer.observation.autoconfigure.condition.SemanticConventions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportRuntimeHints;
@@ -109,6 +118,54 @@ public final class JvmMetricsAutoConfiguration {
 	@ConditionalOnMissingBean
 	JvmCompilationMetrics jvmCompilationMetrics() {
 		return new JvmCompilationMetrics();
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnSemanticConventions(SemanticConventions.MICROMETER)
+	static class MicrometerJvmConventionsConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(JvmMemoryMeterConventions.class)
+		MicrometerJvmMemoryMeterConventions micrometerJvmMemoryMeterConventions() {
+			return new MicrometerJvmMemoryMeterConventions();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(JvmClassLoadingMeterConventions.class)
+		MicrometerJvmClassLoadingMeterConventions micrometerJvmClassLoadingMeterConventions() {
+			return new MicrometerJvmClassLoadingMeterConventions();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(JvmThreadMeterConventions.class)
+		MicrometerJvmThreadMeterConventions micrometerJvmThreadMeterConventions() {
+			return new MicrometerJvmThreadMeterConventions(Tags.empty());
+		}
+
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnSemanticConventions(SemanticConventions.OPEN_TELEMETRY)
+	static class OpenTelemetryJvmConventionsConfiguration {
+
+		@Bean
+		@ConditionalOnMissingBean(JvmMemoryMeterConventions.class)
+		OpenTelemetryJvmMemoryMeterConventions openTelemetryJvmMemoryMeterConventions() {
+			return new OpenTelemetryJvmMemoryMeterConventions(Tags.empty());
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(JvmClassLoadingMeterConventions.class)
+		OpenTelemetryJvmClassLoadingMeterConventions openTelemetryJvmClassLoadingMeterConventions() {
+			return new OpenTelemetryJvmClassLoadingMeterConventions();
+		}
+
+		@Bean
+		@ConditionalOnMissingBean(JvmThreadMeterConventions.class)
+		OpenTelemetryJvmThreadMeterConventions openTelemetryJvmThreadMeterConventions() {
+			return new OpenTelemetryJvmThreadMeterConventions(Tags.empty());
+		}
+
 	}
 
 	@Configuration(proxyBeanMethods = false)
