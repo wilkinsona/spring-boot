@@ -1,0 +1,60 @@
+/*
+ * Copyright 2012-present the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.boot.grpc.server.autoconfigure.security;
+
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.grpc.server.GlobalServerInterceptor;
+import org.springframework.grpc.server.security.AuthenticationProcessInterceptor;
+import org.springframework.grpc.server.security.GrpcSecurity;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
+
+/**
+ * {@link EnableAutoConfiguration Auto-configuration} for gRPC OAuth2 resource server.
+ *
+ * @author Dave Syer
+ * @author Andrey Litvitski
+ * @since 1.0.0
+ */
+@AutoConfiguration
+@ConditionalOnMissingBean(AuthenticationProcessInterceptor.class)
+public final class GrpcServerOAuth2ResourceServerAutoConfiguration {
+
+	@Bean
+	@ConditionalOnBean(OpaqueTokenIntrospector.class)
+	@GlobalServerInterceptor
+	AuthenticationProcessInterceptor opaqueTokenAuthenticationProcessInterceptor(GrpcSecurity grpc) throws Exception {
+		grpc.authorizeRequests((requests) -> requests.allRequests().authenticated());
+		grpc.oauth2ResourceServer((resourceServer) -> resourceServer.opaqueToken(Customizer.withDefaults()));
+		return grpc.build();
+	}
+
+	@Bean
+	@ConditionalOnBean(JwtDecoder.class)
+	@GlobalServerInterceptor
+	AuthenticationProcessInterceptor jwtAuthenticationProcessInterceptor(GrpcSecurity grpc) throws Exception {
+		grpc.authorizeRequests((requests) -> requests.allRequests().authenticated());
+		grpc.oauth2ResourceServer((resourceServer) -> resourceServer.jwt(Customizer.withDefaults()));
+		return grpc.build();
+	}
+
+}
