@@ -16,18 +16,15 @@
 
 package org.springframework.boot.gradle.dsl;
 
-import java.io.File;
-
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Property;
-import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
+import org.gradle.language.jvm.tasks.ProcessResources;
 
 import org.springframework.boot.gradle.tasks.buildinfo.BuildInfo;
 
@@ -65,11 +62,11 @@ public class SpringBootExtension {
 
 	/**
 	 * Creates a new {@link BuildInfo} task named {@code bootBuildInfo} and configures the
-	 * Java plugin's {@code classes} task to depend upon it.
+	 * {@code processResources} task to include its output in {@code META-INF}.
 	 * <p>
-	 * By default, the task's destination dir will be a directory named {@code META-INF}
-	 * beneath the main source set's resources output directory, and the task's project
-	 * artifact will be the base name of the {@code bootWar} or {@code bootJar} task.
+	 * By default, the task's destination dir will be a directory named
+	 * {@code build/generated/bootBuildInfo} and the task's project artifact will be the
+	 * base name of the {@code bootWar} or {@code bootJar} task.
 	 */
 	public void buildInfo() {
 		buildInfo(null);
@@ -77,12 +74,12 @@ public class SpringBootExtension {
 
 	/**
 	 * Creates a new {@link BuildInfo} task named {@code bootBuildInfo} and configures the
-	 * Java plugin's {@code classes} task to depend upon it. The task is passed to the
-	 * given {@code configurer} for further configuration.
+	 * {@code processResources} task to include its output in {@code META-INF}. The task
+	 * is passed to the given {@code configurer} for further configuration.
 	 * <p>
-	 * By default, the task's destination dir will be a directory named {@code META-INF}
-	 * beneath the main source set's resources output directory, and the task's project
-	 * artifact will be the base name of the {@code bootWar} or {@code bootJar} task.
+	 * By default, the task's destination dir will be a directory named
+	 * {@code build/generated/bootBuildInfo} and the task's project artifact will be the
+	 * base name of the {@code bootWar} or {@code bootJar} task.
 	 * @param configurer the task configurer
 	 */
 	public void buildInfo(Action<BuildInfo> configurer) {
@@ -90,7 +87,8 @@ public class SpringBootExtension {
 		TaskProvider<BuildInfo> bootBuildInfo = tasks.register("bootBuildInfo", BuildInfo.class,
 				this::configureBuildInfoTask);
 		this.project.getPlugins().withType(JavaPlugin.class, (plugin) -> {
-			tasks.named(JavaPlugin.CLASSES_TASK_NAME).configure((task) -> task.dependsOn(bootBuildInfo));
+			tasks.named(JavaPlugin.PROCESS_RESOURCES_TASK_NAME, ProcessResources.class)
+				.configure((processResources) -> processResources.from(bootBuildInfo, (spec) -> spec.into("META-INF")));
 			bootBuildInfo.configure((buildInfo) -> buildInfo.getProperties()
 				.getArtifact()
 				.convention(this.project.provider(this::determineArtifactBaseName)));
@@ -102,19 +100,9 @@ public class SpringBootExtension {
 
 	private void configureBuildInfoTask(BuildInfo task) {
 		task.setGroup(BasePlugin.BUILD_GROUP);
-		task.setDescription("Generates a META-INF/build-info.properties file.");
+		task.setDescription("Generates a build-info.properties file.");
 		task.getDestinationDir()
-			.convention(this.project.getLayout()
-				.dir(this.project.provider(() -> new File(determineMainSourceSetResourcesOutputDir(), "META-INF"))));
-	}
-
-	private File determineMainSourceSetResourcesOutputDir() {
-		return this.project.getExtensions()
-			.getByType(JavaPluginExtension.class)
-			.getSourceSets()
-			.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
-			.getOutput()
-			.getResourcesDir();
+			.convention(this.project.getLayout().getBuildDirectory().dir("generated/" + task.getName()));
 	}
 
 	private String determineArtifactBaseName() {

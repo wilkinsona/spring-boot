@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.TestTemplate;
@@ -42,19 +44,27 @@ class BuildInfoDslIntegrationTests {
 	GradleBuild gradleBuild;
 
 	@TestTemplate
-	void basicJar() {
-		assertThat(this.gradleBuild.build("bootBuildInfo", "--stacktrace").task(":bootBuildInfo").getOutcome())
+	void basicJar() throws IOException {
+		assertThat(this.gradleBuild.build("bootJar").task(":bootBuildInfo").getOutcome())
 			.isEqualTo(TaskOutcome.SUCCESS);
 		Properties properties = buildInfoProperties();
 		assertThat(properties).containsEntry("build.name", this.gradleBuild.getProjectDir().getName());
 		assertThat(properties).containsEntry("build.artifact", this.gradleBuild.getProjectDir().getName());
 		assertThat(properties).containsEntry("build.group", "com.example");
 		assertThat(properties).containsEntry("build.version", "1.0");
+		File jar = new File(this.gradleBuild.getProjectDir(), "build/libs/").listFiles()[0];
+		try (JarFile jarFile = new JarFile(jar)) {
+			JarEntry entry = jarFile.getJarEntry("META-INF/build-info.properties");
+			assertThat(entry).isNotNull();
+			Properties jarProperties = new Properties();
+			jarProperties.load(jarFile.getInputStream(entry));
+			assertThat(jarProperties).isEqualTo(properties);
+		}
 	}
 
 	@TestTemplate
 	void jarWithCustomName() {
-		assertThat(this.gradleBuild.build("bootBuildInfo", "--stacktrace").task(":bootBuildInfo").getOutcome())
+		assertThat(this.gradleBuild.build("bootBuildInfo").task(":bootBuildInfo").getOutcome())
 			.isEqualTo(TaskOutcome.SUCCESS);
 		Properties properties = buildInfoProperties();
 		assertThat(properties).containsEntry("build.name", this.gradleBuild.getProjectDir().getName());
@@ -64,19 +74,27 @@ class BuildInfoDslIntegrationTests {
 	}
 
 	@TestTemplate
-	void basicWar() {
-		assertThat(this.gradleBuild.build("bootBuildInfo", "--stacktrace").task(":bootBuildInfo").getOutcome())
+	void basicWar() throws IOException {
+		assertThat(this.gradleBuild.build("bootWar").task(":bootBuildInfo").getOutcome())
 			.isEqualTo(TaskOutcome.SUCCESS);
 		Properties properties = buildInfoProperties();
 		assertThat(properties).containsEntry("build.name", this.gradleBuild.getProjectDir().getName());
 		assertThat(properties).containsEntry("build.artifact", this.gradleBuild.getProjectDir().getName());
 		assertThat(properties).containsEntry("build.group", "com.example");
 		assertThat(properties).containsEntry("build.version", "1.0");
+		File war = new File(this.gradleBuild.getProjectDir(), "build/libs/").listFiles()[0];
+		try (JarFile warFile = new JarFile(war)) {
+			JarEntry entry = warFile.getJarEntry("WEB-INF/classes/META-INF/build-info.properties");
+			assertThat(entry).isNotNull();
+			Properties jarProperties = new Properties();
+			jarProperties.load(warFile.getInputStream(entry));
+			assertThat(jarProperties).isEqualTo(properties);
+		}
 	}
 
 	@TestTemplate
 	void warWithCustomName() {
-		assertThat(this.gradleBuild.build("bootBuildInfo", "--stacktrace").task(":bootBuildInfo").getOutcome())
+		assertThat(this.gradleBuild.build("bootBuildInfo").task(":bootBuildInfo").getOutcome())
 			.isEqualTo(TaskOutcome.SUCCESS);
 		Properties properties = buildInfoProperties();
 		assertThat(properties).containsEntry("build.name", this.gradleBuild.getProjectDir().getName());
@@ -87,7 +105,7 @@ class BuildInfoDslIntegrationTests {
 
 	@TestTemplate
 	void additionalProperties() {
-		assertThat(this.gradleBuild.build("bootBuildInfo", "--stacktrace").task(":bootBuildInfo").getOutcome())
+		assertThat(this.gradleBuild.build("bootBuildInfo").task(":bootBuildInfo").getOutcome())
 			.isEqualTo(TaskOutcome.SUCCESS);
 		Properties properties = buildInfoProperties();
 		assertThat(properties).containsEntry("build.name", this.gradleBuild.getProjectDir().getName());
@@ -98,14 +116,8 @@ class BuildInfoDslIntegrationTests {
 		assertThat(properties).containsEntry("build.b", "bravo");
 	}
 
-	@TestTemplate
-	void classesDependency() {
-		assertThat(this.gradleBuild.build("classes", "--stacktrace").task(":bootBuildInfo").getOutcome())
-			.isEqualTo(TaskOutcome.SUCCESS);
-	}
-
 	private Properties buildInfoProperties() {
-		File file = new File(this.gradleBuild.getProjectDir(), "build/resources/main/META-INF/build-info.properties");
+		File file = new File(this.gradleBuild.getProjectDir(), "build/generated/bootBuildInfo/build-info.properties");
 		assertThat(file).isFile();
 		Properties properties = new Properties();
 		try (FileReader reader = new FileReader(file)) {
