@@ -46,11 +46,16 @@ class ReactiveOpaqueTokenIntrospectionClientConfiguration {
 		Assert.state(token.getClientSecret() != null,
 				"No 'spring.security.oauth2.resourceserver.opaquetoken.client-secret' property specified");
 		SpringReactiveOpaqueTokenIntrospector.Builder builder = SpringReactiveOpaqueTokenIntrospector
-			.withIntrospectionUri(token.getIntrospectionUri())
+			.withIntrospectionUri(introspectionUri(token))
 			.clientId(token.getClientId())
 			.clientSecret(token.getClientSecret());
 		customizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
 		return builder.build();
+	}
+
+	@SuppressWarnings("NullAway") // never null due to @ConditionalOnProperty
+	private String introspectionUri(OAuth2ResourceServerProperties.Opaquetoken token) {
+		return token.getIntrospectionUri();
 	}
 
 }

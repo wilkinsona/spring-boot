@@ -58,6 +58,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder.JwkSetUriJwtDecoderBuilder;
 import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.util.Assert;
 import org.springframework.util.function.SingletonSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -146,6 +147,7 @@ class SampleGrpcServerOAuthApplicationTests {
 		private String token(ClientRegistrationRepository clientRegistrationRepository) {
 			RestClientClientCredentialsTokenResponseClient client = new RestClientClientCredentialsTokenResponseClient();
 			ClientRegistration registration = clientRegistrationRepository.findByRegistrationId("spring");
+			Assert.notNull(registration, "Registration 'spring' not found");
 			OAuth2ClientCredentialsGrantRequest request = new OAuth2ClientCredentialsGrantRequest(registration);
 			return client.getTokenResponse(request).getAccessToken().getTokenValue();
 		}

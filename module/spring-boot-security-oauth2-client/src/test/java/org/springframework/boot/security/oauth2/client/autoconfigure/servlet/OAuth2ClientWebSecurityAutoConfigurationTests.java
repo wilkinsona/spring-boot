@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.servlet.Filter;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -165,7 +166,9 @@ class OAuth2ClientWebSecurityAutoConfigurationTests {
 		throw new IllegalStateException("No FilterChainProxy found");
 	}
 
-	private boolean isEqual(ClientRegistration reg1, ClientRegistration reg2) {
+	private boolean isEqual(@Nullable ClientRegistration reg1, @Nullable ClientRegistration reg2) {
+		assertThat(reg1).isNotNull();
+		assertThat(reg2).isNotNull();
 		boolean result = ObjectUtils.nullSafeEquals(reg1.getClientId(), reg2.getClientId());
 		result = result && ObjectUtils.nullSafeEquals(reg1.getClientName(), reg2.getClientName());
 		result = result && ObjectUtils.nullSafeEquals(reg1.getClientSecret(), reg2.getClientSecret());
