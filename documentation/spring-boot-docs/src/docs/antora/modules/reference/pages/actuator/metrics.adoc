@@ -1012,7 +1012,9 @@ This section briefly describes the available metrics for MongoDB.
 [[actuator.metrics.supported.mongodb.command]]
 ==== MongoDB Command Metrics
 
-Auto-configuration registers a javadoc:io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener[] with the auto-configured javadoc:{url-mongodb-driver-sync-javadoc}/com.mongodb.client.MongoClient[].
+By default, xref:data/nosql.adoc#data.nosql.mongodb.observability[auto-configuration of the MongoDB driver's observation support] is preferred.
+To use command metrics instead, set configprop:management.metrics.mongodb.command.enabled[] to `true`.
+This will trigger registration of a javadoc:io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener[] with the auto-configured javadoc:{url-mongodb-driver-sync-javadoc}/com.mongodb.client.MongoClient[].
 
 A timer metric named `mongodb.driver.commands` is created for each command issued to the underlying MongoDB driver.
 Each metric is tagged with the following information by default:

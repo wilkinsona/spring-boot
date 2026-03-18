@@ -51,7 +51,7 @@ public final class MongoMetricsAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(MongoMetricsCommandListener.class)
-	@ConditionalOnBooleanProperty(name = "management.metrics.mongodb.command.enabled", matchIfMissing = true)
+	@ConditionalOnBooleanProperty(name = "management.metrics.mongodb.command.enabled", matchIfMissing = false)
 	static class MongoCommandMetricsConfiguration {
 
 		@Bean

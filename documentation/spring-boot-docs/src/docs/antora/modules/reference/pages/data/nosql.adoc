@@ -229,6 +229,20 @@ TIP: For complete details of Spring Data MongoDB, including its rich object mapp
 
 
 
+[[data.nosql.mongodb.observability]]
+=== MongoDB Observability
+Spring Boot will auto-configure the MongoDB Driver's Micrometer observability integration.
+This integration can optionally include command payloads in the observations that it creates.
+This can have a performance cost. To enable tracing of command payloads, set `management.observations.mongodb.enable-command-payload-tracing` to `true`.
+By default, the entire payload will be captured.
+To limit the size of the captured payloads, set `management.observations.mongodb.max-query-text-length`.
+Any payload that exceeds this length will be truncated.
+
+To disable the observability integration, set `management.observations.mongodb.enabled` to `false`.
+To use xref:actuator/metrics.adoc#actuator.metrics.supported.mongodb.command[command listener metrics] instead, set `management.metrics.mongodb.command.enabled` to `true`.
+
+
+
 [[data.nosql.neo4j]]
 == Neo4j
 

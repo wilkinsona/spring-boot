@@ -56,9 +56,10 @@ class MongoMetricsAutoConfigurationTests {
 		.withConfiguration(AutoConfigurations.of(MongoMetricsAutoConfiguration.class));
 
 	@Test
-	void whenThereIsAMeterRegistryThenMetricsCommandListenerIsAdded() {
+	void whenThereIsAMeterRegistryAndCommandMetricsAreEnabledThenMetricsCommandListenerIsAdded() {
 		this.contextRunner.withBean(SimpleMeterRegistry.class)
 			.withConfiguration(AutoConfigurations.of(MongoAutoConfiguration.class))
+			.withPropertyValues("management.metrics.mongodb.command.enabled=true")
 			.run((context) -> {
 				assertThat(context).hasSingleBean(MongoMetricsCommandListener.class);
 				assertThat(getActualMongoClientSettingsUsedToConstructClient(context))
@@ -67,6 +68,19 @@ class MongoMetricsAutoConfigurationTests {
 					.containsExactly(context.getBean(MongoMetricsCommandListener.class));
 				assertThat(getMongoCommandTagsProviderUsedToConstructListener(context))
 					.isInstanceOf(DefaultMongoCommandTagsProvider.class);
+			});
+	}
+
+	@Test
+	void whenThereIsAMeterRegistryAndCommandMetricsAreNotEnabledThenMetricsCommandListenerIsNotAdded() {
+		this.contextRunner.withBean(SimpleMeterRegistry.class)
+			.withConfiguration(AutoConfigurations.of(MongoAutoConfiguration.class))
+			.run((context) -> {
+				assertThat(context).doesNotHaveBean(MongoMetricsCommandListener.class);
+				assertThat(getActualMongoClientSettingsUsedToConstructClient(context))
+					.extracting(MongoClientSettings::getCommandListeners)
+					.asInstanceOf(InstanceOfAssertFactories.LIST)
+					.isEmpty();
 			});
 	}
 
@@ -100,6 +114,7 @@ class MongoMetricsAutoConfigurationTests {
 		final MongoCommandTagsProvider customTagsProvider = mock(MongoCommandTagsProvider.class);
 		this.contextRunner.withBean(SimpleMeterRegistry.class)
 			.withConfiguration(AutoConfigurations.of(MongoAutoConfiguration.class))
+			.withPropertyValues("management.metrics.mongodb.command.enabled=true")
 			.withBean("customMongoCommandTagsProvider", MongoCommandTagsProvider.class, () -> customTagsProvider)
 			.run((context) -> assertThat(getMongoCommandTagsProviderUsedToConstructListener(context))
 				.isSameAs(customTagsProvider));
