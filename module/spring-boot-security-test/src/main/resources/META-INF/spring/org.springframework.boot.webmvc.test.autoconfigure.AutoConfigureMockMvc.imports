@@ -3,3 +3,4 @@ org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfigurat
 org.springframework.boot.security.autoconfigure.web.servlet.SecurityFilterAutoConfiguration
 org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration
 org.springframework.boot.security.test.autoconfigure.webmvc.SecurityMockMvcAutoConfiguration
+org.springframework.boot.security.test.autoconfigure.webmvc.SecurityMockMvcOrderingAutoConfiguration
