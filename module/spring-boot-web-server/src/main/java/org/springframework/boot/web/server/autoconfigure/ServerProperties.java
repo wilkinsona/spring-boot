@@ -19,6 +19,8 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.boot.web.server.Compression;
 import org.springframework.boot.web.server.Cookie;
+import org.springframework.boot.web.server.ForwardedRequestHeaders;
+import org.springframework.boot.web.server.ForwardedRequestHeaders.Naming;
 import org.springframework.boot.web.server.Http2;
 import org.springframework.boot.web.server.MimeMappings;
 import org.springframework.boot.web.server.Shutdown;
@@ -112,6 +114,8 @@ public class ServerProperties {
 
 	private final Reactive reactive = new Reactive();
 
+	private final Request request = new Request();
+
 	public @Nullable Integer getPort() {
 		return this.port;
 	}
@@ -182,6 +186,10 @@ public class ServerProperties {
 
 	public Reactive getReactive() {
 		return this.reactive;
+	}
+
+	public Request getRequest() {
+		return this.request;
 	}
 
 	public @Nullable ForwardHeadersStrategy getForwardHeadersStrategy() {
@@ -331,23 +339,111 @@ public class ServerProperties {
 	}
 
 	/**
-	 * Strategies for supporting forward headers.
+	 * Request server properties.
 	 */
+	public static class Request {
+
+		@NestedConfigurationProperty
+		private final Header header = new Header();
+
+		public Header getHeader() {
+			return this.header;
+		}
+
+		/**
+		 * Request header server properties.
+		 */
+		public static class Header {
+
+			@NestedConfigurationProperty
+			private final Forwarded forwarded = new Forwarded();
+
+			public Forwarded getForwarded() {
+				return this.forwarded;
+			}
+
+			/**
+			 * Forwarded request header server properties.
+			 */
+			public static class Forwarded {
+
+				/**
+				 * Strategy to use to process the forwarded headers. If not specified, the
+				 * strategy will be deduced based on the cloud platform.
+				 */
+				private @Nullable ForwardedHeaderStrategy strategy;
+
+				/**
+				 * Naming of forwarded headers.
+				 */
+				private ForwardedRequestHeaders.Naming naming = Naming.X_FORWARDED;
+
+				/**
+				 * If the 'prefix' forward header should be used.
+				 */
+				private boolean usePrefix;
+
+				public @Nullable ForwardedHeaderStrategy getStrategy() {
+					return this.strategy;
+				}
+
+				public void setStrategy(@Nullable ForwardedHeaderStrategy strategy) {
+					this.strategy = strategy;
+				}
+
+				public ForwardedRequestHeaders.Naming getNaming() {
+					return this.naming;
+				}
+
+				public void setNaming(ForwardedRequestHeaders.Naming naming) {
+					this.naming = naming;
+				}
+
+				public boolean isUsePrefix() {
+					return this.usePrefix;
+				}
+
+				public void setUsePrefix(boolean usePrefix) {
+					this.usePrefix = usePrefix;
+				}
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Strategies for supporting forward headers.
+	 *
+	 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
+	 * {@link ForwardedHeaderStrategy}
+	 */
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public enum ForwardHeadersStrategy {
 
 		/**
 		 * Use the underlying container's native support for forwarded headers.
+		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
+		 * {@link ForwardedHeaderStrategy#NATIVE}
 		 */
+		@Deprecated(since = "4.2.0", forRemoval = true)
 		NATIVE,
 
 		/**
 		 * Use Spring's support for handling forwarded headers.
+		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
+		 * {@link ForwardedHeaderStrategy#FRAMEWORK}
 		 */
+		@Deprecated(since = "4.2.0", forRemoval = true)
 		FRAMEWORK,
 
 		/**
 		 * Ignore X-Forwarded-* headers.
+		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
+		 * {@link ForwardedHeaderStrategy#NONE}
 		 */
+		@Deprecated(since = "4.2.0", forRemoval = true)
 		NONE
 
 	}
