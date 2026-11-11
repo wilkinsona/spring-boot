@@ -518,7 +518,7 @@ server:
         strategy: native
 ----
 
-With this setup, the Web servers themselves natively support this feature.
+With this setup, the web servers themselves natively support this feature.
 You can check their documentation to learn more about their specific behavior.
 
 TIP: If you are using Tomcat and terminating SSL at the proxy, configprop:server.tomcat.servlet.redirect-context-root[] should be set to `false`.
@@ -545,7 +545,8 @@ TIP: If your web server does not support RFC 7239, you can switch to xref:how-to
 [[howto.webserver.use-behind-a-proxy-server.prefix-header]]
 === Forwarded Prefix Header Support
 
-The `"X-Forwarded-Prefix"` header is supported by some proxy, load-balancer and cloud platform to tell your application the original URL path prefix that was stripped away before forwarding the request.
+The `"X-Forwarded-Prefix"` header is supported by some proxies, load-balancers and cloud platforms.
+It tells your application the original URL path prefix that was stripped away before forwarding the request.
 
 By default, `"X-Forwarded-Prefix"` headers are ignored.
 If you want to enabled support for them, you can use the following configuration:
@@ -578,7 +579,7 @@ server:
         strategy: framework
 ----
 
-TIP: We recommend using the `native` strategy whenever possible since it's more efficient that Spring Framework's generic support.
+TIP: We recommend using the `native` strategy whenever possible since it's more efficient than Spring Framework's generic support.
 
 
 
@@ -598,7 +599,7 @@ server:
 
 Tomcat is also configured with a regular expression that matches internal proxies that are to be trusted.
 See the xref:appendix:application-properties/index.adoc#application-properties.server.server.tomcat.remoteip.internal-proxies[configprop:server.tomcat.remoteip.internal-proxies[] entry in the appendix] for its default value.
-You can customize the valve's configuration by adding an entry to `application.properties`, as shown in the following example:
+You can customize the valve's configuration using the configprop:server.tomcat.remoteip.internal-proxies[] configuration property, as shown in the following example:
 
 [configprops,yaml]
 ----

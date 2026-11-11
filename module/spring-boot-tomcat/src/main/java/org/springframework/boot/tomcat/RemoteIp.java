@@ -17,7 +17,7 @@ import org.springframework.util.Assert;
  * @param header settings for the header or {@code null} to keep defaults
  * @param proxies setting for the proxies or {@code null} to keep defaults
  * @param usage when the configuration should be used
- * @since 2.4.0
+ * @since 4.2.0
  */
 public record RemoteIp(@Nullable Header header, @Nullable Proxies proxies, Usage usage) {
 

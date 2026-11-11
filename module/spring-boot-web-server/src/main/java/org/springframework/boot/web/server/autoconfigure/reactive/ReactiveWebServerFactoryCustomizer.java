@@ -9,8 +9,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.server.autoconfigure.ServerPropertAdapters;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
+import org.springframework.boot.web.server.autoconfigure.ServerPropertyAdapters;
 import org.springframework.boot.web.server.reactive.ConfigurableReactiveWebServerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
@@ -36,10 +36,10 @@ public class ReactiveWebServerFactoryCustomizer
 	/**
 	 * Create a new {@link ReactiveWebServerFactoryCustomizer} instance.
 	 * @param serverProperties the server properties
-	 * @deprecated since 2.4.0 for removal in 2.6.0 in favor of
+	 * @deprecated since 4.2.0 for removal in 4.4.0 in favor of
 	 * {@link #ReactiveWebServerFactoryCustomizer(Environment, ServerProperties, SslBundles)}
 	 */
-	@Deprecated(since = "2.4.0", forRemoval = true)
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public ReactiveWebServerFactoryCustomizer(ServerProperties serverProperties) {
 		this(serverProperties, null);
 	}
@@ -48,10 +48,10 @@ public class ReactiveWebServerFactoryCustomizer
 	 * Create a new {@link ReactiveWebServerFactoryCustomizer} instance.
 	 * @param serverProperties the server properties
 	 * @param sslBundles the SSL bundles
-	 * @deprecated since 2.4.0 for removal in 2.6.0 in favor of
+	 * @deprecated since 4.2.0 for removal in 4.4.0 in favor of
 	 * {@link #ReactiveWebServerFactoryCustomizer(Environment, ServerProperties, SslBundles)}
 	 */
-	@Deprecated(since = "2.4.0", forRemoval = true)
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public ReactiveWebServerFactoryCustomizer(ServerProperties serverProperties, @Nullable SslBundles sslBundles) {
 		this.environment = null;
 		this.serverProperties = serverProperties;
@@ -86,7 +86,7 @@ public class ReactiveWebServerFactoryCustomizer
 		map.from(this.serverProperties::getCompression).to(factory::setCompression);
 		map.from(this.serverProperties::getHttp2).to(factory::setHttp2);
 		map.from(this.serverProperties)
-			.as(ServerPropertAdapters.nativeForwardedRequestHeaders(this.environment))
+			.as(ServerPropertyAdapters.nativeForwardedRequestHeaders(this.environment))
 			.to(factory::setForwardedRequestHeaders);
 		map.from(this.serverProperties.getShutdown()).to(factory::setShutdown);
 		map.from(() -> this.sslBundles).to(factory::setSslBundles);

@@ -15,6 +15,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.boot.convert.DurationUnit;
 import org.springframework.boot.web.server.Compression;
@@ -74,7 +75,9 @@ public class ServerProperties {
 
 	/**
 	 * Strategy for handling X-Forwarded-* headers.
+	 * @deprecated since 4.2.0 for removal in 4.4.0
 	 */
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	private @Nullable ForwardHeadersStrategy forwardHeadersStrategy;
 
 	/**
@@ -192,10 +195,13 @@ public class ServerProperties {
 		return this.request;
 	}
 
+	@Deprecated(since = "4.2.0", forRemoval = true)
+	@DeprecatedConfigurationProperty(since = "4.2.0", replacement = "server.request.header.forwarded.strategy")
 	public @Nullable ForwardHeadersStrategy getForwardHeadersStrategy() {
 		return this.forwardHeadersStrategy;
 	}
 
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public void setForwardHeadersStrategy(@Nullable ForwardHeadersStrategy forwardHeadersStrategy) {
 		this.forwardHeadersStrategy = forwardHeadersStrategy;
 	}
@@ -343,7 +349,6 @@ public class ServerProperties {
 	 */
 	public static class Request {
 
-		@NestedConfigurationProperty
 		private final Header header = new Header();
 
 		public Header getHeader() {
@@ -355,7 +360,6 @@ public class ServerProperties {
 		 */
 		public static class Header {
 
-			@NestedConfigurationProperty
 			private final Forwarded forwarded = new Forwarded();
 
 			public Forwarded getForwarded() {
@@ -416,7 +420,7 @@ public class ServerProperties {
 	/**
 	 * Strategies for supporting forward headers.
 	 *
-	 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
+	 * @deprecated since 4.2.0 for removal in 4.4.0 in favor of
 	 * {@link ForwardedHeaderStrategy}
 	 */
 	@Deprecated(since = "4.2.0", forRemoval = true)
@@ -424,26 +428,17 @@ public class ServerProperties {
 
 		/**
 		 * Use the underlying container's native support for forwarded headers.
-		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
-		 * {@link ForwardedHeaderStrategy#NATIVE}
 		 */
-		@Deprecated(since = "4.2.0", forRemoval = true)
 		NATIVE,
 
 		/**
 		 * Use Spring's support for handling forwarded headers.
-		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
-		 * {@link ForwardedHeaderStrategy#FRAMEWORK}
 		 */
-		@Deprecated(since = "4.2.0", forRemoval = true)
 		FRAMEWORK,
 
 		/**
 		 * Ignore X-Forwarded-* headers.
-		 * @deprecated since 4.2.0 for removal in 4.6.0 in favor of
-		 * {@link ForwardedHeaderStrategy#NONE}
 		 */
-		@Deprecated(since = "4.2.0", forRemoval = true)
 		NONE
 
 	}

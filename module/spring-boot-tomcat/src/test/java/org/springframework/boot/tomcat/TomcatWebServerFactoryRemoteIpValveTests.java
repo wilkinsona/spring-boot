@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Base class for nested testing of {@link TomcatWebServerFactory} {@link RemoteIpValve}.
  *
  * @param <F> the factory type
- * @param <S> the server type
  * @author Phillip Webb
  */
 public abstract class TomcatWebServerFactoryRemoteIpValveTests<F extends TomcatWebServerFactory> {

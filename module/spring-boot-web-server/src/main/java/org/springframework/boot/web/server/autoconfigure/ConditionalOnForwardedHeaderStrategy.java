@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Conditional;
  * {@link ForwardedHeaderStrategy} is selected by the user.
  *
  * @author Phillip Webb
- * @since 2.4.0
+ * @since 4.2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.TYPE })

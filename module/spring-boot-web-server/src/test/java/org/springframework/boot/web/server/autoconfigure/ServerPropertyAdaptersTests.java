@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Tests for {@link ServerPropertAdapters}.
+ * Tests for {@link ServerPropertyAdapters}.
  *
  * @author Phillip Webb
  */
-class ServerPropertAdaptersTests {
+class ServerPropertyAdaptersTests {
 
 	@Nested
 	class NativeForwardedRequestHeadersAdapterTests {
@@ -107,7 +107,7 @@ class ServerPropertAdaptersTests {
 		private @Nullable ForwardedRequestHeaders adapt(@Nullable Environment environment) {
 			ServerProperties serverProperties = (environment != null)
 					? Binder.get(environment).bindOrCreate("server", ServerProperties.class) : new ServerProperties();
-			return ServerPropertAdapters.nativeForwardedRequestHeaders(environment).adapt(serverProperties);
+			return ServerPropertyAdapters.nativeForwardedRequestHeaders(environment).adapt(serverProperties);
 		}
 
 	}

@@ -17,11 +17,11 @@ import org.springframework.core.env.Environment;
  * {@link PropertyMapper} adapters for {@link ServerProperties}.
  *
  * @author Phillip Webb
- * @since 2.4.0
+ * @since 4.2.0
  */
-public final class ServerPropertAdapters {
+public final class ServerPropertyAdapters {
 
-	private ServerPropertAdapters() {
+	private ServerPropertyAdapters() {
 	}
 
 	/**

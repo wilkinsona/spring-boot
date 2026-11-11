@@ -12,8 +12,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
-import org.springframework.boot.web.server.autoconfigure.ServerPropertAdapters;
 import org.springframework.boot.web.server.autoconfigure.ServerProperties;
+import org.springframework.boot.web.server.autoconfigure.ServerPropertyAdapters;
 import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory;
 import org.springframework.boot.web.server.servlet.CookieSameSiteSupplier;
 import org.springframework.boot.web.server.servlet.WebListenerRegistrar;
@@ -49,10 +49,10 @@ public class ServletWebServerFactoryCustomizer
 	/**
 	 * Create a new {@link ServletWebServerFactoryCustomizer} instance.
 	 * @param serverProperties the server properties
-	 * @deprecated since 2.4.0 for removal in 2.6.0 in favor of
+	 * @deprecated since 4.2.0 for removal in 4.4.0 in favor of
 	 * {@link #ServletWebServerFactoryCustomizer(Environment, ServerProperties, List, List, SslBundles)}
 	 */
-	@Deprecated(since = "2.4.0", forRemoval = true)
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public ServletWebServerFactoryCustomizer(ServerProperties serverProperties) {
 		this(serverProperties, Collections.emptyList(), Collections.emptyList(), null);
 	}
@@ -63,10 +63,10 @@ public class ServletWebServerFactoryCustomizer
 	 * @param webListenerRegistrars the web listener registrars
 	 * @param cookieSameSiteSuppliers the cookie same-site suppliers
 	 * @param sslBundles the SSL bundles
-	 * @deprecated since 2.4.0 for removal in 2.6.0 in favor of
+	 * @deprecated since 4.2.0 for removal in 4.4.0 in favor of
 	 * {@link #ServletWebServerFactoryCustomizer(Environment, ServerProperties, List, List, SslBundles)}
 	 */
-	@Deprecated(since = "2.4.0", forRemoval = true)
+	@Deprecated(since = "4.2.0", forRemoval = true)
 	public ServletWebServerFactoryCustomizer(ServerProperties serverProperties,
 			List<WebListenerRegistrar> webListenerRegistrars, List<CookieSameSiteSupplier> cookieSameSiteSuppliers,
 			@Nullable SslBundles sslBundles) {
@@ -117,7 +117,7 @@ public class ServletWebServerFactoryCustomizer
 		map.from(this.serverProperties::getServerHeader).to(factory::setServerHeader);
 		map.from(this.serverProperties.getServlet()::getContextParameters).to(factory::setInitParameters);
 		map.from(this.serverProperties)
-			.as(ServerPropertAdapters.nativeForwardedRequestHeaders(this.environment))
+			.as(ServerPropertyAdapters.nativeForwardedRequestHeaders(this.environment))
 			.to(factory::setForwardedRequestHeaders);
 		map.from(this.serverProperties.getShutdown()).to(factory::setShutdown);
 		map.from(() -> this.sslBundles).to(factory::setSslBundles);
